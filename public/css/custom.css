@@ -1,0 +1,486 @@
+/* -----------------------------------
+   0. Brand colors (reference)
+   ----------------------------------- */
+/* Main accent: #ffcc33 (yellow)
+   Header/footer background: #000000 (black)
+   Active menu: #88c8bc (teal)
+*/
+
+/* -----------------------------------
+   1. Logo
+   ----------------------------------- */
+#colorlib-logo a {
+  color: #ffcc33;
+}
+
+/* -----------------------------------
+   2. Footer (black, all text white)
+   ----------------------------------- */
+#colorlib-footer {
+  background-color: #000000;
+  color: #ffffff !important;
+}
+
+#colorlib-footer h4,
+#colorlib-footer p,
+#colorlib-footer li,
+#colorlib-footer a,
+#colorlib-footer span,
+#colorlib-footer .copy p,
+#colorlib-footer .copy span,
+#colorlib-footer .copy a,
+#colorlib-footer .colorlib-footer-links li,
+#colorlib-footer .colorlib-footer-links a {
+  color: #ffffff !important;
+}
+
+#colorlib-footer a:hover {
+  color: #ffcc33 !important;
+}
+
+/* Footer widget headings */
+#colorlib-footer .colorlib-widget h4,
+#colorlib-footer .footer-col h4 {
+  color: #ffffff !important;
+}
+
+/* -----------------------------------
+   3. Header bar + menu (navbar)
+   ----------------------------------- */
+
+/* Black bar behind logo + menu */
+.colorlib-nav .top-menu {
+  background-color: #000000;
+}
+
+/* Ensure navbar sections align correctly */
+.colorlib-nav .top-menu .row {
+  align-items: center;
+}
+
+/* Main menu links (Home, Men, Women, About, Contact, Sign In) */
+.colorlib-nav .menu-1 ul {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+
+.colorlib-nav .menu-1 ul li > a {
+  position: relative;
+  padding-bottom: 8px; /* space for underline */
+  color: #ffffff; /* white text on black bar */
+}
+
+/* Hover color for main items */
+.colorlib-nav .menu-1 ul li:hover > a {
+  color: #ffcc33;
+}
+
+/* Active (selected) item */
+.colorlib-nav .menu-1 ul li.active > a {
+  color: #88c8bc;
+}
+
+/* Underline bar animation */
+.colorlib-nav .menu-1 ul li > a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 3px;
+  background-color: #ffcc33;
+  transition: width 0.25s ease;
+}
+
+.colorlib-nav .menu-1 ul li:hover > a::after,
+.colorlib-nav .menu-1 ul li.active > a::after {
+  width: 100%;
+}
+
+/* Dropdown (submenu) links */
+.colorlib-nav .menu-1 ul li .dropdown li a {
+  color: #ffffff;
+}
+
+.colorlib-nav .menu-1 ul li .dropdown li a:hover {
+  color: #ffcc33;
+  background-color: transparent;
+}
+
+/* Auth link (Sign In / My Account) */
+.auth-item a.auth-link {
+  position: relative;
+  padding-bottom: 8px;
+  color: #ffffff;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.auth-item a.auth-link:hover {
+  color: #ffcc33;
+}
+
+.auth-item a.auth-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 3px;
+  background-color: #ffcc33;
+  transition: width 0.25s ease;
+}
+
+.auth-item:hover a.auth-link::after {
+  width: 100%;
+}
+
+/* Cart link same color as menu */
+.colorlib-nav .cart a {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Move cart closer to search */
+.colorlib-nav .cart {
+  margin-left: 10px;
+}
+
+/* Offer / sale banner height + text */
+.colorlib-nav .sale {
+  background: #88c8bc; /* teal bar */
+  color: #ffffff;
+  padding: 6px 0; /* lower height */
+}
+
+.colorlib-nav .sale h3 {
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.colorlib-nav .sale h3 a {
+  color: #ffffff;
+}
+
+/* -----------------------------------
+   4. Partner logos (no glow)
+   ----------------------------------- */
+.colorlib-partner .partner-col img {
+  transition: none;
+  box-shadow: none;
+}
+
+.colorlib-partner .partner-col img:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* -----------------------------------
+   5. Product cards & featured blocks
+   ----------------------------------- */
+.product-entry {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-entry:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 25px rgba(255, 204, 51, 0.7);
+}
+
+/* Image zoom */
+.product-entry .prod-img img {
+  transition: transform 0.3s ease;
+}
+
+.product-entry:hover .prod-img img {
+  transform: scale(1.005);
+  box-shadow: none;
+}
+
+/* Featured tiles */
+.featured {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.featured:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 25px rgba(255, 204, 51, 0.7);
+}
+
+/* Optional glow on other content images */
+.colorlib-product img,
+#colorlib-hero img,
+.colorlib-intro img {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.colorlib-product img:hover,
+#colorlib-hero img:hover,
+.colorlib-intro img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(255, 204, 51, 0.7);
+}
+
+/* -----------------------------------
+   6. Cart page alignment
+   ----------------------------------- */
+
+/* Keep cart content centered but not full-width */
+.colorlib-product .container {
+  max-width: 1140px;
+}
+
+/* Use flex rows like original template */
+.product-name,
+.product-cart {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+/* Product column: slightly wider */
+.product-name .one-forth,
+.product-cart .one-forth {
+  flex: 0 0 30%;
+  max-width: 30%;
+}
+
+/* Other columns equal width */
+.product-name .one-eight,
+.product-cart .one-eight {
+  flex: 0 0 11.6%;
+  max-width: 11.6%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Header labels */
+.product-name .one-eight span,
+.product-name .one-forth span {
+  display: inline-block;
+  font-weight: 600;
+}
+
+/* Product image + name alignment */
+.product-cart .one-forth {
+  display: flex;
+  align-items: center;
+}
+
+.product-cart .product-img {
+  width: 80px;
+  height: 80px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 4px;
+}
+
+.product-cart .one-forth .display-tc {
+  padding-left: 12px;
+}
+
+/* Quantity controls */
+.qty-group {
+  display: inline-flex;
+  align-items: center;
+}
+
+.qty-group .btn-qty {
+  padding: 3px 10px;
+  line-height: 1;
+}
+
+.qty-group .input-number {
+  width: 56px;
+  margin: 0 4px;
+  text-align: center;
+}
+
+/* Row spacing divider */
+.product-cart {
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Step indicator row center + smaller text */
+.process-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.process-wrap .process h3 {
+  font-size: 0.95rem;
+}
+
+/* Breadcrumb spacing */
+.breadcrumbs .bread {
+  margin-bottom: 10px;
+}
+
+/* Totals / info small tweaks */
+.total-wrap .total {
+  margin-bottom: 15px;
+}
+
+.shipping-info,
+.payment-security {
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+/* Continue shopping link closer to table */
+.continue-shopping {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+/* Top row: menu inline with logo */
+.menu-1.menu-inline ul {
+  display: flex;
+  justify-content: flex-start;
+  gap: 25px;
+}
+
+/* Right side: search and cart in one line */
+.header-right-inline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.header-right-inline .search-wrap {
+  margin: 0;
+}
+
+/* Cart same color as menu */
+.colorlib-nav .cart a {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Narrower search box */
+.search-narrow {
+  width: 260px; /* adjust as you like */
+}
+
+/* Align right-side search in first row */
+.header-top-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Menu row: menu left, cart right */
+.menu-1.menu-left ul {
+  display: flex;
+  justify-content: flex-start;
+  gap: 25px;
+}
+
+/* Cart on far right same row */
+.cart-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Keep logo color/size */
+#colorlib-logo a {
+  color: #ffcc33 !important;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+/* Footer base */
+#colorlib-footer {
+  background-color: #000000;
+  color: #ffffff;
+  padding: 40px 0 20px;
+  font-size: 14px;
+}
+
+/* Footer headings */
+#colorlib-footer h4 {
+  color: #ffcc33;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+/* Footer links */
+#colorlib-footer .footer-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#colorlib-footer .footer-links li {
+  margin-bottom: 6px;
+}
+
+#colorlib-footer .footer-links a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+#colorlib-footer .footer-links a:hover {
+  color: #ffcc33;
+  text-decoration: underline;
+}
+
+/* Social icons row */
+#colorlib-footer .footer-social a {
+  display: inline-block;
+  margin-right: 8px;
+  color: #ffffff;
+}
+
+#colorlib-footer .footer-social a:hover {
+  color: #ffcc33;
+}
+
+/* Newsletter input */
+#colorlib-footer .footer-subscribe .form-control {
+  height: 32px;
+  font-size: 13px;
+}
+
+/* Copyright row */
+#colorlib-footer .copyright {
+  border-top: 1px solid #333333;
+  margin-top: 20px;
+  padding-top: 15px;
+  font-size: 13px;
+}
+
+#colorlib-footer .row-pb-md {
+  margin-bottom: 10px; /* gap between menu and copyright */
+}
+
+#colorlib-footer .copy {
+  padding-top: 5px;
+  padding-bottom: 5px; /* gap between copyright and bottom */
+  border-top: 1px solid #333;
+}
+
+#colorlib-footer .copy p {
+  margin-bottom: 0;
+  line-height: 1.4;
+}
+
+/* Reduce space between footer menus and copyright */
+#colorlib-footer .row-pb-md {
+  margin-bottom: 5px; /* was larger; this pulls copyright up */
+}
+
+#colorlib-footer .copy {
+  padding-top: 8px; /* small top padding */
+  padding-bottom: 8px; /* small bottom padding */
+}
+
+#colorlib-footer .copy p {
+  margin-bottom: 0;
+  line-height: 1.4;
+}

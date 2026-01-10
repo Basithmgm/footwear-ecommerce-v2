@@ -1,0 +1,429 @@
+/* 1. Global colors & fonts */
+body {
+  background-color: #f5f6fa;
+}
+
+/* Brand colors */
+:root {
+  --brand-primary: #1b3b5f; /* dark blue */
+  --brand-accent: #ff7b3a; /* warm orange */
+  --text-main: #222222;
+  --text-muted: #777777;
+}
+
+/* 2. Navbar + logo */
+.colorlib-nav {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+#colorlib-logo a {
+  color: var(--brand-primary);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Active menu item */
+.colorlib-nav .menu-1 ul li a {
+  color: #333333;
+}
+.colorlib-nav .menu-1 ul li.active > a {
+  color: var(--brand-accent);
+}
+
+/* 3. Buttons (all primary CTAs) */
+.btn-primary {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--brand-accent);
+  border-color: var(--brand-accent);
+}
+
+/* 4. Hero text colors (slider) */
+#colorlib-hero .head-1,
+#colorlib-hero .head-2,
+#colorlib-hero .head-3 {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+#colorlib-hero .category span {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* 5. Intro text */
+.colorlib-intro .intro {
+  color: var(--text-main);
+}
+
+/* 6. Section titles */
+.colorlib-heading h2,
+.colorlib-heading-sm h2 {
+  color: var(--brand-primary);
+}
+
+/* 7. Product cards (very simple) */
+.product-entry {
+  border: 1px solid #e4e6ea;
+}
+.product-entry .desc h2 a {
+  color: var(--text-main);
+  font-size: 1rem;
+}
+.product-entry .price {
+  color: var(--brand-accent);
+  font-weight: 600;
+}
+
+/* 8. Footer */
+#colorlib-footer {
+  background-color: #111827;
+  color: #d1d5db;
+}
+#colorlib-footer h4 {
+  color: #ffffff;
+}
+#colorlib-footer a {
+  color: #9ca3af;
+}
+#colorlib-footer a:hover {
+  color: var(--brand-accent);
+}
+
+/* 9. Sale strip */
+.sale {
+  background: var(--brand-primary);
+}
+.sale a {
+  color: #ffffff;
+}
+/* HEADER: top area and navbar */
+
+.colorlib-nav {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb; /* light grey line */
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* top area height and alignment */
+.colorlib-nav .top-menu {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* logo */
+#colorlib-logo a {
+  color: #1b3b5f; /* same family as footer standard look */
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* main menu links */
+.colorlib-nav .menu-1 ul li a {
+  color: #374151;
+  font-weight: 500;
+  padding: 10px 12px;
+}
+
+/* active page link */
+.colorlib-nav .menu-1 ul li.active > a {
+  color: #ff7b3a;
+  border-bottom: 2px solid #ff7b3a;
+}
+
+/* hover state */
+.colorlib-nav .menu-1 ul li a:hover {
+  color: #ff7b3a;
+}
+
+/* search box */
+.search-wrap .form-control.search {
+  border-radius: 999px;
+  border-color: #d1d5db;
+}
+.search-wrap .submit-search {
+  border-radius: 999px;
+}
+
+/* sale strip just under nav */
+.sale {
+  background-color: #1f2933; /* dark bar like standard ecommerce headers */
+}
+.sale a {
+  color: #ffffff;
+}
+/* Header background and structure */
+.colorlib-nav {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.colorlib-nav .top-menu {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* Logo */
+#colorlib-logo a {
+  color: #1b3b5f;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Menu links */
+.colorlib-nav .menu-1 ul li a {
+  color: #374151;
+  font-weight: 500;
+  padding: 10px 12px;
+}
+
+.colorlib-nav .menu-1 ul li.active > a {
+  color: #ff7b3a;
+  border-bottom: 2px solid #ff7b3a;
+}
+
+.colorlib-nav .menu-1 ul li a:hover {
+  color: #ff7b3a;
+}
+
+/* Search box */
+.search-wrap .form-control.search {
+  border-radius: 999px;
+  border-color: #d1d5db;
+}
+.search-wrap .submit-search {
+  border-radius: 999px;
+}
+
+/* Auth button */
+.auth-btn {
+  border-radius: 999px;
+  font-weight: 500;
+  padding: 6px 16px;
+}
+
+/* Sale strip */
+.sale {
+  background-color: #1f2933;
+}
+.sale a {
+  color: #ffffff;
+}
+/* Header background – makes it more attractive but still standard */
+.colorlib-nav {
+  background: linear-gradient(90deg, #1b3b5f, #243b6b);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+}
+
+/* Inner container stays white so search bar looks same as before */
+.colorlib-nav .top-menu .container {
+  background-color: #ffffff;
+}
+
+/* Keep top-menu padding similar to original */
+.colorlib-nav .top-menu {
+  padding-top: 15px;
+  padding-bottom: 10px;
+}
+
+/* Menu row background transparent so gradient shows slightly */
+.colorlib-nav .menu-1 {
+  background-color: transparent;
+}
+
+/* Menu links on colored header */
+.colorlib-nav .menu-1 ul li a {
+  color: #f9fafb;
+  font-weight: 500;
+  padding: 10px 12px;
+}
+.colorlib-nav .menu-1 ul li.active > a {
+  color: #ff7b3a;
+  border-bottom: 2px solid #ff7b3a;
+}
+.colorlib-nav .menu-1 ul li a:hover {
+  color: #ff7b3a;
+}
+
+/* Logo keeps strong contrast */
+#colorlib-logo a {
+  color: #1b3b5f;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Search bar – same size and position as original, just slight border tidy */
+.search-wrap .form-control.search {
+  border-radius: 0;
+  border-color: #d1d5db;
+}
+
+/* New auth button style */
+.menu-1 .auth-item {
+  padding-left: 10px;
+}
+
+.btn-auth {
+  border-radius: 999px;
+  border: 1px solid #ff7b3a;
+  color: #ff7b3a !important;
+  background-color: transparent;
+  padding: 5px 16px;
+  font-weight: 500;
+}
+.btn-auth:hover {
+  background-color: #ff7b3a;
+  color: #ffffff !important;
+}
+/* Header background: soft gradient + subtle border */
+.colorlib-nav {
+  background: linear-gradient(90deg, #1b3b5f 0%, #243b6b 40%, #ffffff 100%);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+/* Logo */
+#colorlib-logo a {
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Nav links */
+.colorlib-nav .menu-1 ul li a {
+  color: #f9fafb;
+  font-weight: 500;
+}
+.colorlib-nav .menu-1 ul li.active > a {
+  color: #ff7b3a;
+  border-bottom: 2px solid #ff7b3a;
+}
+.colorlib-nav .menu-1 ul li a:hover {
+  color: #ff7b3a;
+}
+
+/* Cart */
+.colorlib-nav .cart a {
+  color: #f9fafb;
+}
+
+/* Auth button */
+.auth-btn-wrap {
+  margin-left: 8px;
+}
+.auth-btn {
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-color: #fbbf24;
+  color: #111827;
+  background-color: #fbbf24;
+}
+.auth-btn:hover {
+  color: #111827;
+  background-color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+/* Search remains same size, just adjust border slightly to fit on gradient */
+.search-wrap .form-control.search {
+  border-color: rgba(209, 213, 219, 0.9);
+}
+/* HEADER: Modernized with clean logo area, subtle shadow, no search box */
+.colorlib-nav {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border-bottom: 2px solid #ff6b35;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 0;
+}
+#colorlib-logo a {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.top-menu .menu-1 ul li a {
+    color: #2c3e50;
+    font-weight: 500;
+    padding: 1rem 1.2rem;
+    transition: all 0.3s ease;
+}
+.top-menu .menu-1 ul li.active a,
+.top-menu .menu-1 ul li a:hover {
+    color: #ff6b35 !important;
+    background: rgba(255,107,53,0.1);
+    border-radius: 5px;
+}
+/* Remove search box entirely */
+.search-wrap { display: none; }
+/* Sale banner: Simplified gradient */
+.sale {
+    background: linear-gradient(90deg, #ff6b35, #f7931e);
+    padding: 0.8rem 0;
+}
+.sale h3 a { color: #fff; font-size: 1.1rem; }
+
+/* FOOTER: Enhanced with gradient, better spacing, hover links */
+#colorlib-footer {
+    background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+    color: #bdc3c7;
+    padding: 3rem 0 2rem;
+}
+.footer-col h4 {
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #ff6b35;
+    padding-bottom: 0.5rem;
+}
+.colorlib-footer-links li a {
+    color: #bdc3c7;
+    transition: all 0.3s ease;
+}
+.colorlib-footer-links li a:hover {
+    color: #ff6b35;
+    padding-left: 0.5rem;
+}
+.copy {
+    background: rgba(0,0,0,0.2);
+    padding: 1.5rem 0;
+    margin-top: 2rem;
+}
+
+/* IMAGE HOVER ZOOM: Applies to ALL product/featured images site-wide */
+.prod-img,
+.featured-img {
+    overflow: hidden;
+    border-radius: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.prod-img img,
+.featured-img {
+    transition: transform 0.5s ease;
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+}
+.prod-img:hover img,
+.featured-img:hover {
+    transform: scale(1.15);
+}
+.prod-img:hover,
+.featured-img:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .prod-img img,
+    .featured-img { height: 200px; }
+    .featured-img:hover { transform: none; }
+}

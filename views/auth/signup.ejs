@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Sign Up - Footwear</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+  <!-- SweetAlert2 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .signup-card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .signup-title {
+      font-size: 26px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: #666;
+    }
+
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-wrapper input[type="password"],
+    .password-wrapper input[type="text"] {
+      padding-right: 40px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 16px;
+      color: #666;
+      user-select: none;
+    }
+
+    .signup-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      background-color: #444;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .signup-btn:hover {
+      background-color: #333;
+    }
+
+    .signup-footer-text {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .signup-footer-text a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .signup-footer-text a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="signup-card">
+    <h3 class="signup-title">Create Your Footwear Account</h3>
+
+    <!-- Signup form -->
+    <form action="/signup" method="POST" autocomplete="off">
+      <div class="form-group">
+        <label for="inputName">Full Name</label>
+        <input
+          type="text"
+          id="inputName"
+          name="name"
+          placeholder="Enter your name"
+          value="<%= oldInput && oldInput.name ? oldInput.name : '' %>"
+          required
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="inputEmail">Email address</label>
+        <input
+          type="email"
+          id="inputEmail"
+          name="email"
+          placeholder="Enter email"
+          value="<%= oldInput && oldInput.email ? oldInput.email : '' %>"
+          required
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="inputPassword">Password</label>
+        <div class="password-wrapper">
+          <input
+            type="password"
+            id="inputPassword"
+            name="password"
+            placeholder="Enter password"
+            required
+            autocomplete="new-password"
+          />
+          <span class="toggle-password" id="togglePassword" aria-label="Show or hide password">👁</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="inputConfirmPassword">Confirm Password</label>
+        <div class="password-wrapper">
+          <input
+            type="password"
+            id="inputConfirmPassword"
+            name="confirmPassword"
+            placeholder="Confirm password"
+            required
+            autocomplete="new-password"
+          />
+          <span class="toggle-password" id="toggleConfirmPassword" aria-label="Show or hide confirm password">👁</span>
+        </div>
+      </div>
+
+      <button type="submit" class="signup-btn">Sign Up</button>
+
+      <p class="signup-footer-text">
+        Already have an account?
+        <a href="/login">Sign In</a>
+      </p>
+    </form>
+  </div>
+
+  <script>
+    // Password eye toggles
+    (function () {
+      function setupToggle(inputId, toggleId) {
+        const input = document.getElementById(inputId);
+        const toggle = document.getElementById(toggleId);
+        if (!input || !toggle) return;
+
+        toggle.addEventListener('click', function () {
+          const isPassword = input.getAttribute('type') === 'password';
+          input.setAttribute('type', isPassword ? 'text' : 'password');
+          toggle.textContent = isPassword ? '🙈' : '👁';
+        });
+      }
+
+      setupToggle('inputPassword', 'togglePassword');
+      setupToggle('inputConfirmPassword', 'toggleConfirmPassword');
+    })();
+
+    // SweetAlert2 error popup from server-side validation
+    <% if (errors && errors.length > 0) { %>
+      Swal.fire({
+        icon: 'error',
+        title: 'Sign Up Failed',
+        html: '<%= errors.map(e => e.msg).join("<br>") %>',
+        confirmButtonText: 'Try Again',
+        confirmButtonColor: '#444'
+      });
+    <% } %>
+  </script>
+</body>
+</html>
