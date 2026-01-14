@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Verify Email - Footwear</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link rel="stylesheet" href="/css/custom.css" />
+  <link rel="stylesheet" href="/css/sweetalert2.min.css">
+  <script src="/js/sweetalert2.all.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      width: 100%;
+      max-width: 450px;
+      text-align: center;
+    }
+
+    .card-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .card-subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.3s;
+      text-align: center;
+      letter-spacing: 5px;
+      font-size: 20px;
+    }
+
+    input:focus {
+      border-color: #444;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.3s;
+      background-color: #444;
+      color: white;
+    }
+
+    .btn:hover {
+      background-color: #333;
+    }
+
+    .cancel-link {
+      display: block;
+      margin-top: 15px;
+      color: #666;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .cancel-link:hover {
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h3 class="card-title">Verify New Email</h3>
+    <p class="card-subtitle">We sent a verification code to <strong>
+        <%= email %>
+      </strong></p>
+
+    <% if (locals.error) { %>
+      <script>
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: '<%= error %>',
+          confirmButtonColor: '#444'
+        });
+      </script>
+      <% } %>
+
+        <form action="/profile/verify-email" method="POST">
+          <input type="hidden" name="email" value="<%= email %>">
+          <div class="form-group">
+            <label>Enter Verification Code</label>
+            <input type="text" name="otp" required placeholder="000000" maxlength="6">
+          </div>
+
+          <button type="submit" class="btn">Verify Email</button>
+          <a href="/profile" class="cancel-link">Cancel</a>
+        </form>
+  </div>
+</body>
+
+</html>

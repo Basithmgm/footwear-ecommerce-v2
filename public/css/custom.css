@@ -484,3 +484,32 @@
   margin-bottom: 0;
   line-height: 1.4;
 }
+
+.remember-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Optional wrapper for checkbox + label */
+.remember-left {
+  display: flex;
+  align-items: center;
+}
+
+/* Keep small gap between checkbox and label */
+input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+/* Push the forgot link to the right */
+.forgot-link {
+  margin-left: auto;
+  font-size: 14px;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Edit Address - Footwear</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <style>
+        /* Reuse styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h3 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #444;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #ebebeb;
+            color: #333;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h3>Edit Address</h3>
+            <% if (locals.error) { %>
+                <div class="error">
+                    <%= error %>
+                </div>
+                <% } %>
+                    <form action="/profile/address/edit/<%= address._id %>" method="POST">
+                        <div class="form-group">
+                            <label>Street Address</label>
+                            <input type="text" name="street" value="<%= address.street %>" required>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" name="city" value="<%= address.city %>" required>
+                            </div>
+                            <div class="form-group">
+                                <label>State</label>
+                                <input type="text" name="state" value="<%= address.state %>" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="text" name="phone" value="<%= address.phone || '' %>"
+                                placeholder="Contact number">
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Zip Code</label>
+                                <input type="text" name="zip" value="<%= address.zip %>" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <input type="text" name="country" value="<%= address.country %>" required>
+                            </div>
+                        </div>
+                        <div class="btn-container">
+                            <a href="/profile" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Address</button>
+                        </div>
+                    </form>
+        </div>
+    </div>
+</body>
+
+</html>

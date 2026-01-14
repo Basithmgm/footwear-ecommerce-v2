@@ -3,6 +3,7 @@ const express = require("express");
 require("dotenv").config();
 
 const sessionMiddleware = require("express-session");
+const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 
 const app = express();
@@ -12,16 +13,22 @@ const app = express();
 // ============================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // ============================================
 // Session middleware
 // ============================================
+const MongoStore = require("connect-mongo").MongoStore;
+
 app.use(
   sessionMiddleware({
     secret:
       process.env.SESSION_SECRET || "footwear-secret-key-change-this",
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI || "mongodb://localhost:27017/footwear-master"
+    }),
     cookie: {
       secure: false, // set true only if using HTTPS
       maxAge: 24 * 60 * 60 * 1000, // 1 day
@@ -63,11 +70,31 @@ mongoose
   .connect(
     process.env.MONGO_URI || "mongodb://localhost:27017/footwear-master"
   )
-  .then(() => console.log("✅ Connected to MongoDB: footwear-master"))
+  .then(() => console.log("Connected to MongoDB: footwear-master"))
   .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("MongoDB connection error:", err);
     process.exit(1);
   });
+// ============================================
+// Global user middleware - ADD THIS
+// ============================================
+app.use(async (req, res, next) => {
+  // If user is logged in, fetch full user data
+  if (req.session && req.session.userId) {
+    try {
+      const User = require("./models/User");
+      req.user = await User.findById(req.session.userId).populate('role_id').select("-password");
+      console.log("App Middleware: User fetched:", req.user ? req.user.email : "Not found"); // DEBUG LOG
+      res.locals.user = req.user; // Make available in all views
+    } catch (err) {
+      console.error("Error fetching user:", err);
+      req.user = null;
+    }
+  } else {
+    req.user = null;
+  }
+  next();
+});
 
 // ============================================
 // ROUTES

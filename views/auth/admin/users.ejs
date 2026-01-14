@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Footwear Admin - Customers</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/sweetalert2.min.css">
+    <script src="/js/sweetalert2.all.min.js"></script>
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+        }
+
+        .admin-wrapper {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .admin-sidebar {
+            width: 230px;
+            background: #111;
+            color: #fff;
+            padding: 20px 15px;
+        }
+
+        .admin-sidebar .brand {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .admin-sidebar ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        .admin-sidebar li {
+            margin-bottom: 6px;
+        }
+
+        .admin-sidebar a {
+            color: #ced4da;
+            font-size: 14px;
+            display: block;
+            padding: 10px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .admin-sidebar a:hover,
+        .admin-sidebar a.active {
+            background: #343a40;
+            color: #fff;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .admin-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .admin-topbar-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .small-text {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .card-box {
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            font-size: 13px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            font-weight: 600;
+            color: #555;
+            background: #f8f9fa;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 11px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-blocked {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .form-control {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-dark {
+            background: #333;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-outline {
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 5px;
+            margin-top: 15px;
+            justify-content: flex-end;
+        }
+
+        .pagination a {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #333;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .pagination a.active {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-wrapper">
+        <%- include('../../partials/admin/sidebar', { path: '/admin/users' }) %>
+
+            <main class="admin-content">
+                <div class="admin-topbar">
+                    <div>
+                        <div class="admin-topbar-title">User Management</div>
+                        <div class="small-text">Manage users and access control.</div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card-box filters">
+                    <form action="/admin/users" method="GET" style="display: flex; gap: 10px; align-items: center;">
+                        <div style="flex: 1; max-width: 300px;">
+                            <input type="text" name="search" class="form-control" placeholder="Search by name or email"
+                                value="<%= search %>">
+                        </div>
+                        <button type="submit" class="btn btn-dark">Search</button>
+                        <% if (search) { %>
+                            <a href="/admin/users" class="btn btn-outline">Clear</a>
+                            <% } %>
+                    </form>
+                </div>
+
+                <!-- Users table -->
+                <div class="card-box">
+                    <div class="d-flex justify-content-between align-items-center mb-2"
+                        style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <h5 style="margin:0; font-size: 16px;">User List</h5>
+                        <span class="small-text">Total Users: <%= totalUsers %></span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Verified</th>
+                                    <th>Status</th>
+                                    <th>Role</th>
+                                    <th>Joined Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (users.length> 0) { %>
+                                    <% users.forEach(user=> { %>
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight: 500;">
+                                                    <%= user.full_name %>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <%= user.email %>
+                                            </td>
+                                            <td>
+                                                <%= user.phone_number || '-' %>
+                                            </td>
+                                            <td>
+                                                <% if (user.isVerified) { %>
+                                                    <span style="color: green;">✔</span>
+                                                    <% } else { %>
+                                                        <span style="color: orange;">✘</span>
+                                                        <% } %>
+                                            </td>
+                                            <td>
+                                                <% if (user.status==='Blocked' ) { %>
+                                                    <span class="status-pill status-blocked">Blocked</span>
+                                                    <% } else { %>
+                                                        <span class="status-pill status-active">Active</span>
+                                                        <% } %>
+                                            </td>
+                                            <td>
+                                                <%= user.role_id ? user.role_id.role_name : 'N/A' %>
+                                            </td>
+                                            <td>
+                                                <%= new Date(user.created_at).toLocaleDateString() %>
+                                            </td>
+                                            <td>
+                                                <% if (user.status==='Blocked' ) { %>
+                                                    <button type="button" onclick="confirmUnblock('<%= user._id %>')"
+                                                        class="btn btn-success">Unblock</button>
+                                                    <!-- Hidden Form -->
+                                                    <form id="unblock-form-<%= user._id %>"
+                                                        action="/admin/users/unblock/<%= user._id %>" method="POST"
+                                                        style="display:none;"></form>
+                                                    <% } else { %>
+                                                        <button type="button" onclick="confirmBlock('<%= user._id %>')"
+                                                            class="btn btn-danger">Block</button>
+                                                        <!-- Hidden Form -->
+                                                        <form id="block-form-<%= user._id %>"
+                                                            action="/admin/users/block/<%= user._id %>" method="POST"
+                                                            style="display:none;"></form>
+                                                        <% } %>
+                                            </td>
+                                        </tr>
+                                        <% }) %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="8" style="text-align: center; padding: 20px;">No users
+                                                        found.</td>
+                                                </tr>
+                                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <% if (totalPages> 1) { %>
+                        <div class="pagination">
+                            <% if (currentPage> 1) { %>
+                                <a href="/admin/users?page=<%= currentPage - 1 %>&search=<%= search %>">Previous</a>
+                                <% } %>
+
+                                    <% for(let i=1; i <=totalPages; i++) { %>
+                                        <a href="/admin/users?page=<%= i %>&search=<%= search %>"
+                                            class="<%= currentPage === i ? 'active' : '' %>">
+                                            <%= i %>
+                                        </a>
+                                        <% } %>
+
+                                            <% if (currentPage < totalPages) { %>
+                                                <a
+                                                    href="/admin/users?page=<%= currentPage + 1 %>&search=<%= search %>">Next</a>
+                                                <% } %>
+                        </div>
+                        <% } %>
+
+                </div>
+            </main>
+    </div>
+
+    <script>
+        // Check for server-side success message
+        <% if (locals.successMessage && locals.successMessage.length > 0) { %>
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: '<%= successMessage %>',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        <% } %>
+
+        // Check for server-side error message
+        <% if (locals.error && locals.error.length > 0) { %>
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: '<%= error %>',
+            });
+        <% } %>
+
+            function confirmBlock(userId) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You are about to block this user. They will not be able to login.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, Block!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('block-form-' + userId).submit();
+                    }
+                })
+            }
+
+        function confirmUnblock(userId) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You are about to unblock this user.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, Unblock!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('unblock-form-' + userId).submit();
+                }
+            })
+        }
+    </script>
+</body>
+
+</html>

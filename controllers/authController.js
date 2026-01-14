@@ -1,8 +1,9 @@
-// controllers/authController.js
+
 const User = require("../models/User");
+const Role = require("../models/Role");
 const OTP = require("../models/OTP");
 const { sendOTPEmail } = require("../services/emailService");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 // ============================================
 // VALIDATION FUNCTIONS
@@ -45,7 +46,7 @@ const validateConfirmPassword = (password, confirmPassword) => {
 exports.getSignup = (req, res) => {
   res.render("auth/signup", {
     pageTitle: "Sign Up",
-    oldInput: { name: "", email: "" },
+    oldInput: { name: "", email: "" }, // view expects 'name', we'll map existing form field 'name' to 'full_name' in POST
     errors: [],
     successMessage: "",
   });
@@ -53,26 +54,41 @@ exports.getSignup = (req, res) => {
 
 // Show login page
 exports.getLogin = (req, res) => {
+  const savedEmail = req.cookies.remembered_email || "";
   res.render("auth/login", {
     pageTitle: "Login",
+    oldInput: { email: "" },
+    savedEmail,
+    errors: [],
+    successMessage: "",
+  });
+};
+
+// Show forgot password page
+exports.getForgotPassword = (req, res) => {
+  res.render("auth/forgot-password", {
+    pageTitle: "Forgot Password",
     oldInput: { email: "" },
     errors: [],
     successMessage: "",
   });
 };
 
-// Show OTP page
+// Show OTP page (used for signup + reset)
 exports.getOTPPage = (req, res) => {
   const email = req.query.email;
+  const mode = req.query.mode || "signup"; // 'signup' or 'reset'
+
   if (!email) {
     return res.redirect("/signup");
   }
 
   res.render("auth/otp", {
-    pageTitle: "Verify OTP",
+    pageTitle: mode === "reset" ? "Reset Password - Verify OTP" : "Verify OTP",
     email,
     errors: [],
     successMessage: "",
+    isReset: mode === "reset",
   });
 };
 
@@ -80,13 +96,100 @@ exports.getOTPPage = (req, res) => {
 // FORM SUBMISSIONS (POST)
 // ============================================
 
+// Handle forgot password (step 1: form + send OTP)
+exports.postForgotPassword = async (req, res) => {
+  const { email, password, confirmPassword } = req.body;
+  const errors = [];
+
+  // Validate fields
+  const emailError = validateEmail(email);
+  if (emailError) errors.push({ msg: emailError });
+
+  const passwordError = validatePassword(password);
+  if (passwordError) errors.push({ msg: passwordError });
+
+  const confirmError = validateConfirmPassword(password, confirmPassword);
+  if (confirmError) errors.push({ msg: confirmError });
+
+  if (errors.length > 0) {
+    return res.status(422).render("auth/forgot-password", {
+      pageTitle: "Forgot Password",
+      oldInput: { email },
+      errors,
+      successMessage: "",
+    });
+  }
+
+  try {
+    // Check user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).render("auth/forgot-password", {
+        pageTitle: "Forgot Password",
+        oldInput: { email },
+        errors: [{ msg: "No account found with this email." }],
+        successMessage: "",
+      });
+    }
+
+    // Save reset data in session
+    req.session.resetPasswordData = {
+      email,
+      newPassword: password,
+      createdAt: Date.now(),
+    };
+
+    // Generate OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Remove old OTPs
+    await OTP.deleteMany({ email });
+
+    // Create new OTP (5 mins expiry)
+    await OTP.create({
+      email,
+      otp: otpCode,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    });
+
+    // Send OTP email
+    try {
+      await sendOTPEmail(email, otpCode);
+      console.log("Forgot password OTP sent to:", email);
+    } catch (emailErr) {
+      console.error("Error sending forgot-password OTP email:", emailErr);
+      return res.status(500).render("auth/forgot-password", {
+        pageTitle: "Forgot Password",
+        oldInput: { email },
+        errors: [
+          {
+            msg: "Could not send verification email. Please try again later.",
+          },
+        ],
+        successMessage: "",
+      });
+    }
+
+    // Redirect to OTP page in reset mode
+    return res.redirect(`/otp?email=${encodeURIComponent(email)}&mode=reset`);
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    return res.status(500).render("auth/forgot-password", {
+      pageTitle: "Forgot Password",
+      oldInput: { email },
+      errors: [{ msg: "Something went wrong. Please try again." }],
+      successMessage: "",
+    });
+  }
+};
+
 // Handle signup (step 1: form + send OTP)
 exports.postSignup = async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
   const errors = [];
 
   // Validate all fields
-  const nameError = validateName(name);
+  const nameError = validateName(name); // 'name' comes from form, will be 'full_name' in DB
   if (nameError) errors.push({ msg: nameError });
 
   const emailError = validateEmail(email);
@@ -126,13 +229,11 @@ exports.postSignup = async (req, res) => {
 
     // Store signup data in session (PLAIN password)
     req.session.signupData = {
-      name,
+      full_name: name, // Converting 'name' -> 'full_name' here
       email,
       password, // plain password
       createdAt: Date.now(),
     };
-
-    console.log("Session signupData set at signup:", req.session.signupData);
 
     // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -147,12 +248,9 @@ exports.postSignup = async (req, res) => {
       expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
     });
 
-    console.log("OTP generated and sent to:", email);
-
     // Send OTP email
     try {
       await sendOTPEmail(email, otpCode);
-      console.log("sendOTPEmail resolved for:", email);
     } catch (emailErr) {
       console.error("Error sending OTP email:", emailErr);
       return res.status(500).render("auth/signup", {
@@ -167,8 +265,20 @@ exports.postSignup = async (req, res) => {
       });
     }
 
-    // Redirect to OTP page
-    return res.redirect(`/otp?email=${encodeURIComponent(email)}`);
+    // Explicitly save session before redirect to prevent race condition
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.status(500).render("auth/signup", {
+          pageTitle: "Sign Up",
+          oldInput: { name, email },
+          errors: [{ msg: "Session error. Please try again." }],
+          successMessage: "",
+        });
+      }
+      // Redirect to OTP page
+      return res.redirect(`/otp?email=${encodeURIComponent(email)}`);
+    });
   } catch (err) {
     console.error("Signup error:", err);
     return res.status(500).render("auth/signup", {
@@ -205,19 +315,8 @@ exports.postLogin = async (req, res) => {
   }
 
   try {
-    console.log("LOGIN ATTEMPT body:", {
-      email,
-      passwordLength: password ? password.length : null,
-    });
-
-    // Find user
-    const user = await User.findOne({ email });
-    console.log(
-      "LOGIN DB USER:",
-      user
-        ? { id: user._id, email: user.email, isVerified: user.isVerified }
-        : null
-    );
+    // Find user and populate Role to check permissions
+    const user = await User.findOne({ email }).populate('role_id');
 
     if (!user) {
       return res.status(401).render("auth/login", {
@@ -228,18 +327,24 @@ exports.postLogin = async (req, res) => {
       });
     }
 
-    console.log("LOGIN STORED HASH:", user.password);
-    console.log("LOGIN RAW PASSWORD FROM BODY:", password, typeof password);
-
     // Compare plain password with stored hash
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log("LOGIN PASSWORD MATCH?:", isMatch);
 
     if (!isMatch) {
       return res.status(401).render("auth/login", {
         pageTitle: "Login",
         oldInput: { email },
         errors: [{ msg: "Invalid email or password" }],
+        successMessage: "",
+      });
+    }
+
+    // Check if blocked using 'status' field enum: ['Active', 'Blocked']
+    if (user.status === 'Blocked') {
+      return res.status(403).render("auth/login", {
+        pageTitle: "Login",
+        oldInput: { email },
+        errors: [{ msg: "Your account has been blocked. Please contact support." }],
         successMessage: "",
       });
     }
@@ -258,19 +363,49 @@ exports.postLogin = async (req, res) => {
       });
     }
 
-    // Set session (no JWT for EJS)
+    // Update last_login_at
+    user.last_login_at = new Date();
+    await user.save();
+
+    // Determine if admin
+    let isAdmin = false;
+    if (user.role_id && user.role_id.role_name === 'admin') {
+      isAdmin = true;
+      req.session.isAdmin = true;
+    }
+
+    // Set session
     req.session.userId = user._id;
     req.session.user = {
       id: user._id,
-      username: user.name,
+      username: user.full_name, // Mapped from full_name
       email: user.email,
     };
 
-    // One-time success message for SweetAlert on home
+    // Remember Me Logic
+    if (rememberMe === "true" || rememberMe === true) {
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+      // Set a cookie for the email that lasts 30 days
+      res.cookie("remembered_email", email, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+      });
+    } else {
+      req.session.cookie.maxAge = 24 * 60 * 60 * 1000;
+      // Clear the remembered email cookie if not checked
+      res.clearCookie("remembered_email");
+    }
+
+    // One-time success message for SweetAlert
     req.session.successMessage = "Login successful! Welcome back.";
 
-    console.log("✅ LOGIN SUCCESS:", email);
-    return res.redirect("/");
+    // Redirect admins to dashboard, users to home
+    if (isAdmin) {
+      return res.redirect("/admin/users");
+    } else {
+      return res.redirect("/");
+    }
+
   } catch (err) {
     console.error("Login error:", err);
     return res.status(500).render("auth/login", {
@@ -315,7 +450,6 @@ exports.postVerifyOTP = async (req, res) => {
 
     // Check expiry (5 minutes)
     if (otpRecord.expiresAt < new Date()) {
-      console.log("❌ OTP expired");
       await OTP.deleteMany({ email });
       return res.status(400).render("auth/otp", {
         pageTitle: "Verify OTP",
@@ -329,46 +463,99 @@ exports.postVerifyOTP = async (req, res) => {
       });
     }
 
-    // Get signup data from session
-    const signupData = req.session.signupData;
-    console.log("Session signupData at verify:", signupData);
+    // Get reset data (for forgot password flow)
+    const resetData = req.session.resetPasswordData;
 
+    // Get signup data (for normal signup flow)
+    const signupData = req.session.signupData;
+
+    // 1) RESET PASSWORD FLOW
+    if (resetData && resetData.email === email) {
+      // Find existing user
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(400).render("auth/otp", {
+          pageTitle: "Reset Password - Verify OTP",
+          email,
+          errors: [{ msg: "No user found for this email." }],
+          successMessage: "",
+        });
+      }
+
+      // Hash new password and save
+      const hashedPassword = await bcrypt.hash(resetData.newPassword, 10);
+      user.password = hashedPassword;
+      // If user verifies via OTP for password reset, they are verified
+      user.isVerified = true;
+      await user.save();
+
+      // Clean up OTP + session
+      await OTP.deleteMany({ email });
+      delete req.session.resetPasswordData;
+
+      // Do NOT auto-login; send to login page
+      req.session.successMessage =
+        "Password reset successfully. Please log in with your new password.";
+
+      return res.redirect("/login");
+    }
+
+    // 2) SIGNUP FLOW
     if (!signupData || signupData.email !== email) {
-      console.log("❌ Session data mismatch");
       return res.status(400).render("auth/otp", {
         pageTitle: "Verify OTP",
         email,
         errors: [
-          {
-            msg: "Session expired. Please sign up again to get a new OTP.",
-          },
+          { msg: "Session expired. Please sign up again to get a new OTP." },
         ],
         successMessage: "",
       });
     }
 
-    // Create or update user (hash password here, no pre-save hook)
-    let user = await User.findOne({ email });
+    // Validate Name Presence (mapped to full_name)
+    if (!signupData.full_name) {
+      return res.status(400).render("auth/signup", {
+        pageTitle: "Sign Up",
+        oldInput: { name: "", email: signupData.email },
+        errors: [{ msg: "Session lost user details. Please sign up again." }],
+        successMessage: "",
+      });
+    }
 
+    // Find USER ROLE
+    const userRole = await Role.findOne({ role_name: 'user' });
+    if (!userRole) {
+      console.error("❌ 'user' Role not found in DB! Seed script likely failed.");
+      return res.status(500).render("auth/otp", {
+        pageTitle: "Verify OTP",
+        email,
+        errors: [{ msg: "System configuration error. Please contact admin." }],
+        successMessage: "",
+      });
+    }
+
+    // Create or update user
+    let user = await User.findOne({ email });
     const hashedPassword = await bcrypt.hash(signupData.password, 10);
 
     if (!user) {
       user = new User({
-        name: signupData.name,
+        full_name: signupData.full_name,
         email: signupData.email,
-        password: hashedPassword, // store hash directly
+        password: hashedPassword,
         isVerified: true,
+        status: 'Active',
+        role_id: userRole._id, // Assign Role ID
+        last_login_at: new Date()
       });
       await user.save();
-      console.log("✅ User created at verify (password hashed):", user.email);
     } else {
       user.password = hashedPassword;
       user.isVerified = true;
+      user.status = 'Active';
+      user.role_id = userRole._id;
+      user.last_login_at = new Date();
       await user.save();
-      console.log(
-        "✅ Existing user marked verified (password updated):",
-        user.email
-      );
     }
 
     // Delete OTPs
@@ -381,20 +568,16 @@ exports.postVerifyOTP = async (req, res) => {
     req.session.userId = user._id;
     req.session.user = {
       id: user._id,
-      username: user.name,
+      username: user.full_name,
       email: user.email,
     };
 
-    // One-time success message for SweetAlert on home
     req.session.successMessage =
       "Account created and verified successfully! Welcome to Footwear.";
 
-    console.log("✅ User verified and logged in:", email);
-
-    // Redirect to home
     return res.redirect("/");
   } catch (err) {
-    console.error("❌ OTP verify error:", err);
+    console.error("OTP verify error:", err);
     return res.status(500).render("auth/otp", {
       pageTitle: "Verify OTP",
       email,

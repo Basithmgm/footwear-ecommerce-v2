@@ -15,17 +15,8 @@
           <div class="header-top-right">
             <form action="/search" method="get" class="search-wrap">
               <div class="form-group">
-                <input
-                  type="search"
-                  name="q"
-                  class="form-control search search-narrow"
-                  placeholder="Search"
-                />
-                <button
-                  aria-label="submit-search"
-                  class="btn btn-primary submit-search text-center"
-                  type="submit"
-                >
+                <input type="search" name="q" class="form-control search search-narrow" placeholder="Search" />
+                <button aria-label="submit-search" class="btn btn-primary submit-search text-center" type="submit">
                   <i class="icon-search"></i>
                 </button>
               </div>
@@ -49,23 +40,23 @@
               <li><a href="/about">About</a></li>
               <li><a href="/contact">Contact</a></li>
 
-              <% if (session && session.user) { %>
-              <li class="has-dropdown">
-                <a href="/account">My Account</a>
-                <ul class="dropdown">
-                  <li><a href="/account">Profile</a></li>
-                  <li>
-                    <form action="/logout" method="POST" style="margin: 0">
-                      <button type="submit" class="fw-navbar-btn">
-                        Logout
-                      </button>
-                    </form>
-                  </li>
-                </ul>
-              </li>
-              <% } else { %>
-              <li><a href="/login">Sign In</a></li>
-              <% } %>
+              <% if (locals.session && locals.session.user) { %>
+                <li class="has-dropdown">
+                  <a href="/profile">My Profile</a>
+                  <ul class="dropdown">
+                    <li><a href="/profile">View Profile</a></li>
+                    <li>
+                      <form action="/logout" method="POST" style="margin: 0">
+                        <button type="submit" class="fw-navbar-btn">
+                          Logout
+                        </button>
+                      </form>
+                    </li>
+                  </ul>
+                </li>
+                <% } else { %>
+                  <li><a href="/login">Sign In</a></li>
+                  <% } %>
             </ul>
           </div>
         </div>

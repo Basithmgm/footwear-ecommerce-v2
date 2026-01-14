@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>My Profile - Footwear</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link rel="stylesheet" href="/css/custom.css" />
+  <link rel="stylesheet" href="/css/sweetalert2.min.css">
+  <script src="/js/sweetalert2.all.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .navbar {
+      background: white;
+      padding: 15px 30px;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .navbar-brand {
+      font-weight: bold;
+      font-size: 20px;
+      text-decoration: none;
+      color: #333;
+    }
+
+    .navbar-menu a {
+      text-decoration: none;
+      color: #666;
+      margin-left: 20px;
+      font-weight: 500;
+    }
+
+    .profile-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .profile-card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 20px;
+    }
+
+    .profile-img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #eee;
+    }
+
+    .profile-info h2 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .profile-info p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .verified-badge {
+      color: #28a745;
+      font-size: 14px;
+      margin-left: 5px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .info-group {
+      margin-bottom: 20px;
+    }
+
+    .info-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #888;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+
+    .info-value {
+      font-size: 16px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .address-card {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #eee;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #444;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #333;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #ddd;
+      color: #666;
+    }
+
+    .btn-outline:hover {
+      border-color: #444;
+      color: #444;
+    }
+
+    .empty-state {
+      color: #999;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Simple Navbar -->
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">Footwear</a>
+    <div class="navbar-menu">
+      <a href="/">Home</a>
+      <form action="/logout" method="POST" style="display:inline;">
+        <button type="submit"
+          style="background:none; border:none; color:#666; font-weight:500; font-size:16px; cursor:pointer; margin-left:20px;">Logout</button>
+      </form>
+    </div>
+  </nav>
+
+  <div class="profile-container">
+    <% if (locals.success) { %>
+      <script>
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: '<%= success %>',
+          confirmButtonColor: '#444'
+        });
+      </script>
+      <% } %>
+
+        <% if (locals.error) { %>
+          <script>
+            Swal.fire({
+              icon: 'error',
+              title: 'Profile Error',
+              text: '<%= error %>',
+              confirmButtonColor: '#444'
+            });
+          </script>
+          <% } %>
+
+            <div class="profile-card">
+              <% if (locals.user) { %>
+                <div class="profile-header">
+                  <img src="<%= user.image || '/images/default-avatar.jpg' %>" alt="Profile" class="profile-img"
+                    onerror="this.src='/images/default-avatar.jpg'">
+                  <div class="profile-info">
+                    <h2>
+                      <%= user.full_name %>
+                    </h2>
+                    <p>
+                      <%= user.email %>
+                        <% if (user.isVerified) { %>
+                          <span class="verified-badge" title="Verified">✓ Verified</span>
+                          <% } else { %>
+                            <span style="color:orange; font-size:12px; margin-left:5px;">(Unverified)</span>
+                            <% } %>
+                    </p>
+                    <p style="color: #666; font-size: 14px; margin-top:5px;">
+                      Phone Number: <%= user.phone_number || 'No phone added' %>
+                    </p>
+                    <p style="font-size:12px; color:#999; margin-top:5px;">Member since <%= new
+                        Date(user.created_at).toLocaleDateString() %>
+                    </p>
+                  </div>
+                </div>
+
+                <div class="profile-body">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="section-title" style="margin: 0;">Address Book</div>
+                    <a href="/profile/address/add" class="verified-badge"
+                      style="text-decoration:none; cursor:pointer;">+ Add New</a>
+                  </div>
+
+                  <% if (user.addresses && user.addresses.length> 0) { %>
+                    <div style="display: grid; gap: 20px;">
+                      <% user.addresses.forEach(addr=> { %>
+                        <div class="address-card">
+                          <!-- isDefault logic removed from API, removing UI flag too -->
+                          <p style="font-weight: 600; font-size: 16px; margin-bottom: 5px;">
+                            <%= addr.full_address %>
+                          </p>
+                          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                            <%= addr.city %>, <%= addr.state %>
+                                <%= addr.zip_code %>, <%= addr.country %>
+                                    <br>
+                                    <% if (addr.phone_number) { %>
+                                      Phone: <%= addr.phone_number %>
+                                        <% } %>
+                          </p>
+
+                          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <a href="/profile/address/edit/<%= addr._id %>"
+                              style="font-size: 13px; color: #007bff; text-decoration: none;">Edit</a>
+
+                            <form action="/profile/address/delete/<%= addr._id %>" method="POST" style="display:inline;"
+                              onsubmit="return confirm('Are you sure?')">
+                              <button type="submit"
+                                style="background:none; border:none; color:#dc3545; font-size:13px; cursor:pointer;">Delete</button>
+                            </form>
+                          </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                    <% } else { %>
+                      <p class="empty-state">No addresses added yet.</p>
+                      <a href="/profile/address/add" class="btn btn-outline"
+                        style="margin-top: 15px; display: inline-block;">Add Address</a>
+                      <% } %>
+                </div>
+
+                <div class="action-buttons">
+                  <a href="/profile/edit" class="btn btn-primary">Edit Profile</a>
+                  <a href="/profile/change-password" class="btn btn-outline">Change Password</a>
+                </div>
+                <% } else { %>
+                  <div style="text-align: center; padding: 50px;">
+                    <h3>User not found.</h3>
+                    <p>There was a problem loading your profile data.</p>
+                    <p>Please try logging out and logging back in.</p>
+                    <% if (locals.error) { %>
+                      <p style="color:red; margin-top:10px;">Error details: <%= error %>
+                      </p>
+                      <% } %>
+                        <form action="/logout" method="POST" style="margin-top:20px;">
+                          <button type="submit" class="btn btn-primary">Logout & Retry</button>
+                        </form>
+                  </div>
+                  <% } %>
+            </div>
+  </div>
+</body>
+
+</html>

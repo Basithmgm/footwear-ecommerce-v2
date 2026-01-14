@@ -1,239 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Sign In - Footwear</title>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
 
-    <!-- SweetAlert2 -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
-    />
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<head>
+  <title>Sign In - Footwear</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link rel="stylesheet" href="/css/custom.css" />
+  <!-- SweetAlert2 -->
+  <link rel="stylesheet" href="/css/sweetalert2.min.css">
+  <script src="/js/sweetalert2.all.min.js"></script>
 
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f7f7f7;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
 
-      .signin-card {
-        background-color: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        padding: 40px;
-        width: 100%;
-        max-width: 420px;
-      }
+    .signin-card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+    }
 
-      .signin-title {
-        font-size: 24px;
-        font-weight: 600;
-        text-align: center;
-        margin-bottom: 30px;
-        color: #333;
-      }
+    .signin-title {
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
 
-      .form-group {
-        margin-bottom: 20px;
-      }
+    .form-group {
+      margin-bottom: 20px;
+    }
 
-      label {
-        display: block;
-        font-size: 14px;
-        font-weight: 500;
-        margin-bottom: 6px;
-        color: #333;
-      }
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #333;
+    }
 
-      input[type="email"],
-      input[type="password"] {
-        width: 100%;
-        padding: 12px;
-        font-size: 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        outline: none;
-        transition: border-color 0.3s;
-      }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
 
-      input[type="email"]:focus,
-      input[type="password"]:focus {
-        border-color: #666;
-      }
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: #666;
+    }
 
-      .password-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
 
-      .password-wrapper input[type="password"],
-      .password-wrapper input[type="text"] {
-        padding-right: 40px;
-      }
+    .password-wrapper input[type="password"],
+    .password-wrapper input[type="text"] {
+      padding-right: 40px;
+    }
 
-      .toggle-password {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        cursor: pointer;
-        font-size: 16px;
-        color: #666;
-        user-select: none;
-      }
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 16px;
+      color: #666;
+      user-select: none;
+    }
 
-      .remember-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-      }
+    .remember-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
 
-      input[type="checkbox"] {
-        margin-right: 8px;
-      }
+    input[type="checkbox"] {
+      margin-right: 8px;
+    }
 
-      .remember-row label {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 400;
-        cursor: pointer;
-      }
+    .remember-row label {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 400;
+      cursor: pointer;
+    }
 
-      .signin-btn {
-        width: 100%;
-        padding: 12px;
-        font-size: 16px;
-        font-weight: 600;
-        color: white;
-        background-color: #444;
-        border: none;
-        border-radius: 50px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-      }
+    .signin-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      background-color: #444;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
 
-      .signin-btn:hover {
-        background-color: #333;
-      }
+    .signin-btn:hover {
+      background-color: #333;
+    }
 
-      .signin-footer-text {
-        margin-top: 20px;
-        text-align: center;
-        font-size: 14px;
-        color: #666;
-      }
+    .signin-footer-text {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+    }
 
-      .signin-footer-text a {
-        color: #007bff;
-        text-decoration: none;
-      }
+    .signin-footer-text a {
+      color: #007bff;
+      text-decoration: none;
+    }
 
-      .signin-footer-text a:hover {
-        text-decoration: underline;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="signin-card">
-      <h3 class="signin-title">Sign In to Footwear</h3>
+    .signin-footer-text a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
 
-      <!-- Login form -->
-      <form action="/login" method="POST" autocomplete="off">
-        <div class="form-group">
-          <label for="inputEmail">Email address</label>
-          <input
-            type="email"
-            id="inputEmail"
-            name="email"
-            placeholder="Enter email"
-            value="<%= oldInput && oldInput.email ? oldInput.email : '' %>"
-            required
-            autocomplete="off"
-          />
+<body>
+  <div class="signin-card">
+    <h3 class="signin-title">Sign In to Footwear</h3>
+
+    <!-- Login form -->
+    <form action="/login" method="POST" autocomplete="off">
+      <div class="form-group">
+        <label for="inputEmail">Email address</label>
+        <input type="email" id="inputEmail" name="email" placeholder="Enter email"
+          value="<%= (oldInput && oldInput.email) ? oldInput.email : (savedEmail ? savedEmail : '') %>" required
+          autocomplete="off" />
+      </div>
+
+      <div class="form-group">
+        <label for="inputPassword">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="inputPassword" name="password" placeholder="Enter password" required
+            autocomplete="new-password" />
+          <span class="toggle-password" id="togglePassword" aria-label="Show or hide password">👁</span>
         </div>
+      </div>
 
-        <div class="form-group">
-          <label for="inputPassword">Password</label>
-          <div class="password-wrapper">
-            <input
-              type="password"
-              id="inputPassword"
-              name="password"
-              placeholder="Enter password"
-              required
-              autocomplete="new-password"
-            />
-            <span
-              class="toggle-password"
-              id="togglePassword"
-              aria-label="Show or hide password"
-              >👁</span
-            >
-          </div>
-        </div>
-
-        <div class="remember-row">
-          <input
-            type="checkbox"
-            id="rememberMe"
-            name="rememberMe"
-            value="true"
-          />
+      <div class="remember-row">
+        <div class="remember-left">
+          <input type="checkbox" id="rememberMe" name="rememberMe" value="true" />
           <label for="rememberMe">Remember me</label>
         </div>
 
-        <button type="submit" class="signin-btn">Sign In</button>
+        <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+      </div>
 
-        <p class="signin-footer-text">
-          Don't have an account?
-          <a href="/signup">Sign Up</a>
-        </p>
-      </form>
-    </div>
+      <button type="submit" class="signin-btn">Sign In</button>
 
-    <script>
-      // Password eye toggle (no browser default show-password UI)
-      (function () {
-        const passwordInput = document.getElementById('inputPassword');
-        const toggle = document.getElementById('togglePassword');
+      <p class="signin-footer-text">
+        Don't have an account?
+        <a href="/signup">Sign Up</a>
+      </p>
+    </form>
+  </div>
 
-        if (!passwordInput || !toggle) return;
+  <script>
+    // Password eye toggle (no browser default show-password UI)
+    (function () {
+      const passwordInput = document.getElementById('inputPassword');
+      const toggle = document.getElementById('togglePassword');
 
-        toggle.addEventListener('click', function () {
-          const isPassword = passwordInput.getAttribute('type') === 'password';
-          passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-          // Simple icon swap
-          toggle.textContent = isPassword ? '🙈' : '👁';
-        });
-      })();
+      if (!passwordInput || !toggle) return;
+
+      toggle.addEventListener('click', function () {
+        const isPassword = passwordInput.getAttribute('type') === 'password';
+        passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+        // Simple icon swap
+        toggle.textContent = isPassword ? '🙈' : '👁';
+      });
+    })();
 
       // SweetAlert2 error popup from server-side validation
-      <% if (errors && errors.length > 0) { %>
-        Swal.fire({
-          icon: 'error',
-          title: 'Login Failed',
-          html: '<%= errors.map(e => e.msg).join("<br>") %>',
-          confirmButtonText: 'Try Again',
-          confirmButtonColor: '#444'
-        });
+      <% if (locals.errors && locals.errors.length > 0) { %>
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        html: '<%- errors.map(e => e.msg).join("<br>") %>',
+        confirmButtonText: 'Try Again',
+        confirmButtonColor: '#444'
+      });
       <% } %>
-    </script>
-  </body>
+  </script>
+</body>
+
 </html>

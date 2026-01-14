@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>Verify OTP - Footwear</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
   <!-- SweetAlert2 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="/css/sweetalert2.min.css">
+  <script src="/js/sweetalert2.all.min.js"></script>
 
   <style>
     * {
@@ -163,6 +164,7 @@
       .otp-card {
         padding: 24px 18px;
       }
+
       .otp-input-row input[type="text"] {
         width: 40px;
         height: 45px;
@@ -171,13 +173,16 @@
     }
   </style>
 </head>
+
 <body>
   <div class="otp-wrapper">
     <div class="otp-card">
       <h2 class="otp-heading">Verify Your Email</h2>
       <p class="otp-subtitle">
         We have sent a 6-digit code to
-        <span><%= email %></span>.
+        <span>
+          <%= email %>
+        </span>.
         Please enter it below to complete your sign up.
       </p>
 
@@ -287,7 +292,7 @@
     })();
 
     // SweetAlert2 for server-side errors
-    <% if (errors && errors.length > 0) { %>
+    <% if (locals.errors && locals.errors.length > 0) { %>
       Swal.fire({
         icon: 'error',
         title: 'OTP Error',
@@ -298,7 +303,7 @@
     <% } %>
 
     // SweetAlert2 for server-side successMessage (optional)
-    <% if (successMessage && successMessage.length > 0) { %>
+    <% if (locals.successMessage && locals.successMessage.length > 0) { %>
       Swal.fire({
         icon: 'success',
         title: 'Success',
@@ -309,4 +314,5 @@
     <% } %>
   </script>
 </body>
+
 </html>

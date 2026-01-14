@@ -1,8 +1,11 @@
-// models/User.js
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
+  full_name: {
+    type: String,
+    required: true,
+    trim: true
+  },
   email: {
     type: String,
     required: true,
@@ -10,11 +13,37 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true,
   },
-  password: { type: String, required: true }, // will store HASH directly
-  isVerified: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
+  password: {
+    type: String,
+    required: true
+  },
+  phone_number: {
+    type: String
+  },
+  image: {
+    type: String,
+    default: '/images/default-avatar.jpg'
+  },
+  role_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Role',
+    // required: true // Can't start as required if we need to migrate or seed, but logic should enforce it
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Blocked'],
+    default: 'Active'
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  last_login_at: {
+    type: Date
+  }
+}, {
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+  collection: 'users'
 });
-
-// IMPORTANT: no userSchema.pre("save") here
 
 module.exports = mongoose.model("User", userSchema);
