@@ -51,7 +51,7 @@ const migrateUsers = async () => {
             }
 
             // Move Addresses
-            if (rawUser.addresses && rawUser.addresses.length > 0) {
+            if (rawUser.addresses?.length > 0) {
                 console.log(`Moving ${rawUser.addresses.length} addresses for ${rawUser.email}`);
                 for (const addr of rawUser.addresses) {
                     // Check if already moved (idempotency check by street/zip)

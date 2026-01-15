@@ -292,7 +292,7 @@
     })();
 
     // SweetAlert2 for server-side errors
-    <% if (locals.errors && locals.errors.length > 0) { %>
+    <% if (locals.errors?.length > 0) { %>
       Swal.fire({
         icon: 'error',
         title: 'OTP Error',
@@ -303,7 +303,7 @@
     <% } %>
 
     // SweetAlert2 for server-side successMessage (optional)
-    <% if (locals.successMessage && locals.successMessage.length > 0) { %>
+    <% if (locals.successMessage?.length > 0) { %>
       Swal.fire({
         icon: 'success',
         title: 'Success',

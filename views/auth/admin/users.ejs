@@ -332,7 +332,7 @@
 
     <script>
         // Check for server-side success message
-        <% if (locals.successMessage && locals.successMessage.length > 0) { %>
+        <% if (locals.successMessage?.length > 0) { %>
             Swal.fire({
                 icon: 'success',
                 title: 'Success',
@@ -343,7 +343,7 @@
         <% } %>
 
         // Check for server-side error message
-        <% if (locals.error && locals.error.length > 0) { %>
+        <% if (locals.error?.length > 0) { %>
             Swal.fire({
                 icon: 'error',
                 title: 'Error',

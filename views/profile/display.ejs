@@ -239,7 +239,7 @@
                       style="text-decoration:none; cursor:pointer;">+ Add New</a>
                   </div>
 
-                  <% if (user.addresses && user.addresses.length> 0) { %>
+                  <% if (user.addresses?.length > 0) { %>
                     <div style="display: grid; gap: 20px;">
                       <% user.addresses.forEach(addr=> { %>
                         <div class="address-card">

@@ -140,13 +140,13 @@
       <div class="form-group">
         <label for="inputName">Full Name</label>
         <input type="text" id="inputName" name="name" placeholder="Enter your name"
-          value="<%= oldInput && oldInput.name ? oldInput.name : '' %>" required autocomplete="off" />
+          value="<%= oldInput?.name ? oldInput.name : '' %>" required autocomplete="off" />
       </div>
 
       <div class="form-group">
         <label for="inputEmail">Email address</label>
         <input type="email" id="inputEmail" name="email" placeholder="Enter email"
-          value="<%= oldInput && oldInput.email ? oldInput.email : '' %>" required autocomplete="off" />
+          value="<%= oldInput?.email ? oldInput.email : '' %>" required autocomplete="off" />
       </div>
 
       <div class="form-group">
@@ -196,7 +196,7 @@
     })();
 
     // SweetAlert2 error popup from server-side validation
-    <% if (locals.errors && locals.errors.length > 0) { %>
+    <% if (locals.errors?.length > 0) { %>
       Swal.fire({
         icon: 'error',
         title: 'Sign Up Failed',

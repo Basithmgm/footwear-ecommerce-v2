@@ -38,7 +38,7 @@ router.post("/signup", async (req, res) => {
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: lowerEmail });
-    if (existingUser && existingUser.isVerified) {
+    if (existingUser?.isVerified) {
       return res
         .status(400)
         .json({

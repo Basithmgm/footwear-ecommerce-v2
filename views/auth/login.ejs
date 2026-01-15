@@ -155,7 +155,7 @@
       <div class="form-group">
         <label for="inputEmail">Email address</label>
         <input type="email" id="inputEmail" name="email" placeholder="Enter email"
-          value="<%= (oldInput && oldInput.email) ? oldInput.email : (savedEmail ? savedEmail : '') %>" required
+          value="<%= (oldInput?.email) ? oldInput.email : (savedEmail ? savedEmail : '') %>" required
           autocomplete="off" />
       </div>
 
@@ -203,7 +203,7 @@
     })();
 
       // SweetAlert2 error popup from server-side validation
-      <% if (locals.errors && locals.errors.length > 0) { %>
+      <% if (locals.errors?.length > 0) { %>
       Swal.fire({
         icon: 'error',
         title: 'Login Failed',
