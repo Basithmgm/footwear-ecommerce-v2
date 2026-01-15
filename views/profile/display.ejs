@@ -239,7 +239,7 @@
                       style="text-decoration:none; cursor:pointer;">+ Add New</a>
                   </div>
 
-                  <% if (user.addresses?.length > 0) { %>
+                  <% if (user.addresses?.length> 0) { %>
                     <div style="display: grid; gap: 20px;">
                       <% user.addresses.forEach(addr=> { %>
                         <div class="address-card">
@@ -260,9 +260,9 @@
                             <a href="/profile/address/edit/<%= addr._id %>"
                               style="font-size: 13px; color: #007bff; text-decoration: none;">Edit</a>
 
-                            <form action="/profile/address/delete/<%= addr._id %>" method="POST" style="display:inline;"
-                              onsubmit="return confirm('Are you sure?')">
-                              <button type="submit"
+                            <form id="delete-address-form-<%= addr._id %>"
+                              action="/profile/address/delete/<%= addr._id %>" method="POST" style="display:inline;">
+                              <button type="button" onclick="confirmDeleteAddress('<%= addr._id %>')"
                                 style="background:none; border:none; color:#dc3545; font-size:13px; cursor:pointer;">Delete</button>
                             </form>
                           </div>
@@ -296,6 +296,23 @@
                   <% } %>
             </div>
   </div>
+  <script>
+    function confirmDeleteAddress(addressId) {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          document.getElementById('delete-address-form-' + addressId).submit();
+        }
+      })
+    }
+  </script>
 </body>
 
 </html>

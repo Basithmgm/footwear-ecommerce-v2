@@ -422,12 +422,7 @@ exports.postVerifyOTP = async (req, res) => {
   const { email, otp } = req.body;
 
   if (!email || !otp) {
-    return res.status(400).render("auth/otp", {
-      pageTitle: "Verify OTP",
-      email: email || "",
-      errors: [{ msg: "Email and OTP are required" }],
-      successMessage: "",
-    });
+    return res.status(400).json({ success: false, message: "Email and OTP are required" });
   }
 
   try {
@@ -438,29 +433,13 @@ exports.postVerifyOTP = async (req, res) => {
 
     if (!otpRecord) {
       console.log("❌ OTP not found");
-      return res.status(400).render("auth/otp", {
-        pageTitle: "Verify OTP",
-        email,
-        errors: [
-          { msg: "Invalid or expired OTP. Please try again or sign up again." },
-        ],
-        successMessage: "",
-      });
+      return res.status(400).json({ success: false, message: "Invalid OTP. Please try again." });
     }
 
     // Check expiry (5 minutes)
     if (otpRecord.expiresAt < new Date()) {
       await OTP.deleteMany({ email });
-      return res.status(400).render("auth/otp", {
-        pageTitle: "Verify OTP",
-        email,
-        errors: [
-          {
-            msg: "OTP has expired. Please sign up again to get a new OTP.",
-          },
-        ],
-        successMessage: "",
-      });
+      return res.status(400).json({ success: false, message: "OTP has expired. Please sign up again to get a new OTP." });
     }
 
     // Get reset data (for forgot password flow)
@@ -474,12 +453,7 @@ exports.postVerifyOTP = async (req, res) => {
       // Find existing user
       const user = await User.findOne({ email });
       if (!user) {
-        return res.status(400).render("auth/otp", {
-          pageTitle: "Reset Password - Verify OTP",
-          email,
-          errors: [{ msg: "No user found for this email." }],
-          successMessage: "",
-        });
+        return res.status(400).json({ success: false, message: "No user found for this email." });
       }
 
       // Hash new password and save
@@ -497,41 +471,24 @@ exports.postVerifyOTP = async (req, res) => {
       req.session.successMessage =
         "Password reset successfully. Please log in with your new password.";
 
-      return res.redirect("/login");
+      return res.json({ success: true, message: "Password reset successfully. Please log in with your new password.", redirectUrl: "/login" });
     }
 
     // 2) SIGNUP FLOW
     if (!signupData || signupData.email !== email) {
-      return res.status(400).render("auth/otp", {
-        pageTitle: "Verify OTP",
-        email,
-        errors: [
-          { msg: "Session expired. Please sign up again to get a new OTP." },
-        ],
-        successMessage: "",
-      });
+      return res.status(400).json({ success: false, message: "Session expired. Please sign up again to get a new OTP." });
     }
 
     // Validate Name Presence (mapped to full_name)
     if (!signupData.full_name) {
-      return res.status(400).render("auth/signup", {
-        pageTitle: "Sign Up",
-        oldInput: { name: "", email: signupData.email },
-        errors: [{ msg: "Session lost user details. Please sign up again." }],
-        successMessage: "",
-      });
+      return res.status(400).json({ success: false, message: "Session lost user details. Please sign up again.", redirectUrl: "/signup" });
     }
 
     // Find USER ROLE
     const userRole = await Role.findOne({ role_name: 'user' });
     if (!userRole) {
       console.error("❌ 'user' Role not found in DB! Seed script likely failed.");
-      return res.status(500).render("auth/otp", {
-        pageTitle: "Verify OTP",
-        email,
-        errors: [{ msg: "System configuration error. Please contact admin." }],
-        successMessage: "",
-      });
+      return res.status(500).json({ success: false, message: "System configuration error. Please contact admin." });
     }
 
     // Create or update user
@@ -575,15 +532,10 @@ exports.postVerifyOTP = async (req, res) => {
     req.session.successMessage =
       "Account created and verified successfully! Welcome to Footwear.";
 
-    return res.redirect("/");
+    return res.json({ success: true, message: "Account verified successfully!", redirectUrl: "/" });
   } catch (err) {
     console.error("OTP verify error:", err);
-    return res.status(500).render("auth/otp", {
-      pageTitle: "Verify OTP",
-      email,
-      errors: [{ msg: "Something went wrong. Please try again." }],
-      successMessage: "",
-    });
+    return res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
   }
 };
 

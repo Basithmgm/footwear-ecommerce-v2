@@ -2,6 +2,7 @@ const User = require('../models/User');
 const OTP = require('../models/OTP');
 const Address = require('../models/Address');
 const bcrypt = require('bcryptjs');
+const cloudinary = require('../config/cloudinary');
 
 const { sendOTPEmail } = require("../services/emailService");
 
@@ -70,8 +71,22 @@ exports.updateProfile = async (req, res) => {
 
     // Update profile image if uploaded
     if (req.file) {
-      // Save relative path for frontend
-      user.image = "/uploads/profiles/" + req.file.filename; // Schema: 'image'
+      // Delete old image from Cloudinary if it exists
+      if (user.image && user.image.includes('cloudinary.com')) {
+        try {
+          const parts = user.image.split('/upload/');
+          if (parts.length === 2) {
+            let pathPart = parts[1];
+            pathPart = pathPart.replace(/^v\d+\//, ''); // Remove version
+            const publicId = pathPart.substring(0, pathPart.lastIndexOf('.'));
+            await cloudinary.uploader.destroy(publicId);
+          }
+        } catch (delErr) {
+          console.error("Failed to delete old image from Cloudinary:", delErr);
+        }
+      }
+      // Save new Cloudinary URL
+      user.image = req.file.path;
     }
 
     // Check for email change

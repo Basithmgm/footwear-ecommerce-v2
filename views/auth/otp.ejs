@@ -244,14 +244,15 @@
         });
       });
 
-      form.addEventListener('submit', function (e) {
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
         let otp = '';
         inputs.forEach((input) => {
           otp += input.value || '';
         });
 
         if (otp.length !== 6) {
-          e.preventDefault();
           Swal.fire({
             icon: 'warning',
             title: 'Incomplete OTP',
@@ -262,6 +263,61 @@
         }
 
         otpHidden.value = otp;
+
+        // AJAX Submission
+        try {
+          const formData = new URLSearchParams(new FormData(form));
+
+          const response = await fetch('/verify-otp', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: result.message,
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#444',
+              allowOutsideClick: false,
+              timer: 2000,
+              showConfirmButton: false
+            }).then(() => {
+              window.location.href = result.redirectUrl || '/';
+            });
+            // Fallback for timer
+            setTimeout(() => {
+              window.location.href = result.redirectUrl || '/';
+            }, 2000);
+
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: result.message,
+              confirmButtonText: 'Try Again',
+              confirmButtonColor: '#d33'
+            });
+            // Clear inputs on error
+            inputs.forEach(input => input.value = '');
+            inputs[0].focus();
+          }
+
+        } catch (error) {
+          console.error('Error submitting OTP:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'System Error',
+            text: 'Something went wrong. Please try again.',
+            confirmButtonColor: '#444'
+          });
+        }
       });
     })();
 
@@ -291,27 +347,6 @@
       updateTimer();
     })();
 
-    // SweetAlert2 for server-side errors
-    <% if (locals.errors?.length > 0) { %>
-      Swal.fire({
-        icon: 'error',
-        title: 'OTP Error',
-        html: '<%= errors.map(e => e.msg).join("<br>") %>',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#444'
-      });
-    <% } %>
-
-    // SweetAlert2 for server-side successMessage (optional)
-    <% if (locals.successMessage?.length > 0) { %>
-      Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: '<%= successMessage %>',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#444'
-      });
-    <% } %>
   </script>
 </body>
 

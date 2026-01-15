@@ -21,12 +21,10 @@ router.post("/signup", async (req, res) => {
         .json({ success: false, message: "All fields are required" });
     }
     if (password.length < 6) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Password must be at least 6 characters",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
+      });
     }
     if (password !== confirmPassword) {
       return res
@@ -39,12 +37,10 @@ router.post("/signup", async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email: lowerEmail });
     if (existingUser?.isVerified) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Email already registered. Please sign in.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered. Please sign in.",
+      });
     }
 
     // Remove old unverified user
@@ -68,23 +64,21 @@ router.post("/signup", async (req, res) => {
     // Send OTP email
     try {
       await sendOTPEmail(email, otp);
-      console.log("✅ OTP sent to:", email);
+      console.log("OTP sent to:", email);
     } catch (emailError) {
       console.error("Email error:", emailError);
       await OTP.deleteMany({ email: lowerEmail });
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Failed to send OTP. Please try again.",
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send OTP. Please try again.",
+      });
     }
 
     // Store signup data in session (PLAIN password - will be hashed by User model)
     req.session.signupData = {
       name,
       email: lowerEmail,
-      password, // ✅ Store PLAIN password
+      password, //Store PLAIN password
       createdAt: Date.now(),
     };
 
@@ -98,12 +92,10 @@ router.post("/signup", async (req, res) => {
     });
   } catch (error) {
     console.error("Signup error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "An error occurred. Please try again.",
-      });
+    res.status(500).json({
+      success: false,
+      message: "An error occurred. Please try again.",
+    });
   }
 });
 
@@ -132,24 +124,20 @@ router.post("/verify-otp", async (req, res) => {
     // Check expiry
     if (otpRecord.expiresAt < new Date()) {
       await OTP.deleteMany({ email: lowerEmail });
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "OTP has expired. Please request a new one.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
     }
 
     // Get signup data from session
     const signupData = req.session.signupData;
 
     if (!signupData || signupData.email !== lowerEmail) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Session expired. Please sign up again.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Session expired. Please sign up again.",
+      });
     }
 
     // Create user - Password will be hashed by pre-save hook
@@ -163,12 +151,12 @@ router.post("/verify-otp", async (req, res) => {
         isVerified: true,
       });
       await user.save(); // ← pre-save hook hashes password here
-      console.log("✅ User created:", user.email);
+      console.log("User created:", user.email);
     } else {
       user.password = signupData.password; // ✅ PLAIN password
       user.isVerified = true;
       await user.save(); // ← pre-save hook hashes password here
-      console.log("✅ User updated:", user.email);
+      console.log("User updated:", user.email);
     }
 
     // Clean up
@@ -183,7 +171,7 @@ router.post("/verify-otp", async (req, res) => {
       email: user.email,
     };
 
-    console.log("✅ User verified and logged in:", user.email);
+    console.log("User verified and logged in:", user.email);
 
     res.json({
       success: true,
@@ -197,12 +185,10 @@ router.post("/verify-otp", async (req, res) => {
     });
   } catch (error) {
     console.error("OTP verification error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "An error occurred during verification",
-      });
+    res.status(500).json({
+      success: false,
+      message: "An error occurred during verification",
+    });
   }
 });
 
@@ -222,12 +208,10 @@ router.post("/resend-otp", async (req, res) => {
     // Check session
     const signupData = req.session.signupData;
     if (!signupData || signupData.email !== lowerEmail) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Session expired. Please sign up again.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Session expired. Please sign up again.",
+      });
     }
 
     // Generate new OTP
@@ -246,7 +230,7 @@ router.post("/resend-otp", async (req, res) => {
     // Send OTP
     try {
       await sendOTPEmail(email, otp);
-      console.log("✅ OTP resent to:", email);
+      console.log("OTP resent to:", email);
     } catch (emailError) {
       await OTP.deleteMany({ email: lowerEmail });
       return res
@@ -314,7 +298,7 @@ router.post("/login", async (req, res) => {
       email: user.email,
     };
 
-    console.log("✅ User logged in:", user.email);
+    console.log("User logged in:", user.email);
 
     res.json({
       success: true,
