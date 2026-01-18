@@ -5,148 +5,150 @@
     <title>Edit Address - Footwear</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <link rel="stylesheet" href="/css/custom.css" />
+
+    <!-- Standard CSS Includes -->
+    <link rel="stylesheet" href="/css/animate.css">
+    <link rel="stylesheet" href="/css/icomoon.css">
+    <link rel="stylesheet" href="/css/ionicons.min.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/magnific-popup.css">
+    <link rel="stylesheet" href="/css/flexslider.css">
+    <link rel="stylesheet" href="/css/owl.carousel.min.css">
+    <link rel="stylesheet" href="/css/owl.theme.default.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-datepicker.css">
+    <link rel="stylesheet" href="/fonts/flaticon/font/flaticon.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/custom.css">
+
     <style>
-        /* Reuse styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* Inherit global styles, add specific form card styling */
+        html,
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f7f7f7;
-            padding: 20px;
-            min-height: 100vh;
+            overflow-x: hidden !important;
+            width: 100%;
         }
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
+        #page {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            position: relative;
+        }
+
+        .address-form-container {
+            max-width: 800px;
+            margin: 50px auto 100px;
+            padding: 0 15px;
         }
 
         .card {
             background: white;
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            /* Match profile style */
+            border: 1px solid #eee;
         }
 
-        h3 {
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #333;
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 14px;
+        .form-group label {
             font-weight: 500;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            outline: none;
-        }
-
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .btn-container {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: #444;
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #ebebeb;
             color: #333;
         }
 
         .error {
             color: red;
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="card">
-            <h3>Edit Address</h3>
-            <% if (locals.error) { %>
-                <div class="error">
-                    <%= error %>
+    <div class="colorlib-loader"></div>
+    <div id="page">
+        <%- include('../partials/navbar-offer-search') %>
+
+            <div class="breadcrumbs">
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <p class="bread"><span><a href="/">Home</a></span> / <span><a
+                                        href="/profile">Profile</a></span> / <span>Edit Address</span></p>
+                        </div>
+                    </div>
                 </div>
-                <% } %>
-                    <form action="/profile/address/edit/<%= address._id %>" method="POST">
-                        <div class="form-group">
-                            <label>Street Address</label>
-                            <input type="text" name="street" value="<%= address.street %>" required>
+            </div>
+
+            <div class="address-form-container">
+                <div class="card">
+                    <h3 class="text-center mb-4">Edit Address</h3>
+                    <% if (locals.error) { %>
+                        <div class="error">
+                            <%= error %>
                         </div>
-                        <div class="row">
-                            <div class="form-group">
-                                <label>City</label>
-                                <input type="text" name="city" value="<%= address.city %>" required>
-                            </div>
-                            <div class="form-group">
-                                <label>State</label>
-                                <input type="text" name="state" value="<%= address.state %>" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="text" name="phone" value="<%= address.phone || '' %>"
-                                placeholder="Contact number">
-                        </div>
-                        <div class="row">
-                            <div class="form-group">
-                                <label>Zip Code</label>
-                                <input type="text" name="zip" value="<%= address.zip %>" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Country</label>
-                                <input type="text" name="country" value="<%= address.country %>" required>
-                            </div>
-                        </div>
-                        <div class="btn-container">
-                            <a href="/profile" class="btn btn-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-primary">Update Address</button>
-                        </div>
-                    </form>
-        </div>
+                        <% } %>
+                            <form action="/profile/address/edit/<%= address._id %>" method="POST">
+                                <div class="form-group">
+                                    <label>Street Address</label>
+                                    <input type="text" class="form-control" name="street" value="<%= address.street %>"
+                                        required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label>City</label>
+                                        <input type="text" class="form-control" name="city" value="<%= address.city %>"
+                                            required>
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label>State</label>
+                                        <input type="text" class="form-control" name="state"
+                                            value="<%= address.state %>" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Phone Number</label>
+                                    <input type="text" class="form-control" name="phone"
+                                        value="<%= address.phone || '' %>" placeholder="Contact number"
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, '')" inputmode="numeric"
+                                        pattern="\d*">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label>PIN Code</label>
+                                        <input type="text" class="form-control" name="zip" value="<%= address.zip %>"
+                                            oninput="this.value = this.value.replace(/[^0-9]/g, '')" inputmode="numeric"
+                                            pattern="\d*" required>
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label>Country</label>
+                                        <input type="text" class="form-control" name="country"
+                                            value="<%= address.country %>" required>
+                                    </div>
+                                </div>
+                                <div class="btn-container d-flex justify-content-between mt-4">
+                                    <a href="/profile" class="btn btn-outline-secondary">Cancel</a>
+                                    <button type="submit" class="btn btn-primary">Update Address</button>
+                                </div>
+                            </form>
+                </div>
+            </div>
+
+            <%- include('../partials/footer') %>
     </div>
+
+    <!-- Standard JS Includes -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery.easing.1.3.js"></script>
+    <script src="/js/jquery.waypoints.min.js"></script>
+    <script src="/js/jquery.flexslider-min.js"></script>
+    <script src="/js/owl.carousel.min.js"></script>
+    <script src="/js/jquery.magnific-popup.min.js"></script>
+    <script src="/js/magnific-popup-options.js"></script>
+    <script src="/js/bootstrap-datepicker.js"></script>
+    <script src="/js/jquery.stellar.min.js"></script>
+    <script src="/js/main.js"></script>
 </body>
 
 </html>

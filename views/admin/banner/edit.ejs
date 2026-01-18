@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Banner - Footwear Admin</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/sweetalert2.min.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+        }
+
+        .admin-wrapper {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .admin-sidebar {
+            width: 230px;
+            background: #111;
+            color: #fff;
+            padding: 20px 15px;
+        }
+
+        .admin-sidebar .brand {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .admin-sidebar ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        .admin-sidebar li {
+            margin-bottom: 6px;
+        }
+
+        .admin-sidebar a {
+            color: #ced4da;
+            font-size: 14px;
+            display: block;
+            padding: 10px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .admin-sidebar a:hover,
+        .admin-sidebar a.active {
+            background: #343a40;
+            color: #fff;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .card-box {
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e2e6ea;
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .error-msg {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-wrapper">
+        <%- include('../../partials/admin/sidebar', { path: '/admin/banners' }) %>
+            <main class="admin-content">
+                <h3 style="text-align: center; margin-bottom: 30px;">Edit Banner</h3>
+                <div class="card-box">
+                    <% if (locals.error) { %>
+                        <div class="error-msg">
+                            <%= error %>
+                        </div>
+                        <% } %>
+                            <form action="/admin/banners/edit/<%= banner._id %>" method="POST">
+                                <div class="form-group">
+                                    <label>Banner Text</label>
+                                    <input type="text" name="title" class="form-control" value="<%= banner.title %>"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Link URL</label>
+                                    <input type="text" name="link" class="form-control" value="<%= banner.link %>">
+                                </div>
+                                <div class="form-group" style="display:flex; gap: 20px;">
+                                    <div style="flex:1;">
+                                        <label>Order (Sort Priority)</label>
+                                        <input type="number" name="order" class="form-control"
+                                            value="<%= banner.order %>">
+                                    </div>
+                                    <div style="flex:1; display: flex; align-items: center; padding-top: 25px;">
+                                        <label style="margin:0; cursor:pointer;">
+                                            <input type="checkbox" name="isActive" <%=banner.isActive ? 'checked' : ''
+                                                %>> Active
+                                        </label>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 30px;">
+                                    <a href="/admin/banners" class="btn btn-secondary">Cancel</a>
+                                    <button type="submit" class="btn btn-primary">Update Banner</button>
+                                </div>
+                            </form>
+                </div>
+            </main>
+    </div>
+    <script src="/js/sweetalert2.all.min.js"></script>
+    <script>
+        <% if (locals.success) { %> Swal.fire({ icon: 'success', title: 'Success', text: '<%= success %>', timer: 2000, showConfirmButton: false }); <% } %>
+        <% if (locals.error) { %> Swal.fire({ icon: 'error', title: 'Error', text: '<%= error %>' }); <% } %>
+    </script>
+</body>
+
+</html>

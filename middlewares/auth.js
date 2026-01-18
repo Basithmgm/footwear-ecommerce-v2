@@ -4,6 +4,7 @@ const User = require('../models/User');
 const auth = async (req, res, next) => {
   if (req.session?.userId) {
     try {
+      if (req.user) return next(); // Already fetched by global middleware
       req.user = await User.findById(req.session.userId).select('-password');
       next();
     } catch (err) {

@@ -165,11 +165,7 @@ router.post("/verify-otp", async (req, res) => {
 
     // Create session
     req.session.userId = user._id;
-    req.session.user = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-    };
+    // req.session.user = ... REMOVED
 
     console.log("User verified and logged in:", user.email);
 
@@ -292,11 +288,7 @@ router.post("/login", async (req, res) => {
 
     // Set session
     req.session.userId = user._id;
-    req.session.user = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-    };
+    // req.session.user = ... REMOVED
 
     console.log("User logged in:", user.email);
 
@@ -330,13 +322,25 @@ router.post("/login", async (req, res) => {
 // });
 
 // GET USER
-router.get("/user", (req, res) => {
-  if (!req.session.user) {
+router.get("/user", async (req, res) => {
+  if (!req.session.userId) {
     return res
       .status(401)
       .json({ success: false, message: "Not authenticated" });
   }
-  res.json({ success: true, user: req.session.user });
+
+  // If app.js middleware ran, req.user should be there
+  if (req.user) {
+    return res.json({ success: true, user: req.user });
+  }
+
+  // Fallback if middleware didn't run or failed
+  try {
+    const user = await User.findById(req.session.userId).select("-password");
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error fetching user" });
+  }
 });
 
 module.exports = router;

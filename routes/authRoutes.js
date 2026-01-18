@@ -7,27 +7,38 @@ const auth = require("../middlewares/authMiddleware");
 
 const adminAuth = require("../middlewares/adminAuth"); // Require the new middleware
 
+const guest = require("../middlewares/guest");
+const noCache = require("../middlewares/noCache");
+
 // ============================================
 // ADMIN ROUTES
 // ============================================
-router.get("/admin", adminController.getLogin);
+router.get("/admin", guest, noCache, adminController.getLogin);
 router.post("/admin/login", adminController.postLogin);
 router.get("/admin/logout", adminController.logout);
 
 // Protected Admin Routes
-router.get("/admin/users", adminAuth, adminController.getUsers);
+router.get("/admin/users", adminAuth, noCache, adminController.getUsers);
 router.post("/admin/users/block/:id", adminAuth, adminController.blockUser);
 router.post("/admin/users/unblock/:id", adminAuth, adminController.unblockUser);
+// Actually, protected pages usually don't need no-store unless highly sensitive. But preventing back button to login is the request.
+// If I am on dashboard, and I hit back, I go to login? Login should redirect me forward.
+// This is handled by guest middleware on login route.
+// BUT, if I logout, and hit back, I see dashboard (from cache)?
+// YES. User wants to prevent this too probably.
+// "user cannot go back to the sign up or sign in page" -> This usually implies forward protection.
+// But standard security also implies preventing back button to protected pages after logout.
+// Let's stick to the request: "cannot go back to the sign up or sign in page"
 
 // ============================================
 // AUTH & USER ROUTES
 // ============================================
 
 // PAGE ROUTES (GET)
-router.get("/signup", authController.getSignup);
-router.get("/login", authController.getLogin);
-router.get("/otp", authController.getOTPPage);
-router.get("/forgot-password", authController.getForgotPassword);
+router.get("/signup", guest, noCache, authController.getSignup);
+router.get("/login", guest, noCache, authController.getLogin);
+router.get("/otp", guest, noCache, authController.getOTPPage);
+router.get("/forgot-password", guest, noCache, authController.getForgotPassword);
 
 // Profile routes - USE THE CONTROLLER
 router.get('/profile', auth, profileController.getProfile);

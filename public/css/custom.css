@@ -11,6 +11,8 @@
    ----------------------------------- */
 #colorlib-logo a {
   color: #ffcc33;
+  font-size: 32px;
+  font-weight: 700;
 }
 
 /* -----------------------------------
@@ -19,6 +21,8 @@
 #colorlib-footer {
   background-color: #000000;
   color: #ffffff !important;
+  padding: 40px 0 20px;
+  font-size: 14px;
 }
 
 #colorlib-footer h4,
@@ -34,14 +38,10 @@
   color: #ffffff !important;
 }
 
-#colorlib-footer a:hover {
+#colorlib-footer h4 {
   color: #ffcc33 !important;
-}
-
-/* Footer widget headings */
-#colorlib-footer .colorlib-widget h4,
-#colorlib-footer .footer-col h4 {
-  color: #ffffff !important;
+  font-size: 16px;
+  margin-bottom: 15px;
 }
 
 /* -----------------------------------
@@ -67,8 +67,10 @@
 
 .colorlib-nav .menu-1 ul li > a {
   position: relative;
-  padding-bottom: 8px; /* space for underline */
-  color: #ffffff; /* white text on black bar */
+  padding: 10px 0 2px 0; /* Adjusted padding: top right bottom left */
+  color: #ffffff;
+  display: inline-block; /* Ensure block model for spacing */
+  text-decoration: none;
 }
 
 /* Hover color for main items */
@@ -86,9 +88,9 @@
   content: "";
   position: absolute;
   left: 0;
-  bottom: 0;
+  bottom: 0px;
   width: 0;
-  height: 3px;
+  height: 2px;
   background-color: #ffcc33;
   transition: width 0.25s ease;
 }
@@ -108,6 +110,14 @@
   background-color: transparent;
 }
 
+/* Fix dropdown positioning */
+.colorlib-nav .menu-1 ul li .dropdown {
+  top: 100%;
+  margin-top: 0;
+  border-radius: 4px; /* improved aesthetics */
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
 /* Auth link (Sign In / My Account) */
 .auth-item a.auth-link {
   position: relative;
@@ -115,6 +125,8 @@
   color: #ffffff;
   display: inline-block;
   text-decoration: none;
+  z-index: 9999; /* Ensure it's above other elements */
+  cursor: pointer;
 }
 
 .auth-item a.auth-link:hover {
@@ -358,10 +370,7 @@
 }
 
 /* Cart same color as menu */
-.colorlib-nav .cart a {
-  color: #ffffff;
-  font-weight: 600;
-}
+/* Cart link removed (duplicate) */
 
 /* Narrower search box */
 .search-narrow {
@@ -388,26 +397,7 @@
 }
 
 /* Keep logo color/size */
-#colorlib-logo a {
-  color: #ffcc33 !important;
-  font-size: 32px;
-  font-weight: 700;
-}
-
-/* Footer base */
-#colorlib-footer {
-  background-color: #000000;
-  color: #ffffff;
-  padding: 40px 0 20px;
-  font-size: 14px;
-}
-
-/* Footer headings */
-#colorlib-footer h4 {
-  color: #ffcc33;
-  font-size: 16px;
-  margin-bottom: 15px;
-}
+/* Logo and Footer Base moved to top */
 
 /* Footer links */
 #colorlib-footer .footer-links {
@@ -455,29 +445,15 @@
   font-size: 13px;
 }
 
-#colorlib-footer .row-pb-md {
-  margin-bottom: 10px; /* gap between menu and copyright */
-}
-
-#colorlib-footer .copy {
-  padding-top: 5px;
-  padding-bottom: 5px; /* gap between copyright and bottom */
-  border-top: 1px solid #333;
-}
-
-#colorlib-footer .copy p {
-  margin-bottom: 0;
-  line-height: 1.4;
-}
-
 /* Reduce space between footer menus and copyright */
 #colorlib-footer .row-pb-md {
-  margin-bottom: 5px; /* was larger; this pulls copyright up */
+  margin-bottom: 5px;
 }
 
 #colorlib-footer .copy {
-  padding-top: 8px; /* small top padding */
-  padding-bottom: 8px; /* small bottom padding */
+  border-top: 1px solid #333;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
 #colorlib-footer .copy p {
@@ -512,4 +488,47 @@ input[type="checkbox"] {
 
 .forgot-link:hover {
   text-decoration: underline;
+}
+
+/* -----------------------------------
+   7. Banner Marquee
+   ----------------------------------- */
+.marquee-container {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  background: #88c8bc; /* teal bar */
+  color: #ffffff;
+}
+
+.marquee-content {
+  display: inline-block;
+  padding-left: 100%; /* Start from right */
+  animation: marquee-scroll 20s linear infinite;
+}
+
+/* Hover to pause */
+.marquee-container:hover .marquee-content {
+  animation-play-state: paused;
+}
+
+.marquee-content a {
+  color: #ffffff;
+  margin: 0 10px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.marquee-content .separator {
+  margin: 0 10px;
+  opacity: 0.7;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }

@@ -18,7 +18,7 @@ app.use(cookieParser());
 // ============================================
 // Session middleware
 // ============================================
-const MongoStore = require("connect-mongo").MongoStore;
+const MongoStore = require("connect-mongo").default || require("connect-mongo");
 
 app.use(
   sessionMiddleware({
@@ -31,7 +31,7 @@ app.use(
     }),
     cookie: {
       secure: false, // set true only if using HTTPS
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      // maxAge: null // Session cookie (expires on browser close) by default
     },
   })
 );
@@ -93,6 +93,51 @@ app.use(async (req, res, next) => {
   } else {
     req.user = null;
   }
+
+  // If ADMIN is logged in + has adminId, fetch admin user data separately
+  if (req.session && req.session.adminId) {
+    try {
+      const User = require("./models/User");
+      // Fetch admin user
+      req.adminUser = await User.findById(req.session.adminId).populate('role_id').select("-password");
+      console.log("App Middleware: Admin fetched:", req.adminUser ? req.adminUser.email : "Not found");
+      res.locals.adminUser = req.adminUser; // Make available in admin views
+    } catch (err) {
+      console.error("Error fetching adminUser:", err);
+      req.adminUser = null;
+    }
+  } else {
+    req.adminUser = null;
+  }
+
+  // Fetch Active Banners for global use
+  try {
+    const Banner = require("./models/Banner");
+    const SiteSetting = require("./models/SiteSetting");
+
+    const activeBanners = await Banner.find({ isActive: true }).sort({ order: 1 });
+    res.locals.activeBanners = activeBanners;
+
+    // Fetch settings
+    const settings = await SiteSetting.find({ key: { $in: ['bannerScrollSpeed', 'bannerBackgroundColor', 'bannerTextColor'] } });
+
+    const getSetting = (k, def) => {
+      const s = settings.find(x => x.key === k);
+      return s ? s.value : def;
+    };
+
+    res.locals.bannerSpeed = getSetting('bannerScrollSpeed', 20);
+    res.locals.bannerBgColor = getSetting('bannerBackgroundColor', '#88c8bc');
+    res.locals.bannerTextColor = getSetting('bannerTextColor', '#ffffff');
+
+  } catch (err) {
+    console.error("Error fetching banners/settings:", err);
+    res.locals.activeBanners = [];
+    res.locals.bannerSpeed = 20;
+    res.locals.bannerBgColor = '#88c8bc';
+    res.locals.bannerTextColor = '#ffffff';
+  }
+
   next();
 });
 
@@ -106,13 +151,28 @@ app.use("/auth", apiAuthRoutes);
 
 // EJS Page routes (signup, login, otp, verify-otp, logout)
 const authRoutes = require("./routes/authRoutes");
+
 app.use(authRoutes);
+
+const shopRoutes = require("./routes/shopRoutes");
+
+app.use(shopRoutes);
+
+const categoryRoutes = require("./routes/categoryRoutes");
+app.use(categoryRoutes);
+
+const bannerRoutes = require("./routes/bannerRoutes");
+app.use(bannerRoutes);
+
+const productRoutes = require("./routes/productRoutes");
+app.use(productRoutes);
 
 // Home route (after signup + OTP or login, redirect here)
 app.get("/", (req, res) => {
   res.render("user/home", {
     title: "Footwear Home",
-    user: req.session.user || null,
+    user: req.user || null,
+    activeMenu: 'home'
   });
 });
 

@@ -152,25 +152,12 @@ exports.postForgotPassword = async (req, res) => {
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
-    // Send OTP email
-    try {
-      await sendOTPEmail(email, otpCode);
-      console.log("Forgot password OTP sent to:", email);
-    } catch (emailErr) {
-      console.error("Error sending forgot-password OTP email:", emailErr);
-      return res.status(500).render("auth/forgot-password", {
-        pageTitle: "Forgot Password",
-        oldInput: { email },
-        errors: [
-          {
-            msg: "Could not send verification email. Please try again later.",
-          },
-        ],
-        successMessage: "",
-      });
-    }
+    // Send OTP email (Async - Fire and forget)
+    sendOTPEmail(email, otpCode)
+      .then(() => console.log("Forgot password OTP sent to:", email))
+      .catch(emailErr => console.error("Error sending forgot-password OTP email:", emailErr));
 
-    // Redirect to OTP page in reset mode
+    // Redirect to OTP page in reset mode immediately
     return res.redirect(`/otp?email=${encodeURIComponent(email)}&mode=reset`);
   } catch (err) {
     console.error("Forgot password error:", err);
@@ -248,22 +235,8 @@ exports.postSignup = async (req, res) => {
       expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
     });
 
-    // Send OTP email
-    try {
-      await sendOTPEmail(email, otpCode);
-    } catch (emailErr) {
-      console.error("Error sending OTP email:", emailErr);
-      return res.status(500).render("auth/signup", {
-        pageTitle: "Sign Up",
-        oldInput: { name, email },
-        errors: [
-          {
-            msg: "Could not send verification email. Please try again later.",
-          },
-        ],
-        successMessage: "",
-      });
-    }
+    // Send OTP email (Async - Fire and forget)
+    sendOTPEmail(email, otpCode).catch(emailErr => console.error("Error sending OTP email:", emailErr));
 
     // Explicitly save session before redirect to prevent race condition
     req.session.save((err) => {
@@ -293,6 +266,7 @@ exports.postSignup = async (req, res) => {
 // Handle login
 exports.postLogin = async (req, res) => {
   const { email, password, rememberMe } = req.body;
+  console.log("LOGIN START:", { email, rememberMe }); // DEBUG LOG
   const errors = [];
 
   // Validate email
@@ -317,6 +291,7 @@ exports.postLogin = async (req, res) => {
   try {
     // Find user and populate Role to check permissions
     const user = await User.findOne({ email }).populate('role_id');
+    console.log("LOGIN User found:", user ? user._id : "None"); // DEBUG LOG
 
     if (!user) {
       return res.status(401).render("auth/login", {
@@ -331,6 +306,7 @@ exports.postLogin = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+      console.log("LOGIN Password match fail"); // DEBUG LOG
       return res.status(401).render("auth/login", {
         pageTitle: "Login",
         oldInput: { email },
@@ -376,22 +352,20 @@ exports.postLogin = async (req, res) => {
 
     // Set session
     req.session.userId = user._id;
-    req.session.user = {
-      id: user._id,
-      username: user.full_name, // Mapped from full_name
-      email: user.email,
-    };
+    console.log("LOGIN Session Set userId:", req.session.userId); // DEBUG LOG
+    // req.session.user => REMOVED (Relies on DB fetch in middleware)
 
     // Remember Me Logic
     if (rememberMe === "true" || rememberMe === true) {
-      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
-      // Set a cookie for the email that lasts 30 days
+      // Set session to 24 hours
+      req.session.cookie.maxAge = 24 * 60 * 60 * 1000;
+      // Set a cookie for the email that lasts 24 hours
       res.cookie("remembered_email", email, {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        maxAge: 24 * 60 * 60 * 1000,
         httpOnly: true,
       });
     } else {
-      req.session.cookie.maxAge = 24 * 60 * 60 * 1000;
+      req.session.cookie.maxAge = null; // Session cookie (expires on close)
       // Clear the remembered email cookie if not checked
       res.clearCookie("remembered_email");
     }
@@ -403,7 +377,12 @@ exports.postLogin = async (req, res) => {
     if (isAdmin) {
       return res.redirect("/admin/users");
     } else {
-      return res.redirect("/");
+      console.log("LOGIN Redirecting to home"); // DEBUG LOG
+      // Explicitly save session to ensure persistence before redirect
+      req.session.save((err) => {
+        if (err) console.error("LOGIN Session Save Error:", err);
+        return res.redirect("/");
+      });
     }
 
   } catch (err) {
@@ -523,11 +502,7 @@ exports.postVerifyOTP = async (req, res) => {
 
     // Set session (auto-login after OTP)
     req.session.userId = user._id;
-    req.session.user = {
-      id: user._id,
-      username: user.full_name,
-      email: user.email,
-    };
+    // req.session.user => REMOVED
 
     req.session.successMessage =
       "Account created and verified successfully! Welcome to Footwear.";
@@ -541,6 +516,18 @@ exports.postVerifyOTP = async (req, res) => {
 
 // Logout
 exports.logout = (req, res) => {
+  // If admin is logged in (same browser), don't destroy session, just remove user data
+  if (req.session.isAdmin || req.session.adminId) {
+    req.session.userId = null;
+    delete req.session.userId;
+    // req.session.user is already removed from storage logic, but just in case
+    if (req.session.user) delete req.session.user;
+
+    req.session.successMessage = "Logged out successfully";
+    return res.redirect("/");
+  }
+
+  // If no admin, destroy everything
   req.session.destroy((err) => {
     if (err) {
       console.error("Logout error:", err);

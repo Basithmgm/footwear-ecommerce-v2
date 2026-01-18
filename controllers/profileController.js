@@ -25,14 +25,16 @@ exports.getProfile = async (req, res) => {
 
     res.render('profile/display', {
       user: userView,
-      success: req.query.success
+      success: req.query.success,
+      activeMenu: 'profile'
     });
   } catch (err) {
     console.error("Profile rendering error:", err);
     res.status(500).render('profile/display', {
       user: null,
       success: null,
-      error: "Error loading profile: " + err.message
+      error: "Error loading profile: " + err.message,
+      activeMenu: 'profile'
     });
   }
 };
@@ -47,7 +49,8 @@ exports.getEditProfile = async (req, res) => {
     const user = await User.findById(req.user.id);
     res.render('profile/edit', {
       user,
-      error: req.query.error || null
+      error: req.query.error || null,
+      activeMenu: 'profile'
     });
   } catch (err) {
     res.redirect('/profile?error=' + encodeURIComponent(err.message));
@@ -67,7 +70,9 @@ exports.updateProfile = async (req, res) => {
     user.full_name = name;
 
     // Update phone (new schema field name is phone_number, form is phone)
-    if (phone) user.phone_number = phone;
+    if (phone !== undefined) {
+      user.phone_number = phone;
+    }
 
     // Update profile image if uploaded
     if (req.file) {
@@ -118,10 +123,10 @@ exports.updateProfile = async (req, res) => {
 
     await user.save();
 
-    // Update session
-    if (req.session.user) {
-      req.session.user.username = user.full_name;
-    }
+    // Update session - REMOVED (Relies on DB fetch)
+    // if (req.session.user) {
+    //   req.session.user.username = user.full_name;
+    // }
 
     res.redirect('/profile?success=Profile updated successfully');
   } catch (err) {
@@ -133,7 +138,8 @@ exports.updateProfile = async (req, res) => {
 // Get Change Password Page
 exports.getChangePassword = (req, res) => {
   res.render('profile/change-password', {
-    errors: req.query.error || null
+    errors: req.query.error || null,
+    activeMenu: 'profile'
   });
 };
 
@@ -176,7 +182,8 @@ exports.getVerifyEmail = (req, res) => {
 
   res.render('profile/verify-email', {
     email,
-    error: req.query.error || null
+    error: req.query.error || null,
+    activeMenu: 'profile'
   });
 };
 
@@ -203,9 +210,9 @@ exports.verifyEmailOTP = async (req, res) => {
 
     await OTP.deleteMany({ email });
 
-    if (req.session.user) {
-      req.session.user.email = user.email;
-    }
+    // if (req.session.user) {
+    //   req.session.user.email = user.email;
+    // }
 
     res.redirect('/profile?success=Email updated successfully');
   } catch (err) {
@@ -222,7 +229,8 @@ exports.verifyEmailOTP = async (req, res) => {
 exports.getAddAddress = (req, res) => {
   res.render('profile/address-add', {
     error: req.query.error || null,
-    oldInput: {}
+    oldInput: {},
+    activeMenu: 'profile'
   });
 };
 
@@ -255,7 +263,8 @@ exports.postAddAddress = async (req, res) => {
     console.error("Add address error:", err);
     res.render('profile/address-add', {
       error: "Failed to add address",
-      oldInput: req.body
+      oldInput: req.body,
+      activeMenu: 'profile'
     });
   }
 };
@@ -293,7 +302,8 @@ exports.getEditAddress = async (req, res) => {
 
     res.render('profile/address-edit', {
       address: addressView,
-      error: req.query.error || null
+      error: req.query.error || null,
+      activeMenu: 'profile'
     });
   } catch (err) {
     res.redirect('/profile?error=' + encodeURIComponent(err.message));

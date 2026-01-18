@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Banner Management - Footwear Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="/css/sweetalert2.min.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+        }
+
+        .admin-wrapper {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .admin-sidebar {
+            width: 230px;
+            background: #111;
+            color: #fff;
+            padding: 20px 15px;
+        }
+
+        .admin-sidebar .brand {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .admin-sidebar ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        .admin-sidebar li {
+            margin-bottom: 6px;
+        }
+
+        .admin-sidebar a {
+            color: #ced4da;
+            font-size: 14px;
+            display: block;
+            padding: 10px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .admin-sidebar a:hover,
+        .admin-sidebar a.active {
+            background: #343a40;
+            color: #fff;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .admin-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .admin-topbar-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .card-box {
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            font-size: 14px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            font-weight: 600;
+            background: #f8f9fa;
+            color: #555;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-outline {
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-secondary {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-wrapper">
+        <%- include('../../partials/admin/sidebar', { path: '/admin/banners' }) %>
+            <main class="admin-content">
+                <div class="admin-topbar">
+                    <div class="admin-topbar-title">Banner Management</div>
+                    <a href="/admin/banners/add" class="btn btn-primary">+ Add New Banner</a>
+                </div>
+
+                <div class="card-box" style="margin-bottom: 20px;">
+                    <form action="/admin/banners/settings" method="POST"
+                        style="display:flex; align-items:flex-end; gap: 15px; flex-wrap: wrap;">
+                        <div style="flex:1; min-width: 200px;">
+                            <label style="font-size:14px; font-weight:600;">Marquee Scroll Speed (Seconds)</label>
+                            <input type="number" name="bannerSpeed" class="form-control"
+                                value="<%= locals.bannerSpeed || 20 %>" min="5" max="100" required>
+                            <small style="color:#666;">Higher number = Slower speed</small>
+                        </div>
+                        <div style="flex:1; min-width: 150px;">
+                            <label style="font-size:14px; font-weight:600;">Background Color</label>
+                            <input type="color" name="bannerBgColor" class="form-control"
+                                value="<%= locals.bannerBgColor || '#88c8bc' %>" style="height: 38px; padding: 2px;">
+                        </div>
+                        <div style="flex:1; min-width: 150px;">
+                            <label style="font-size:14px; font-weight:600;">Text Color</label>
+                            <input type="color" name="bannerTextColor" class="form-control"
+                                value="<%= locals.bannerTextColor || '#ffffff' %>" style="height: 38px; padding: 2px;">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-bottom: 2px;">Update
+                            Settings</button>
+                    </form>
+                </div>
+
+                <div class="card-box">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Title</th>
+                                <th>Link</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (banners.length> 0) { %>
+                                <% banners.forEach(banner=> { %>
+                                    <tr>
+                                        <td>
+                                            <%= banner.order %>
+                                        </td>
+                                        <td>
+                                            <%= banner.title %>
+                                        </td>
+                                        <td>
+                                            <%= banner.link %>
+                                        </td>
+                                        <td>
+                                            <% if(banner.isActive) { %>
+                                                <span class="badge badge-success">Active</span>
+                                                <% } else { %>
+                                                    <span class="badge badge-secondary">Inactive</span>
+                                                    <% } %>
+                                        </td>
+                                        <td>
+                                            <a href="/admin/banners/edit/<%= banner._id %>" class="btn btn-outline"
+                                                style="margin-right: 5px;">Edit</a>
+                                            <button onclick="confirmDelete('<%= banner._id %>')"
+                                                class="btn btn-danger">Delete</button>
+                                            <form id="delete-form-<%= banner._id %>"
+                                                action="/admin/banners/delete/<%= banner._id %>" method="POST"
+                                                style="display:none;"></form>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                                        <% } else { %>
+                                            <tr>
+                                                <td colspan="5" style="text-align:center; padding: 20px;">No banners
+                                                    found.</td>
+                                            </tr>
+                                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+    </div>
+    <script src="/js/sweetalert2.all.min.js"></script>
+    <script>
+        <% if (locals.success) { %>
+            Swal.fire({ icon: 'success', title: 'Success', text: '<%= success %>', timer: 2000, showConfirmButton: false });
+        <% } %>
+        <% if (locals.error) { %>
+            Swal.fire({ icon: 'error', title: 'Error', text: '<%= error %>' });
+        <% } %>
+            function confirmDelete(id) {
+                Swal.fire({
+                    title: 'Delete Banner?', text: "You won't be able to revert this!", icon: 'warning',
+                    showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) document.getElementById('delete-form-' + id).submit();
+                })
+            }
+    </script>
+</body>
+
+</html>

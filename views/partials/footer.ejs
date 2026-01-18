@@ -84,6 +84,26 @@
 <link rel="stylesheet" href="/css/sweetalert2.min.css">
 <script src="/js/sweetalert2.all.min.js"></script>
 
+<script>
+  <% if (locals.success) { %>
+    Swal.fire({
+      icon: 'success',
+      title: 'Success',
+      text: '<%= success %>',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  <% } %>
+
+  <% if (locals.error) { %>
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: '<%= error %>',
+    });
+  <% } %>
+</script>
+
 
 <div class="gototop js-top">
   <a href="#" class="js-gotop"><i class="ion-ios-arrow-up"></i></a>

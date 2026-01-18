@@ -8,6 +8,7 @@
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <!-- Using existing CSS -->
     <link rel="stylesheet" href="/css/custom.css">
@@ -156,6 +157,20 @@
             background-color: #23272b;
             border-color: #1d2124;
         }
+
+        /* Password Toggle Styles */
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+        }
     </style>
 </head>
 
@@ -179,8 +194,11 @@
 
                 <div class="form-group" style="margin-bottom: 30px;">
                     <label for="password">Password</label>
-                    <input type="password" class="form-control" id="password" name="password"
-                        placeholder="Enter password" required>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-control" id="password" name="password"
+                            placeholder="Enter password" required>
+                        <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+                    </div>
                 </div>
 
                 <!-- Removed Role, Remember me, Forgot password as requested -->
@@ -207,6 +225,20 @@
                 confirmButtonColor: '#343a40'
             });
       <% } %>
+
+      // Password Toggle Logic
+      const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+
+        togglePassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+
+            // toggle the eye slash icon
+            this.classList.toggle('fa-eye-slash');
+            this.classList.toggle('fa-eye');
+        });
     </script>
 </body>
 

@@ -44,7 +44,7 @@ exports.postLogin = async (req, res) => {
         if (isMatch) {
             // Set admin session
             req.session.isAdmin = true;
-            req.session.userId = user._id; // Link to user record
+            req.session.adminId = user._id; // SEPARATE KEY for admin
 
             console.log("✅ Admin Logged In:", email);
 
@@ -70,6 +70,7 @@ exports.logout = (req, res) => {
     // Only clear admin session
     if (req.session.isAdmin) {
         delete req.session.isAdmin;
+        delete req.session.adminId;
     }
     // Set success message for login page
     req.session.successMessage = "Logged out successfully";
