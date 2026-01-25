@@ -1,0 +1,98 @@
+/* Admin Dashboard Styles */
+body {
+    background: #f8f9fa;
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+}
+
+.admin-wrapper {
+    min-height: 100vh;
+    display: flex;
+}
+
+/* Sidebar */
+.admin-sidebar {
+    width: 250px; /* Slightly wider */
+    background: #111;
+    color: #fff;
+    padding: 20px 15px;
+    flex-shrink: 0;
+}
+
+.admin-sidebar .brand {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 30px;
+    font-size: 18px;
+    color: #ffcc33; /* Brand color */
+    text-align: center;
+}
+
+.admin-sidebar ul {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+.admin-sidebar li {
+    margin-bottom: 8px;
+}
+
+.admin-sidebar a {
+    color: #ced4da;
+    font-size: 14px;
+    display: block;
+    padding: 12px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.admin-sidebar a:hover,
+.admin-sidebar a.active {
+    background: #343a40;
+    color: #fff;
+    transform: translateX(5px);
+}
+
+.admin-sidebar a i {
+    width: 24px;
+    text-align: center;
+    margin-right: 10px;
+}
+
+/* Content */
+.admin-content {
+    flex: 1;
+    padding: 30px;
+    background-color: #f8f9fa;
+    width: 100%; /* Ensure full width */
+}
+
+/* Common UI Elements */
+.card {
+    border: none;
+    box-shadow: 0 0 15px rgba(0,0,0,0.05);
+}
+
+.breadcrumb-item a {
+    color: #6c757d;
+    text-decoration: none;
+}
+
+.breadcrumb-item.active {
+    color: #343a40;
+}
+
+/* Table overrides if needed */
+.table th {
+    font-weight: 600;
+    color: #555;
+    background: #f8f9fa;
+    border-bottom: 2px solid #eee;
+}
+
+.table td {
+    vertical-align: middle;
+}

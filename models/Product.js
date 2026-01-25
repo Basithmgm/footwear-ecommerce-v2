@@ -4,48 +4,74 @@ const productSchema = new mongoose.Schema({
     productName: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+    },
+    description: {
+        type: String,
+        required: true,
+        trim: true,
     },
     category: {
-        type: String,
-        required: true
-    },
-    gender: {
-        type: String,
-        enum: ['Men', 'Women', 'Unisex'],
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+        required: true,
     },
     regularPrice: {
         type: Number,
-        required: true
+        required: true,
     },
     salePrice: {
         type: Number,
-        required: true
-    },
-    productDescription: {
-        type: String,
-        required: true
-    },
-    productImages: {
-        type: [String], // Array of image URLs/paths
-        required: true
-    },
-    stock: {
-        type: Number,
         required: true,
+    },
+    variants: [{
+        color: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        variantImages: {
+            type: [String], // Array of image URLs/paths specific to this color
+            required: true,
+            validate: [arrayLimit, '{PATH} must have at least 3 images']
+        },
+        sizes: [{
+            size: {
+                type: Number, // Or String, depending on footwear standards (UK 6, 7 etc often numbers)
+                required: true
+            },
+            quantity: {
+                type: Number,
+                required: true,
+                min: 0
+            }
+        }]
+    }],
+    totalStock: {
+        type: Number,
         default: 0
     },
-    isAvailable: {
+    status: {
+        type: String,
+        enum: ["Available", "Out of Stock", "Discontinued"],
+        default: "Available",
+    },
+    isBlocked: {
         type: Boolean,
-        default: true
+        default: false,
     },
     isDeleted: {
         type: Boolean,
-        default: false
-    }
-}, {
-    timestamps: true
-});
+        default: false,
+    },
+    isFeatured: {
+        type: Boolean,
+        default: false,
+    },
+}, { timestamps: true });
+
+function arrayLimit(val) {
+    return val.length >= 3;
+}
 
 module.exports = mongoose.model("Product", productSchema);

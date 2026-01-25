@@ -1,185 +1,150 @@
-<!DOCTYPE html>
-<html lang="en">
+<%- include('../../partials/admin/header') %>
+    <%- include('../../partials/admin/sidebar', { path: '/admin/categories' }) %>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Add Category - Footwear Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700" rel="stylesheet">
-    <link rel="stylesheet" href="/css/custom.css">
-    <link rel="stylesheet" href="/css/sweetalert2.min.css">
-    <style>
-        body {
-            background: #f8f9fa;
-            font-family: 'Montserrat', sans-serif;
-            margin: 0;
-        }
+        <main class="admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+                <h2 class="h3 mb-0">
+                    <%= locals.lockedParent ? 'Add Subcategory' : 'Add New Parent Category' %>
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/admin/categories">Categories</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Add New</li>
+                    </ol>
+                </nav>
+            </div>
 
-        .admin-wrapper {
-            min-height: 100vh;
-            display: flex;
-        }
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <% if (error) { %>
+                                <div class="alert alert-danger">
+                                    <%= error %>
+                                </div>
+                                <% } %>
 
-        /* Sidebar simple reuse style */
-        .admin-sidebar {
-            width: 230px;
-            background: #111;
-            color: #fff;
-            padding: 20px 15px;
-        }
+                                    <form action="/admin/categories/add" method="POST">
+                                        <input type="hidden" name="returnPage"
+                                            value="<%= typeof returnPage !== 'undefined' ? returnPage : 1 %>">
+                                        <!-- Category Name -->
+                                        <div class="mb-3">
+                                            <label for="name" class="form-label">Category Name *</label>
+                                            <input type="text" class="form-control" id="name" name="name"
+                                                value="<%= oldInput.name || '' %>" required>
+                                        </div>
 
-        .admin-sidebar .brand {
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            margin-bottom: 20px;
-            font-size: 16px;
-        }
+                                        <!-- Parent Category Selection -->
+                                        <div class="mb-3">
+                                            <label for="parentCategory" class="form-label">Parent Category</label>
+                                            <% if (locals.lockedParent) { %>
+                                                <input type="hidden" name="parentCategory"
+                                                    value="<%= locals.lockedParent._id %>">
+                                                <% } %>
+                                                    <select class="form-select" id="parentCategory"
+                                                        name="<%= locals.lockedParent ? '' : 'parentCategory' %>"
+                                                        onchange="updateGenderField()" disabled>
+                                                        <option value="">None (Create Main Category)</option>
+                                                        <% parentCategories.forEach(parent=> { %>
+                                                            <option value="<%= parent._id %>"
+                                                                data-gender="<%= parent.gender %>"
+                                                                <%=(locals.lockedParent &&
+                                                                locals.lockedParent._id.toString()===parent._id.toString())
+                                                                ? 'selected' : '' %>>
+                                                                <%= parent.gender %> - <%= parent.name %> (<%=
+                                                                            parent.level===0 ? 'Main' : 'Sub' %>)
+                                                            </option>
+                                                            <% }) %>
+                                                    </select>
+                                                    <% if (!locals.lockedParent) { %>
+                                                        <div class="form-text text-muted">To add a subcategory, go back
+                                                            to the list and click "Add Subcategory" next to a parent.
+                                                        </div>
+                                                        <% } else { %>
+                                                            <div class="form-text">This category will be a subcategory
+                                                                of the chosen parent.</div>
+                                                            <% } %>
+                                        </div>
 
-        .admin-sidebar ul {
-            list-style: none;
-            padding-left: 0;
-            margin-bottom: 0;
-        }
+                                        <!-- Gender Selection -->
+                                        <div class="mb-3">
+                                            <label for="gender" class="form-label">Gender *</label>
+                                            <% if (locals.lockedParent) { %>
+                                                <input type="hidden" name="gender"
+                                                    value="<%= locals.lockedParent.gender %>">
+                                                <% } %>
+                                                    <select class="form-select" id="gender"
+                                                        name="<%= locals.lockedParent ? '' : 'gender' %>" required
+                                                        <%=locals.lockedParent ? 'disabled' : '' %>>
+                                                        <option value="">Select Gender</option>
+                                                        <option value="Kids" <%=(locals.lockedParent &&
+                                                            locals.lockedParent.gender==='Kids' ) ||
+                                                            oldInput.gender==='Kids' ? 'selected' : '' %>
+                                                            >Kids</option>
+                                                        <option value="Men" <%=(locals.lockedParent &&
+                                                            locals.lockedParent.gender==='Men' ) ||
+                                                            oldInput.gender==='Men' ? 'selected' : '' %>>Men
+                                                        </option>
+                                                        <option value="Unisex" <%=(locals.lockedParent &&
+                                                            locals.lockedParent.gender==='Unisex' ) ||
+                                                            oldInput.gender==='Unisex' ? 'selected' : '' %>>Unisex
+                                                        </option>
+                                                        <option value="Women" <%=(locals.lockedParent &&
+                                                            locals.lockedParent.gender==='Women' ) ||
+                                                            oldInput.gender==='Women' ? 'selected' : '' %>
+                                                            >Women</option>
+                                                    </select>
+                                                    <% if (locals.lockedParent) { %>
+                                                        <div class="form-text text-danger">Gender is locked to match the
+                                                            parent category.</div>
+                                                        <% } else { %>
+                                                            <div class="form-text text-danger d-none"
+                                                                id="gender-locked-msg">Gender is
+                                                                locked to match the parent category.</div>
+                                                            <% } %>
+                                        </div>
 
-        .admin-sidebar li {
-            margin-bottom: 6px;
-        }
+                                        <!-- Description -->
+                                        <div class="mb-3">
+                                            <label for="description" class="form-label">Description</label>
+                                            <textarea class="form-control" id="description" name="description"
+                                                rows="3"><%= oldInput.description || '' %></textarea>
+                                        </div>
 
-        .admin-sidebar a {
-            color: #ced4da;
-            font-size: 14px;
-            display: block;
-            padding: 10px 8px;
-            border-radius: 4px;
-            text-decoration: none;
-        }
-
-        .admin-sidebar a:hover,
-        .admin-sidebar a.active {
-            background: #343a40;
-            color: #fff;
-        }
-
-        .admin-content {
-            flex: 1;
-            padding: 20px;
-        }
-
-        .card-box {
-            background: #fff;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            padding: 30px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: none;
-        }
-
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #e2e6ea;
-            color: #333;
-            margin-right: 10px;
-        }
-
-        .error-msg {
-            color: #dc3545;
-            background: #f8d7da;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="admin-wrapper">
-        <%- include('../../partials/admin/sidebar', { path: '/admin/categories' }) %>
-
-            <main class="admin-content">
-                <h3 style="text-align: center; margin-bottom: 30px;">Add New Category</h3>
-
-                <div class="card-box">
-                    <% if (locals.error) { %>
-                        <div class="error-msg">
-                            <%= error %>
+                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                            <a href="/admin/categories" class="btn btn-light me-md-2">Cancel</a>
+                                            <button type="submit" class="btn btn-primary">Add Category</button>
+                                        </div>
+                                    </form>
                         </div>
-                        <% } %>
-
-                            <form action="/admin/categories/add" method="POST">
-                                <div class="form-group">
-                                    <label>Category Name</label>
-                                    <input type="text" name="name" class="form-control"
-                                        value="<%= locals.oldInput ? oldInput.name : '' %>" required autofocus>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Description</label>
-                                    <textarea name="description" class="form-control"
-                                        rows="4"><%= locals.oldInput ? oldInput.description : '' %></textarea>
-                                </div>
-
-                                <div style="margin-top: 30px;">
-                                    <a href="/admin/categories" class="btn btn-secondary">Cancel</a>
-                                    <button type="submit" class="btn btn-primary">Create Category</button>
-                                </div>
-                            </form>
+                    </div>
                 </div>
-            </main>
-    </div>
-    <script src="/js/sweetalert2.all.min.js"></script>
-    <script>
-        <% if (locals.success) { %>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: '<%= success %>',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        <% } %>
+            </div>
+        </main>
 
-        <% if (locals.error) { %>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: '<%= error %>',
-            });
-        <% } %>
-    </script>
-</body>
+        <script>
+            function updateGenderField() {
+                const parentSelect = document.getElementById('parentCategory');
+                const genderSelect = document.getElementById('gender');
+                const genderMsg = document.getElementById('gender-locked-msg');
 
-</html>
+                const selectedOption = parentSelect.options[parentSelect.selectedIndex];
+                const parentGender = selectedOption.getAttribute('data-gender');
+
+                if (parentGender) {
+                    // Auto-select and Lock gender
+                    genderSelect.value = parentGender;
+                    // Disable interaction
+                    genderSelect.style.pointerEvents = 'none';
+                    genderSelect.classList.add('bg-light');
+                    genderMsg.classList.remove('d-none');
+                } else {
+                    // Unlock
+                    genderSelect.style.pointerEvents = 'auto';
+                    genderSelect.classList.remove('bg-light');
+                    genderMsg.classList.add('d-none');
+                }
+            }
+        </script>
+
+        <%- include('../../partials/admin/footer') %>

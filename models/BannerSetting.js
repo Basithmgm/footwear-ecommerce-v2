@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const siteSettingSchema = new mongoose.Schema({
+const bannerSettingSchema = new mongoose.Schema({
     key: {
         type: String,
         required: true,
@@ -13,4 +13,4 @@ const siteSettingSchema = new mongoose.Schema({
     description: String
 }, { timestamps: true });
 
-module.exports = mongoose.model('SiteSetting', siteSettingSchema);
+module.exports = mongoose.model('BannerSetting', bannerSettingSchema, 'bannersettings');

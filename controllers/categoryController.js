@@ -1,142 +1,280 @@
 const Category = require('../models/Category');
 
-// Get Categories (List with Pagination, Search, Sort)
+// GET: List all categories (Admin)
+// GET: List all categories (Admin)
 exports.getCategories = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = 10;
-        const search = req.query.search || "";
+        const limit = 2;
+        const skip = (page - 1) * limit;
 
-        const query = { isDeleted: false };
+        // Count Total Main Categories (Level 0)
+        const totalMainCategories = await Category.countDocuments({ isDeleted: false, level: 0 });
+        const totalPages = Math.ceil(totalMainCategories / limit);
 
-        if (search) {
-            query.name = { $regex: search, $options: 'i' };
-        }
-
-        const categories = await Category.find(query)
-            .sort({ createdAt: -1 }) // Sort descending
-            .skip((page - 1) * limit)
+        // Fetch Paginated Main Categories
+        // Note: Standard sort here (Kids, Men, Unisex, Women). 
+        // If specific order (Men, Women, Kids...) is strictly required with pagination, 
+        // we'd need aggregation with $addFields custom sort weight. 
+        // For now, simple alphabetical sort on gender is efficient.
+        const mainCats = await Category.find({ isDeleted: false, level: 0 })
+            .sort({ gender: 1, name: 1 }) // Sorted by Gender then Name
+            .skip(skip)
             .limit(limit);
 
-        const totalCategories = await Category.countDocuments(query);
-        const totalPages = Math.ceil(totalCategories / limit);
+        // Fetch all descendants for these Main Categories
+        // 1. Get IDs of fetched main categories
+        const mainIds = mainCats.map(c => c._id);
+
+        // 2. Fetch Level 1 (Sub) categories whose parent is in mainIds
+        const subCats = await Category.find({ isDeleted: false, level: 1, parentCategory: { $in: mainIds } })
+            .populate('parentCategory');
+        const subIds = subCats.map(c => c._id);
+
+        // 3. Fetch Level 2 (Child) categories whose parent is in subIds
+        const childCats = await Category.find({ isDeleted: false, level: 2, parentCategory: { $in: subIds } })
+            .populate('parentCategory');
+
+        // Combine all fetched categories
+        const allFetched = [...mainCats, ...subCats, ...childCats];
+
+        // Grouping & Tree Construction Logic (similar to before, but limited to fetched set)
+        // We can just iterate mainCats (which are already sorted within the page)
+        // and append their children.
+
+        const flattenedList = [];
+
+        // Helper to find children within fetched set
+        const getChildren = (parentId) => {
+            return allFetched.filter(c =>
+                c.parentCategory &&
+                (c.parentCategory._id ? c.parentCategory._id.toString() : c.parentCategory.toString()) === parentId.toString()
+            ).sort((a, b) => a.name.localeCompare(b.name));
+        };
+
+        mainCats.forEach(main => {
+            flattenedList.push(main); // Level 0
+
+            const subs = getChildren(main._id); // Level 1
+            subs.forEach(sub => {
+                flattenedList.push(sub);
+
+                const children = getChildren(sub._id); // Level 2
+                children.forEach(child => {
+                    flattenedList.push(child);
+                });
+            });
+        });
 
         res.render('admin/category/list', {
-            categories,
+            path: '/admin/categories',
+            categories: flattenedList,
             currentPage: page,
-            totalPages,
-            search,
-            totalCategories,
-            path: '/admin/categories', // For sidebar active state
-            success: req.query.success,
-            error: req.query.error
+            totalPages: totalPages,
+            error: req.query.error,
+            success: req.session.successMessage
         });
+        req.session.successMessage = null;
     } catch (err) {
-        console.error("Get Categories Error:", err);
-        res.status(500).send("Server Error");
+        console.error(err);
+        res.redirect('/admin?error=Server Error');
     }
 };
 
-// Get Add Category Page
-exports.getAddCategory = (req, res) => {
-    res.render('admin/category/add', {
-        path: '/admin/categories',
-        error: null,
-        oldInput: {}
-    });
-};
-
-// Post Add Category
-exports.postAddCategory = async (req, res) => {
+// GET: Add Category Form
+exports.getAddCategory = async (req, res) => {
     try {
-        const { name, description } = req.body;
+        const { parent_id, page } = req.query;
+        let lockedParent = null;
 
-        const existing = await Category.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
-        if (existing) {
-            if (existing.isDeleted) {
-                return res.render('admin/category/add', {
-                    path: '/admin/categories',
-                    error: "Category exists but is deleted. Please restore it or use a different name.", // Or handle restore logic if requested
-                    oldInput: { name, description }
-                });
-            }
-            return res.render('admin/category/add', {
-                path: '/admin/categories',
-                error: "Category already exists",
-                oldInput: { name, description }
-            });
+        if (parent_id) {
+            lockedParent = await Category.findById(parent_id);
         }
 
-        await Category.create({ name, description });
+        // Fetch potential parents (Level 0 and 1 only, as we assume max depth 2 for now)
+        const parentCategories = await Category.find({
+            isDeleted: false,
+            level: { $lt: 2 }
+        }).sort({ gender: 1, level: 1, name: 1 });
 
-        res.redirect('/admin/categories?success=Category added successfully');
-    } catch (err) {
-        console.error("Add Category Error:", err);
         res.render('admin/category/add', {
             path: '/admin/categories',
-            error: "Failed to add category: " + err.message,
-            oldInput: req.body
-        });
-    }
-};
-
-// Get Edit Category Page
-exports.getEditCategory = async (req, res) => {
-    try {
-        const category = await Category.findById(req.params.id);
-        if (!category || category.isDeleted) {
-            return res.redirect('/admin/categories?error=Category not found');
-        }
-
-        res.render('admin/category/edit', {
-            path: '/admin/categories',
-            category,
-            error: null
+            parentCategories,
+            lockedParent, // Pass the locked parent if it exists
+            error: null,
+            oldInput: {},
+            returnPage: page || 1
         });
     } catch (err) {
+        console.error(err);
         res.redirect('/admin/categories?error=Server Error');
     }
 };
 
-// Post Edit Category
-exports.postEditCategory = async (req, res) => {
+// POST: Add Category
+exports.postAddCategory = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, description } = req.body;
+        const { name, gender, parentCategory, description, returnPage } = req.body;
 
-        const category = await Category.findById(id);
+        // Basic Validation
+        if (!name || !gender) {
+            throw new Error("Name and Gender are required.");
+        }
+
+        let level = 0;
+        let finalParent = null;
+
+        if (parentCategory) {
+            const parent = await Category.findById(parentCategory);
+            if (!parent) throw new Error("Invalid Parent Category");
+
+            finalParent = parent._id;
+            level = parent.level + 1;
+
+            // Validate Logic: Child must match Parent's Gender? 
+            // Optional: Enforce strict gender inheritance or allow User to choose.
+            // For now, let's assume if parent is chosen, gender MUST match parent's gender implicitly,
+            // OR we rely on the form to send the correct gender.
+            // Let's enforce: If parent exists, Gender = Parent's Gender.
+            if (gender !== parent.gender) {
+                // Alternatively, throw error. Or just override.
+                // Let's throw error for consistency.
+                throw new Error(`Child category gender (${gender}) must match parent's gender (${parent.gender})`);
+            }
+        }
+
+        await Category.create({
+            name,
+            gender,
+            parentCategory: finalParent,
+            level,
+            description
+        });
+
+        req.session.successMessage = "Category added successfully";
+        res.redirect(`/admin/categories?page=${returnPage || 1}`);
+
+    } catch (err) {
+        // Re-render with error
+        const parentCategories = await Category.find({ isDeleted: false, level: { $lt: 2 } });
+        res.render('admin/category/add', {
+            path: '/admin/categories',
+            parentCategories,
+            error: err.message,
+            oldInput: req.body,
+            returnPage: returnPage || 1
+        });
+    }
+};
+
+// GET: Edit Category Form
+exports.getEditCategory = async (req, res) => {
+    try {
+        const { page } = req.query;
+        const category = await Category.findById(req.params.id);
         if (!category) return res.redirect('/admin/categories?error=Category not found');
 
-        // Check name uniqueness if changed
-        if (category.name.toLowerCase() !== name.toLowerCase()) {
-            const existing = await Category.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
-            if (existing) {
-                return res.render('admin/category/edit', {
-                    path: '/admin/categories',
-                    category: { ...category.toObject(), name, description },
-                    error: "Category name already exists"
-                });
+        // Prevent self-parenting and circular dependency (simple check: don't show self or children as options)
+        // For simplicity, just show all eligible parents.
+        const parentCategories = await Category.find({
+            isDeleted: false,
+            level: { $lt: 2 },
+            _id: { $ne: category._id }
+        });
+
+        res.render('admin/category/edit', {
+            path: '/admin/categories',
+            category,
+            parentCategories,
+            error: null,
+            redirectPage: page || 1
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/admin/categories?error=Server Error');
+    }
+};
+
+// POST: Edit Category
+exports.postEditCategory = async (req, res) => {
+    try {
+        const { name, gender, parentCategory, description, isBlocked, redirectPage } = req.body;
+        const category = await Category.findById(req.params.id);
+        if (!category) throw new Error("Category not found");
+
+        // Logic for changing parent is complex (updating levels of children).
+        // For this MVP refactor, assume level/parent changes are allowed but handle carefully.
+        // If Parent Changed:
+        let newLevel = 0;
+        let newParent = null;
+
+        if (parentCategory) {
+            const parent = await Category.findById(parentCategory);
+            if (!parent) throw new Error("Invalid Parent Category");
+            newParent = parent._id;
+            newLevel = parent.level + 1;
+
+            if (gender !== parent.gender) {
+                throw new Error(`Child category gender must match parent's gender`);
             }
         }
 
         category.name = name;
+        category.gender = gender;
+        category.parentCategory = newParent;
+        category.level = newLevel;
         category.description = description;
+        category.isBlocked = isBlocked === 'on';
+
         await category.save();
 
-        res.redirect('/admin/categories?success=Category updated successfully');
+        // TODO: If this category had children, their levels might need updating if we moved this category.
+        // For strict rules, maybe disable moving a parent? 
+        // Let's leave deep recursion out for now unless requested.
+
+        req.session.successMessage = "Category updated successfully";
+        res.redirect(`/admin/categories?page=${redirectPage || 1}`);
     } catch (err) {
-        console.error("Edit Category Error:", err);
-        res.redirect(`/admin/categories/edit/${req.params.id}?error=Update Failed`);
+        const parentCategories = await Category.find({ isDeleted: false, level: { $lt: 2 }, _id: { $ne: req.params.id } });
+        res.render('admin/category/edit', {
+            path: '/admin/categories',
+            category: { ...req.body, _id: req.params.id }, // Fake obj for re-render
+            parentCategories,
+            error: err.message,
+            redirectPage: redirectPage || 1
+        });
     }
 };
 
-// Soft Delete Category
-exports.softDeleteCategory = async (req, res) => {
+// GET: Toggle Block (Soft Delete or Block?)
+// User asked to "delete category section... and build category section".
+// Usually 'Delete' implies Soft Delete.
+exports.deleteCategory = async (req, res) => {
     try {
         await Category.findByIdAndUpdate(req.params.id, { isDeleted: true });
-        res.redirect('/admin/categories?success=Category deleted successfully');
+        req.session.successMessage = "Category deleted successfully";
+        res.redirect('/admin/categories');
     } catch (err) {
-        console.error("Delete Category Error:", err);
+        console.error(err);
         res.redirect('/admin/categories?error=Delete Failed');
+    }
+};
+
+// POST: Toggle Block Status
+exports.toggleBlockCategory = async (req, res) => {
+    try {
+        const category = await Category.findById(req.params.id);
+        if (!category) {
+            return res.redirect('/admin/categories?error=Category not found');
+        }
+
+        category.isBlocked = !category.isBlocked;
+        await category.save();
+
+        req.session.successMessage = category.isBlocked ? "Category Blocked" : "Category Unblocked";
+        res.redirect('/admin/categories');
+    } catch (err) {
+        console.error("Toggle Block Error:", err);
+        res.redirect('/admin/categories?error=Operation Failed');
     }
 };

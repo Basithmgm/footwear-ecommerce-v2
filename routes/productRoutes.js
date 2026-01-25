@@ -1,28 +1,16 @@
-const express = require('express');
+const uploadProduct = require("../config/multerProduct");
+const express = require("express");
 const router = express.Router();
-const productController = require('../controllers/productController');
-const adminAuth = require('../middlewares/adminAuth');
-const multer = require('multer');
-const path = require('path');
+const productController = require("../controllers/productController");
 
-// Multer Config for Products
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'public/uploads/products');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
+router.get("/admin/products", productController.getProductList);
+router.get("/admin/products/add", productController.getAddProduct);
+router.post("/admin/products/add", uploadProduct.array("productImages", 5), productController.postAddProduct);
 
-const upload = multer({ storage: storage });
+router.get("/admin/products/edit/:id", productController.getEditProduct);
+router.post("/admin/products/edit/:id", uploadProduct.array("productImages", 5), productController.postEditProduct);
 
-// Routes
-router.get('/admin/products', adminAuth, productController.getProducts);
-router.get('/admin/products/add', adminAuth, productController.getAddProduct);
-router.post('/admin/products/add', adminAuth, upload.array('productImages', 10), productController.postAddProduct);
-router.get('/admin/products/edit/:id', adminAuth, productController.getEditProduct);
-router.post('/admin/products/edit/:id', adminAuth, upload.array('productImages', 10), productController.postEditProduct);
-router.post('/admin/products/delete/:id', adminAuth, productController.deleteProduct);
+router.post("/admin/products/delete/:id", productController.softDeleteProduct);
+router.post("/admin/products/toggle-block/:id", productController.toggleBlockProduct);
 
 module.exports = router;

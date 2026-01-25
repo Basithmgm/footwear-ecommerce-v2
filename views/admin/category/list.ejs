@@ -1,326 +1,179 @@
-<!DOCTYPE html>
-<html lang="en">
+<%- include('../../partials/admin/header') %>
+    <%- include('../../partials/admin/sidebar', { path: '/admin/categories' }) %>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Footwear Admin - Categories</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <main class="admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+                <h2 class="h3 mb-0 text-gray-800">Category Management</h2>
+                <a href="/admin/categories/add" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add Parent Category
+                </a>
+            </div>
 
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700" rel="stylesheet">
-    <link rel="stylesheet" href="/css/custom.css">
-    <link rel="stylesheet" href="/css/sweetalert2.min.css">
-    <script src="/js/sweetalert2.all.min.js"></script>
-    <style>
-        body {
-            background: #f8f9fa;
-            font-family: 'Montserrat', sans-serif;
-            margin: 0;
-        }
-
-        .admin-wrapper {
-            min-height: 100vh;
-            display: flex;
-        }
-
-        .admin-sidebar {
-            width: 230px;
-            background: #111;
-            color: #fff;
-            padding: 20px 15px;
-        }
-
-        .admin-sidebar .brand {
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            margin-bottom: 20px;
-            font-size: 16px;
-        }
-
-        .admin-sidebar ul {
-            list-style: none;
-            padding-left: 0;
-            margin-bottom: 0;
-        }
-
-        .admin-sidebar li {
-            margin-bottom: 6px;
-        }
-
-        .admin-sidebar a {
-            color: #ced4da;
-            font-size: 14px;
-            display: block;
-            padding: 10px 8px;
-            border-radius: 4px;
-            text-decoration: none;
-        }
-
-        .admin-sidebar a:hover,
-        .admin-sidebar a.active {
-            background: #343a40;
-            color: #fff;
-        }
-
-        .admin-content {
-            flex: 1;
-            padding: 20px;
-        }
-
-        .admin-topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .admin-topbar-title {
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .small-text {
-            font-size: 12px;
-            color: #6c757d;
-        }
-
-        .card-box {
-            background: #fff;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        /* Table Styles */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 10px;
-            font-size: 14px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-
-        th {
-            font-weight: 600;
-            color: #555;
-            background: #f8f9fa;
-        }
-
-        .form-control {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-
-        .btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-dark {
-            background: #333;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-
-        .btn-outline {
-            border: 1px solid #ddd;
-            background: white;
-            color: #333;
-        }
-
-        .pagination {
-            display: flex;
-            gap: 5px;
-            margin-top: 15px;
-            justify-content: flex-end;
-        }
-
-        .pagination a {
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            text-decoration: none;
-            color: #333;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        .pagination a.active {
-            background: #333;
-            color: white;
-            border-color: #333;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="admin-wrapper">
-        <%- include('../../partials/admin/sidebar', { path: '/admin/categories' }) %>
-
-            <main class="admin-content">
-                <div class="admin-topbar">
-                    <div>
-                        <div class="admin-topbar-title">Category Management</div>
-                        <div class="small-text">Add, edit, or delete product categories.</div>
-                    </div>
-                    <a href="/admin/categories/add" class="btn btn-primary">+ Add New Category</a>
+            <% if (error) { %>
+                <div class="alert alert-danger">
+                    <%= error %>
                 </div>
-
-                <!-- Filters -->
-                <div class="card-box filters">
-                    <form action="/admin/categories" method="GET"
-                        style="display: flex; gap: 10px; align-items: center;">
-                        <div style="flex: 1; max-width: 300px;">
-                            <input type="text" name="search" class="form-control" placeholder="Search categories..."
-                                value="<%= search %>">
-                        </div>
-                        <button type="submit" class="btn btn-dark">Search</button>
-                        <% if (search) { %>
-                            <a href="/admin/categories" class="btn btn-outline">Clear</a>
-                            <% } %>
-                    </form>
-                </div>
-
-                <!-- Categories table -->
-                <div class="card-box">
-                    <div class="d-flex justify-content-between align-items-center mb-2"
-                        style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <h5 style="margin:0; font-size: 16px;">Category List</h5>
-                        <span class="small-text">Total Categories: <%= totalCategories %></span>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Description</th>
-                                    <th>Created At</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% if (categories.length> 0) { %>
-                                    <% categories.forEach(category=> { %>
-                                        <tr>
-                                            <td>
-                                                <div style="font-weight: 500;">
-                                                    <%= category.name %>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <%= category.description || '-' %>
-                                            </td>
-                                            <td>
-                                                <%= new Date(category.createdAt).toLocaleDateString() %>
-                                            </td>
-                                            <td>
-                                                <a href="/admin/categories/edit/<%= category._id %>"
-                                                    class="btn btn-outline" style="margin-right: 5px;">Edit</a>
-                                                <button type="button" onclick="confirmDelete('<%= category._id %>')"
-                                                    class="btn btn-danger">Delete</button>
-                                                <!-- Hidden Form -->
-                                                <form id="delete-form-<%= category._id %>"
-                                                    action="/admin/categories/delete/<%= category._id %>" method="POST"
-                                                    style="display:none;"></form>
-                                            </td>
-                                        </tr>
-                                        <% }) %>
-                                            <% } else { %>
-                                                <tr>
-                                                    <td colspan="4" style="text-align: center; padding: 20px;">No
-                                                        categories found.</td>
-                                                </tr>
-                                                <% } %>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    <% if (totalPages> 1) { %>
-                        <div class="pagination">
-                            <% if (currentPage> 1) { %>
-                                <a
-                                    href="/admin/categories?page=<%= currentPage - 1 %>&search=<%= search %>">Previous</a>
-                                <% } %>
-
-                                    <% for(let i=1; i <=totalPages; i++) { %>
-                                        <a href="/admin/categories?page=<%= i %>&search=<%= search %>"
-                                            class="<%= currentPage === i ? 'active' : '' %>">
-                                            <%= i %>
-                                        </a>
-                                        <% } %>
-
-                                            <% if (currentPage < totalPages) { %>
-                                                <a
-                                                    href="/admin/categories?page=<%= currentPage + 1 %>&search=<%= search %>">Next</a>
-                                                <% } %>
+                <% } %>
+                    <% if (success) { %>
+                        <div class="alert alert-success">
+                            <%= success %>
                         </div>
                         <% } %>
 
-                </div>
-            </main>
-    </div>
+                            <div class="card shadow-sm">
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th class="ps-4">Gender</th>
+                                                    <th>Group Name</th>
+                                                    <th>Level</th>
+                                                    <th>Parent Category</th>
+                                                    <th class="text-center">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% if (categories.length> 0) { %>
+                                                    <% categories.forEach(cat=> { %>
+                                                        <tr>
+                                                            <td class="ps-4">
+                                                                <% let badgeColor='#6c757d' ; let textColor='white' ; if
+                                                                    (cat.gender==='Women' ) { badgeColor='#FF8DA1' ; }
+                                                                    else if (cat.gender==='Men' ) { badgeColor='#01A6EA'
+                                                                    ; } else if (cat.gender==='Unisex' ) {
+                                                                    badgeColor='#A649A4' ; } else if
+                                                                    (cat.gender==='Kids' ) { badgeColor='#FFCC10' ;
+                                                                    textColor='black' ; } %>
+                                                                    <span class="badge"
+                                                                        style="background-color: <%= badgeColor %>; color: <%= textColor %>;">
+                                                                        <%= cat.gender %>
+                                                                    </span>
+                                                            </td>
+                                                            <td>
+                                                                <% if(cat.level> 0) { %>
+                                                                    <span class="text-muted"
+                                                                        style="margin-left: <%= cat.level * 20 %>px;">↳
+                                                                    </span>
+                                                                    <% } %>
+                                                                        <strong>
+                                                                            <%= cat.name %>
+                                                                        </strong>
+                                                            </td>
+                                                            <td>
+                                                                <% if (cat.level===0) { %>
+                                                                    <span class="badge bg-secondary">Main</span>
+                                                                    <% } else if (cat.level===1) { %>
+                                                                        <span class="badge bg-info">Sub</span>
+                                                                        <% } else { %>
+                                                                            <span
+                                                                                class="badge bg-light text-dark">Child</span>
+                                                                            <% } %>
+                                                            </td>
+                                                            <td>
+                                                                <% if (cat.level===0) { %>
+                                                                    <a href="/admin/categories/add?parent_id=<%= cat._id %>&page=<%= currentPage %>"
+                                                                        class="btn btn-sm btn-light border"
+                                                                        style="font-size: 0.75rem;">
+                                                                        <i class="fas fa-plus me-1"></i> Add Subcategory
+                                                                    </a>
+                                                                    <% } else { %>
+                                                                        <%= cat.parentCategory ? cat.parentCategory.name
+                                                                            : '-' %>
+                                                                            <% } %>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                <div
+                                                                    class="d-flex justify-content-center align-items-center gap-3">
 
-    <script>
-        // Check for server-side success message
-        <% if (locals.success) { %>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: '<%= success %>',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        <% } %>
+                                                                    <!-- Toggle Form with Label -->
+                                                                    <div class="d-flex align-items-center">
+                                                                        <span class="me-2 text-muted fw-bold"
+                                                                            style="font-size: 0.85rem;">Block</span>
+                                                                        <form
+                                                                            action="/admin/categories/toggle-block/<%= cat._id %>"
+                                                                            method="POST" class="d-inline m-0">
+                                                                            <div
+                                                                                class="form-check form-switch m-0 d-flex align-items-center">
+                                                                                <input class="form-check-input"
+                                                                                    type="checkbox" role="switch"
+                                                                                    onchange="this.form.submit()"
+                                                                                    <%=!cat.isBlocked ? 'checked' : ''
+                                                                                    %>
+                                                                                title="<%= cat.isBlocked ? 'Unblock'
+                                                                                    : 'Block' %>"
+                                                                                    style="cursor: pointer; width: 3em;
+                                                                                    height: 1.5em;">
+                                                                            </div>
+                                                                        </form>
+                                                                    </div>
 
-        // Check for server-side error message
-        <% if (locals.error) { %>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: '<%= error %>',
-            });
-        <% } %>
+                                                                    <div class="btn-group">
+                                                                        <a href="/admin/categories/edit/<%= cat._id %>?page=<%= currentPage %>"
+                                                                            class="btn btn-sm btn-outline-secondary">
+                                                                            <i class="fas fa-edit"></i>
+                                                                        </a>
+                                                                        <form
+                                                                            action="/admin/categories/delete/<%= cat._id %>"
+                                                                            method="POST" class="d-inline"
+                                                                            onsubmit="return confirm('Are you sure? This will delete the category.');">
+                                                                            <button type="submit"
+                                                                                class="btn btn-sm btn-outline-danger ms-1">
+                                                                                <i class="fas fa-trash"></i>
+                                                                            </button>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        <% }) %>
+                                                            <% } else { %>
+                                                                <tr>
+                                                                    <td colspan="6" class="text-center py-4 text-muted">
+                                                                        No categories found.</td>
+                                                                </tr>
+                                                                <% } %>
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-            function confirmDelete(id) {
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "This category will be moved to trash.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        document.getElementById('delete-form-' + id).submit();
-                    }
-                })
-            }
-    </script>
-</body>
+                                    <!-- Pagination -->
+                                    <% if (locals.totalPages> 1) { %>
+                                        <div class="d-flex justify-content-center py-3 border-top">
+                                            <nav aria-label="Page navigation">
+                                                <ul class="pagination mb-0">
+                                                    <!-- Previous -->
+                                                    <li class="page-item <%= currentPage == 1 ? 'disabled' : '' %>">
+                                                        <a class="page-link" href="?page=<%= currentPage - 1 %>"
+                                                            aria-label="Previous">
+                                                            <span aria-hidden="true">&laquo;</span>
+                                                        </a>
+                                                    </li>
 
-</html>
+                                                    <!-- Page Numbers -->
+                                                    <% for(let i=1; i <=totalPages; i++) { %>
+                                                        <li class="page-item <%= currentPage == i ? 'active' : '' %>">
+                                                            <a class="page-link" href="?page=<%= i %>">
+                                                                <%= i %>
+                                                            </a>
+                                                        </li>
+                                                        <% } %>
+
+                                                            <!-- Next -->
+                                                            <li
+                                                                class="page-item <%= currentPage == totalPages ? 'disabled' : '' %>">
+                                                                <a class="page-link" href="?page=<%= currentPage + 1 %>"
+                                                                    aria-label="Next">
+                                                                    <span aria-hidden="true">&raquo;</span>
+                                                                </a>
+                                                            </li>
+                                                </ul>
+                                            </nav>
+                                        </div>
+                                        <% } %>
+
+                                </div>
+                            </div>
+        </main>
+
+        <%- include('../../partials/admin/footer') %>

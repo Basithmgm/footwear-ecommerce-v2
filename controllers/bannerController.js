@@ -1,5 +1,5 @@
 const Banner = require('../models/Banner');
-const SiteSetting = require('../models/SiteSetting');
+const BannerSetting = require('../models/BannerSetting');
 
 // Get All Banners
 // Get All Banners
@@ -8,7 +8,7 @@ exports.getBanners = async (req, res) => {
         const banners = await Banner.find().sort({ order: 1, createdAt: -1 });
 
         // Fetch settings
-        const settings = await SiteSetting.find({ key: { $in: ['bannerScrollSpeed', 'bannerBackgroundColor', 'bannerTextColor'] } });
+        const settings = await BannerSetting.find({ key: { $in: ['bannerScrollSpeed', 'bannerBackgroundColor', 'bannerTextColor'] } });
 
         const getSetting = (k, def) => {
             const s = settings.find(x => x.key === k);
@@ -42,7 +42,7 @@ exports.updateSettings = async (req, res) => {
         ];
 
         for (const up of updates) {
-            await SiteSetting.findOneAndUpdate(
+            await BannerSetting.findOneAndUpdate(
                 { key: up.key },
                 {
                     key: up.key,

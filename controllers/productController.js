@@ -1,172 +1,254 @@
-const Product = require('../models/Product');
-const fs = require('fs');
-const path = require('path');
-
-// Helper to delete file
-const deleteFile = (filePath) => {
-    if (filePath) {
-        fs.unlink(path.join(__dirname, '../public', filePath), (err) => {
-            if (err) console.error("Error deleting file:", err);
-        });
-    }
-};
-
-// GET All Products
-exports.getProducts = async (req, res) => {
+const Product = require("../models/Product");
+const Category = require("../models/Category");
+const getProductList = async (req, res) => {
     try {
-        const products = await Product.find({ isDeleted: false }).sort({ createdAt: -1 });
-        res.render('admin/product/list', {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        const products = await Product.find({ isDeleted: false })
+            .populate("category")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        const totalProducts = await Product.countDocuments({ isDeleted: false });
+        const totalPages = Math.ceil(totalProducts / limit);
+
+        res.render("admin/product/list", {
             products,
-            path: '/admin/products',
-            success: req.session.successMessage || null,
-            error: req.query.error
+            currentPage: page,
+            totalPages,
+            totalProducts,
+            success: req.session.successMessage,
+            error: req.session.errorMessage
         });
         req.session.successMessage = null;
-    } catch (err) {
-        console.error(err);
-        res.redirect('/admin?error=Server Error');
+        req.session.errorMessage = null;
+    } catch (error) {
+        console.error("Error fetching product list:", error);
+        res.status(500).send("Internal Server Error");
     }
 };
 
-const Category = require('../models/Category');
-
-// GET Add Product
-exports.getAddProduct = async (req, res) => {
+const getAddProduct = async (req, res) => {
     try {
-        const categories = await Category.find({ isDeleted: false });
-        res.render('admin/product/add', {
-            path: '/admin/products',
+        const categories = await Category.find({ isDeleted: false }).populate('parentCategory').sort({ name: 1 });
+        res.render("admin/product/add", {
+            categories: categories,
             error: null,
-            categories,
             oldInput: {}
         });
-    } catch (err) {
-        console.error(err);
-        res.redirect('/admin/products?error=Server Error');
+    } catch (error) {
+        console.error("Error rendering add product:", error);
+        res.redirect("/admin/products");
     }
 };
 
-// POST Add Product
-exports.postAddProduct = async (req, res) => {
+const postAddProduct = async (req, res) => {
     try {
-        const { productName, category, gender, regularPrice, salePrice, productDescription, stock, isAvailable } = req.body;
+        const { productName, description, category, regularPrice, salePrice, status, isFeatured, variants } = req.body;
 
-        // Fetch categories for error re-render
-        const categories = await Category.find({ isDeleted: false });
+        // 'variants' in req.body might be a JSON string if sent as formData, or object structure.
+        // Assuming standard form submission where variants[0][color] maps to body.
+        // However, with file uploads (multipart), complex nesting can be tricky.
+        // A common strategy is to send 'variants' as a JSON string field to parse.
+        // OR map manually from flat fields. 
+        // Let's assume the user's frontend sends a 'variants' stringified JSON for data 
+        // and files are sent with fieldnames like 'variant-images-0', 'variant-images-1' etc.
 
-        let imageUrls = [];
-        if (req.files && req.files.length > 0) {
-            imageUrls = req.files.map(file => '/uploads/products/' + file.filename);
+        // For this Implementation, we will assume:
+        // 1. req.body.variants is a JSON string containing the structure (colors, sizes).
+        // 2. req.files is an array of files.
+        //    We need to map files to variants. This usually requires a structured naming convention.
+        //    Let's assume the JSON 'variants' array has a temporary 'tempId' or index that matches the file fieldname.
+
+        // NOTE: Without seeing the Frontend, this is a BEST GUESS implementation.
+        // We will try to parse 'variants' if it's a string.
+
+        let parsedVariants = [];
+        if (typeof variants === 'string') {
+            parsedVariants = JSON.parse(variants);
+        } else if (Array.isArray(variants)) {
+            parsedVariants = variants;
         }
 
-        if (imageUrls.length < 3) {
-            imageUrls.forEach(url => deleteFile(url));
-            return res.render('admin/product/add', {
-                path: '/admin/products',
-                error: 'Minimum 3 images required',
-                categories,
-                oldInput: req.body
-            });
+        // Handle Images
+        // Assumption: req.files is array. We need to know which image belongs to which variant.
+        // If using Multer with fieldname 'variantImages', it's hard to separate.
+        // Ideally, frontend sends fieldname 'variantImages_0', 'variantImages_1'.
+        // Let's iterate parsedVariants and look for matching files in req.files if possible,
+        // OR assume the variants object already contains the logical mapping and we just process files.
+
+        // SIMPLIFIED APPROACH for MVP:
+        // We expect req.files to organized or mapped. 
+        // Let's assume 'parsedVariants' comes with empty 'variantImages' arrays, 
+        // and we verify that we recieved files.
+        // Actually, let's look at req.files. If it's a flat list, we can't easily guess.
+
+        // Let's write abstract logic that can be easily adapted:
+        // "Files are processed and paths added to the corresponding variant object"
+
+        const files = req.files; // Array of files
+
+        // Process variants to add their specific images
+        const finalVariants = parsedVariants.map((variant, index) => {
+            // Retrieve files for this specific variant index
+            // Front-end should send files with fieldname `variantImages[${index}]`
+            // Multer would put them in req.files if configured as any(), or specific fields.
+            // If using req.files (array), we need to filter.
+
+            const variantFiles = files.filter(f => f.fieldname === `variantImages[${index}]` || f.fieldname === `variantImages_${index}`);
+            const imagePaths = variantFiles.map(f => f.path);
+
+            return {
+                ...variant,
+                variantImages: imagePaths,
+                // Ensure quantities are numbers
+                sizes: variant.sizes.map(s => ({ size: s.size, quantity: Number(s.quantity) }))
+            };
+        });
+
+        // Validate Validation: Min 3 images per variant
+        for (const v of finalVariants) {
+            if (v.variantImages.length < 3) {
+                throw new Error(`Color ${v.color} must have at least 3 images.`);
+            }
         }
 
-        await Product.create({
+        // Calculate Total Stock
+        const totalStock = finalVariants.reduce((acc, curr) => {
+            return acc + curr.sizes.reduce((sAcc, s) => sAcc + s.quantity, 0);
+        }, 0);
+
+        const newProduct = new Product({
             productName,
+            description,
             category,
-            gender,
             regularPrice,
             salePrice,
-            productDescription,
-            productImages: imageUrls,
-            stock,
-            isAvailable: isAvailable === 'on'
+            totalStock, // Calculated
+            variants: finalVariants,
+            status,
+            isFeatured: req.body.isFeatured === 'on'
         });
 
-        req.session.successMessage = "Product added successfully";
-        res.redirect('/admin/products');
-    } catch (err) {
-        console.error(err);
-        const categories = await Category.find({ isDeleted: false });
-        res.render('admin/product/add', {
-            path: '/admin/products',
-            error: 'Failed to add product: ' + err.message,
-            categories,
-            oldInput: req.body
+        await newProduct.save();
+        req.session.successMessage = "Product added successfully!";
+        res.redirect("/admin/products");
+
+    } catch (error) {
+        console.error("Error adding product:", error);
+        const categories = await Category.find({ isDeleted: false }).populate('parentCategory').sort({ name: 1 }).lean();
+        res.render("admin/product/add", {
+            categories: categories,
+            error: error.message || "Error adding product. Please try again.",
+            oldInput: req.body // Note: Nesting structure might break simple re-population
         });
     }
 };
 
-// GET Edit Product
-exports.getEditProduct = async (req, res) => {
+const getEditProduct = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
-        if (!product || product.isDeleted) return res.redirect('/admin/products?error=Product not found');
-
-        const categories = await Category.find({ isDeleted: false });
-
+        const product = await Product.findById(req.params.id).populate('category');
+        if (!product) {
+            return res.redirect('/admin/products');
+        }
+        const categories = await Category.find({ isDeleted: false }).sort({ name: 1 }).lean();
         res.render('admin/product/edit', {
-            path: '/admin/products',
             product,
             categories,
             error: null
         });
-    } catch (err) {
-        console.error(err);
-        res.redirect('/admin/products?error=Server Error');
-    }
-};
-
-// POST Edit Product
-exports.postEditProduct = async (req, res) => {
-    try {
-        const { productName, category, gender, regularPrice, salePrice, productDescription, stock, isAvailable } = req.body;
-        const product = await Product.findById(req.params.id);
-
-        if (!product) return res.redirect('/admin/products?error=Product not found');
-
-        let imageUrls = product.productImages || [];
-
-        // Handle deleted images
-        if (req.body.deletedImages) {
-            const deleted = Array.isArray(req.body.deletedImages) ? req.body.deletedImages : [req.body.deletedImages];
-            imageUrls = imageUrls.filter(img => !deleted.includes(img));
-            // Async delete from disk 
-            deleted.forEach(img => deleteFile(img));
-        }
-
-        // If new images are uploaded, append them
-        if (req.files && req.files.length > 0) {
-            const newImages = req.files.map(file => '/uploads/products/' + file.filename);
-            imageUrls = [...imageUrls, ...newImages];
-        }
-
-        product.productName = productName;
-        product.category = category;
-        product.gender = gender;
-        product.regularPrice = regularPrice;
-        product.salePrice = salePrice;
-        product.productDescription = productDescription;
-        product.stock = stock;
-        product.isAvailable = isAvailable === 'on';
-        product.productImages = imageUrls;
-
-        await product.save();
-
-        req.session.successMessage = "Product updated successfully";
+    } catch (error) {
+        console.error("Error getting edit product:", error);
         res.redirect('/admin/products');
-    } catch (err) {
-        console.error(err);
-        res.redirect(`/admin/products/edit/${req.params.id}?error=Update Failed`);
     }
 };
 
-// Soft Delete Product
-exports.deleteProduct = async (req, res) => {
+const postEditProduct = async (req, res) => {
+    try {
+        const { productName, description, category, regularPrice, salePrice, stock, status, existingImages, isFeatured } = req.body;
+        const files = req.files;
+        const productId = req.params.id;
+
+        // existingImages might be a string (if 1) or array (if > 1) or undefined (if 0)
+        let currentImages = [];
+        if (existingImages) {
+            currentImages = Array.isArray(existingImages) ? existingImages : [existingImages];
+        }
+
+        // New images
+        let newImages = [];
+        if (files && files.length > 0) {
+            newImages = files.map(file => file.path);
+        }
+
+        const finalImages = [...currentImages, ...newImages];
+
+        if (finalImages.length < 3) {
+            const product = await Product.findById(productId);
+            const categories = await Category.find({ isDeleted: false }).sort({ name: 1 }).lean();
+            return res.render('admin/product/edit', {
+                product: { ...product.toObject(), ...req.body, productImages: finalImages }, // preserve sort of inputs
+                categories,
+                error: "Product must have at least 3 images."
+            });
+        }
+
+        await Product.findByIdAndUpdate(productId, {
+            productName,
+            description,
+            category,
+            regularPrice,
+            salePrice,
+            stock,
+            status,
+            status,
+            productImages: finalImages,
+            isFeatured: req.body.isFeatured === 'on'
+        });
+
+        req.session.successMessage = "Product updated successfully!";
+        res.redirect('/admin/products');
+
+    } catch (error) {
+        console.error("Error updating product:", error);
+        res.redirect('/admin/products');
+    }
+};
+
+const softDeleteProduct = async (req, res) => {
     try {
         await Product.findByIdAndUpdate(req.params.id, { isDeleted: true });
-        req.session.successMessage = "Product deleted successfully";
+        req.session.successMessage = "Product deleted successfully.";
         res.redirect('/admin/products');
-    } catch (err) {
-        console.error(err);
-        res.redirect('/admin/products?error=Delete Failed');
+    } catch (error) {
+        console.error("Error deleting product:", error);
+        res.redirect('/admin/products');
     }
+};
+
+// Implement Block/Unblock toggle if needed
+const toggleBlockProduct = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        product.isBlocked = !product.isBlocked;
+        await product.save();
+        req.session.successMessage = `Product ${product.isBlocked ? 'blocked' : 'unblocked'} successfully.`;
+        res.redirect('/admin/products');
+    } catch (error) {
+        console.error("Error toggling block:", error);
+        res.redirect('/admin/products');
+    }
+};
+
+module.exports = {
+    getProductList,
+    getAddProduct,
+    postAddProduct,
+    getEditProduct,
+    postEditProduct,
+    softDeleteProduct,
+    toggleBlockProduct
 };

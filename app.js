@@ -113,13 +113,13 @@ app.use(async (req, res, next) => {
   // Fetch Active Banners for global use
   try {
     const Banner = require("./models/Banner");
-    const SiteSetting = require("./models/SiteSetting");
+    const BannerSetting = require("./models/BannerSetting");
 
     const activeBanners = await Banner.find({ isActive: true }).sort({ order: 1 });
     res.locals.activeBanners = activeBanners;
 
     // Fetch settings
-    const settings = await SiteSetting.find({ key: { $in: ['bannerScrollSpeed', 'bannerBackgroundColor', 'bannerTextColor'] } });
+    const settings = await BannerSetting.find({ key: { $in: ['bannerScrollSpeed', 'bannerBackgroundColor', 'bannerTextColor'] } });
 
     const getSetting = (k, def) => {
       const s = settings.find(x => x.key === k);
