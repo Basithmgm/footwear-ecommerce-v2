@@ -6,6 +6,21 @@
    Active menu: #88c8bc (teal)
 */
 
+body {
+    font-family: 'Work Sans', sans-serif !important;
+}
+
+#page {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: transparent !important;
+  overflow-x: hidden !important;
+  position: relative;
+  display: block !important;
+}
+
 /* -----------------------------------
    1. Logo
    ----------------------------------- */
@@ -59,10 +74,13 @@
 }
 
 /* Main menu links (Home, Men, Women, About, Contact, Sign In) */
-.colorlib-nav .menu-1 ul {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
+/* Main menu links (Home, Men, Women, About, Contact, Sign In) */
+@media (min-width: 992px) {
+  .colorlib-nav .menu-1 ul {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+  }
 }
 
 .colorlib-nav .menu-1 ul li > a {
@@ -531,4 +549,59 @@ input[type="checkbox"] {
   100% {
     transform: translateX(-100%);
   }
+}
+
+/* Shop Page Category Styling */
+.category-list ul {
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+.category-list li {
+    margin-bottom: 8px;
+}
+
+.category-link {
+    display: block;
+    padding: 8px 12px;
+    color: #333;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none !important;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.category-link:hover {
+    background-color: #f8f9fa;
+    color: #616161;
+    border-left-color: #ccc;
+    padding-left: 15px; /* Slight movement on hover */
+}
+
+.category-link.active {
+    background-color: #f0f4f8; /* Very light blue/gray */
+    color: #000;
+    font-weight: 600;
+    border-left-color: #88c8bc; /* Primary theme color */
+}
+
+/* New Category Button Styling */
+.category-list .btn-outline-secondary {
+    border-color: #e0e0e0;
+    color: #555;
+    font-weight: 500;
+}
+
+.category-list .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    color: #333;
+    border-color: #ccc;
+}
+
+.category-list .btn-outline-secondary.active {
+    background-color: #88c8bc;
+    border-color: #88c8bc;
+    color: #fff;
 }

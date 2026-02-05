@@ -1,0 +1,309 @@
+<%- include('../../partials/admin/header') %>
+    <%- include('../../partials/admin/sidebar', { path: '/admin/products' }) %>
+
+        <main class="admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+                <div>
+                    <h2 class="h3 mb-1">Product Variant Management</h2>
+                    <p class="text-muted">
+                        <%= product.brand %>
+                            <%= product.model %>
+                    </p>
+                </div>
+                <a href="/admin/products" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Products
+                </a>
+            </div>
+
+            <% if (typeof error !=='undefined' && error) { %>
+                <div class="alert alert-danger">
+                    <%= error %>
+                </div>
+                <% } %>
+                    <% if (typeof success !=='undefined' && success) { %>
+                        <div class="alert alert-success">
+                            <%= success %>
+                        </div>
+                        <% } %>
+
+                            <div class="accordion" id="variantsAccordion">
+                                <% if (product.variants && product.variants.length> 0) { %>
+                                    <% product.variants.forEach((variant, vIndex)=> { %>
+                                        <div class="card mb-4 shadow-sm">
+                                            <div class="card-header bg-white py-3">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <% if (variant.colorImage) { %>
+                                                        <img src="<%= variant.colorImage %>" alt="<%= variant.color %>"
+                                                            class="rounded-circle border"
+                                                            style="width: 50px; height: 50px; object-fit: cover;">
+                                                        <% } %>
+                                                            <div>
+                                                                <h5 class="mb-0 fw-bold">
+                                                                    <%= variant.color %>
+                                                                </h5>
+                                                                <small class="text-muted">
+                                                                    <%= variant.sizes.length %> Sizes Available
+                                                                </small>
+                                                            </div>
+                                                </div>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover align-middle mb-0">
+                                                        <thead class="bg-light">
+                                                            <tr>
+                                                                <th class="ps-4">Size (UK)</th>
+                                                                <th>Regular Price</th>
+                                                                <th>Sale Price</th>
+                                                                <th>Stock</th>
+                                                                <th>SKU</th>
+                                                                <th>Last Modified</th>
+                                                                <th>Status</th>
+                                                                <th>Block/Unblock</th>
+                                                                <th class="text-end pe-4">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <% if (variant.sizes && variant.sizes.length> 0) { %>
+                                                                <% variant.sizes.sort((a,b)=> a.size -
+                                                                    b.size).forEach((size, sIndex) => { %>
+                                                                    <tr>
+                                                                        <td class="ps-4 fw-bold">
+                                                                            <%= size.size %>
+                                                                        </td>
+                                                                        <td>₹<%= size.regularPrice %>
+                                                                        </td>
+                                                                        <td>₹<%= size.salePrice %>
+                                                                        </td>
+                                                                        <td>
+                                                                            <span
+                                                                                class="<%= size.quantity < 5 ? 'text-danger fw-bold' : '' %>">
+                                                                                <%= size.quantity %>
+                                                                            </span>
+                                                                        </td>
+                                                                        <td><small class="text-muted">
+                                                                                <%= size.sku %>
+                                                                            </small></td>
+                                                                        <td>
+                                                                            <small class="text-muted">
+                                                                                <%= size.updatedAt ? new
+                                                                                    Date(size.updatedAt).toLocaleDateString()
+                                                                                    : 'N/A' %>
+                                                                            </small>
+                                                                        </td>
+                                                                        <td>
+                                                                            <% let statusClass='bg-success' ; if
+                                                                                (size.status==='Inactive' )
+                                                                                statusClass='bg-secondary' ; if
+                                                                                (size.status==='Draft' )
+                                                                                statusClass='bg-warning text-dark' ; %>
+                                                                                <span class="badge <%= statusClass %>">
+                                                                                    <%= size.status || 'Active' %>
+                                                                                </span>
+                                                                        </td>
+                                                                        <td>
+                                                                            <form
+                                                                                action="/admin/products/variants/toggle-block/<%= product._id %>/<%= variant._id %>/<%= size._id %>"
+                                                                                method="POST"
+                                                                                class="d-inline variant-block-form">
+                                                                                <div class="form-check form-switch">
+                                                                                    <input
+                                                                                        class="form-check-input variant-block-toggle"
+                                                                                        type="checkbox" role="switch"
+                                                                                        data-name="Size <%= size.size %>"
+                                                                                        <%=!size.isBlocked ? 'checked'
+                                                                                        : '' %>
+                                                                                    style="cursor: pointer;">
+                                                                                    <label
+                                                                                        class="form-check-label small text-muted">
+                                                                                        <%= size.isBlocked ? 'Blocked'
+                                                                                            : 'Active' %>
+                                                                                    </label>
+                                                                                </div>
+                                                                            </form>
+                                                                        </td>
+                                                                        <td class="text-end pe-4">
+                                                                            <div class="btn-group">
+                                                                                <button type="button"
+                                                                                    class="btn btn-sm btn-outline-primary btn-edit-size"
+                                                                                    title="Edit Size"
+                                                                                    data-product="<%= product._id %>"
+                                                                                    data-variant="<%= variant._id %>"
+                                                                                    data-size="<%= size._id %>"
+                                                                                    data-qty="<%= size.quantity %>"
+                                                                                    data-reg="<%= size.regularPrice %>"
+                                                                                    data-sale="<%= size.salePrice %>">
+                                                                                    <i class="fas fa-edit"></i>
+                                                                                </button>
+                                                                                <form
+                                                                                    action="/admin/products/variants/delete/<%= product._id %>/<%= variant._id %>/<%= size._id %>"
+                                                                                    method="POST"
+                                                                                    class="d-inline variant-delete-form"
+                                                                                    data-name="Size <%= size.size %>">
+                                                                                    <button type="submit"
+                                                                                        class="btn btn-sm btn-outline-danger ms-1">
+                                                                                        <i class="fas fa-trash"></i>
+                                                                                    </button>
+                                                                                </form>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <% }) %>
+                                                                        <% } else { %>
+                                                                            <tr>
+                                                                                <td colspan="9"
+                                                                                    class="text-center py-3 text-muted">
+                                                                                    No sizes configured for this color.
+                                                                                </td>
+                                                                            </tr>
+                                                                            <% } %>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <% }) %>
+                                            <% } else { %>
+                                                <div class="text-center py-5">
+                                                    <p class="text-muted">No variants found for this product.</p>
+                                                    <a href="/admin/products/edit/<%= product._id %>"
+                                                        class="btn btn-primary">Add Variant</a>
+                                                </div>
+                                                <% } %>
+                            </div>
+
+        </main>
+
+        <!-- Edit Size Modal -->
+        <div class="modal fade" id="editSizeModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Size Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="editSizeForm" method="POST" action="">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Stock Quantity</label>
+                                <input type="number" class="form-control" name="quantity" id="editQty" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Regular Price</label>
+                                <input type="number" class="form-control" name="regularPrice" id="editRegPrice" min="0"
+                                    step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Sale Price</label>
+                                <input type="number" class="form-control" name="salePrice" id="editSalePrice" min="0"
+                                    step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <%- include('../../partials/admin/footer') %>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Event Delegation for Table Actions
+                    document.getElementById('variantsAccordion').addEventListener('click', function (e) {
+                        const target = e.target;
+
+                        // EDIT BUTTON CLICK
+                        const editBtn = target.closest('.btn-edit-size');
+                        if (editBtn) {
+                            e.preventDefault();
+                            const productId = editBtn.dataset.product;
+                            const variantId = editBtn.dataset.variant;
+                            const sizeId = editBtn.dataset.size;
+                            const qty = editBtn.dataset.qty;
+                            const reg = editBtn.dataset.reg;
+                            const sale = editBtn.dataset.sale;
+
+                            // Populate Modal
+                            document.getElementById('editQty').value = qty;
+                            document.getElementById('editRegPrice').value = reg;
+                            document.getElementById('editSalePrice').value = sale;
+
+                            // Set Action URL
+                            const form = document.getElementById('editSizeForm');
+                            form.action = `/admin/products/variants/edit-size/${productId}/${variantId}/${sizeId}`;
+
+                            // Show Modal
+                            const modal = new bootstrap.Modal(document.getElementById('editSizeModal'));
+                            modal.show();
+                        }
+                    });
+
+                    // Event Delegation for Block/Unblock Toggle
+                    document.getElementById('variantsAccordion').addEventListener('change', function (e) {
+                        if (e.target.classList.contains('variant-block-toggle')) {
+                            const checkbox = e.target;
+                            // Prevent immediate visual change until confirmed (optional, but tricky with checkboxes)
+                            // Actually, let's let it check, then revert if cancelled.
+
+                            e.preventDefault();
+
+                            // Current state (already toggled by browser)
+                            // If checked -> User wants to UNBLOCK (status was blocked)
+                            // If unchecked -> User wants to BLOCK (status was active)
+                            // Wait, logic check again.
+                            // Initial Load: Unblocked = Checked. Blocked = Unchecked.
+                            // User clicks Checked -> Unchecked. Intent: BLOCK.
+                            // User clicks Unchecked -> Checked. Intent: UNBLOCK.
+
+                            const isChecked = checkbox.checked;
+                            // If it IS checked now, it means user wants to turn it ON (Active/Unblock).
+
+                            const actionType = isChecked ? 'unblock' : 'block';
+                            const form = checkbox.closest('form');
+                            const sizeName = checkbox.dataset.name;
+
+                            Swal.fire({
+                                title: 'Are you sure?',
+                                text: `Do you want to ${actionType} ${sizeName}?`,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: actionType === 'block' ? '#d33' : '#28a745',
+                                confirmButtonText: actionType === 'block' ? 'Yes, Block' : 'Yes, Unblock'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    form.submit();
+                                } else {
+                                    // Revert checkbox state silently
+                                    checkbox.checked = !isChecked;
+                                }
+                            });
+                        }
+                    });
+
+                    // Event Delegation for Delete
+                    document.getElementById('variantsAccordion').addEventListener('submit', function (e) {
+                        if (e.target.classList.contains('variant-delete-form')) {
+                            e.preventDefault();
+                            const form = e.target;
+                            const sizeName = form.dataset.name;
+
+                            Swal.fire({
+                                title: 'Are you sure?',
+                                text: `You are about to delete ${sizeName}. This cannot be undone.`,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#d33',
+                                confirmButtonText: 'Yes, Delete'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    form.submit();
+                                }
+                            });
+                        }
+                    });
+                });
+            </script>

@@ -1,15 +1,15 @@
 <%- include('../../partials/admin/header') %>
     <%- include('../../partials/admin/sidebar', { path: '/admin/products' }) %>
 
-        <!-- Cropper.js CDN -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+        <!-- Cropper.js Local -->
+        <link rel="stylesheet" href="/css/cropper.min.css" />
+        <script src="/js/cropper.min.js"></script>
 
         <style>
             .image-container {
-                width: 300px;
-                height: 300px;
-                margin: 10px;
+                width: 150px;
+                height: 150px;
+                margin: 5px;
                 overflow: hidden;
                 border: 1px solid #ddd;
                 display: flex;
@@ -21,31 +21,40 @@
 
             .image-preview {
                 max-width: 100%;
-                max-height: 250px;
+                max-height: 100%;
                 object-fit: contain;
-            }
-
-            .preview-list {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 15px;
             }
 
             .remove-image {
                 position: absolute;
-                top: 5px;
-                right: 5px;
+                top: 2px;
+                right: 2px;
                 background: rgba(255, 0, 0, 0.7);
                 color: white;
                 border: none;
                 border-radius: 50%;
-                width: 25px;
-                height: 25px;
+                width: 20px;
+                height: 20px;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 14px;
+                font-size: 12px;
+            }
+
+            .variant-card {
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 20px;
+                background-color: #fff;
+            }
+
+            .size-row {
+                background-color: #f8f9fa;
+                padding: 10px;
+                margin-bottom: 5px;
+                border-radius: 4px;
             }
         </style>
 
@@ -61,7 +70,7 @@
             </div>
 
             <div class="row justify-content-center">
-                <div class="col-md-10">
+                <div class="col-md-11">
                     <div class="card shadow-sm">
                         <div class="card-body p-4">
                             <% if (typeof error !=='undefined' && error) { %>
@@ -72,466 +81,847 @@
 
                                     <form action="/admin/products/add" method="POST" enctype="multipart/form-data"
                                         id="addProductForm">
+
+                                        <!-- Basic Info Section -->
+                                        <h5 class="mb-3 border-bottom pb-2">Basic Information</h5>
                                         <div class="row">
-                                            <!-- Left Column: Basic Info -->
                                             <div class="col-md-6">
                                                 <div class="mb-3">
-                                                    <label for="productName" class="form-label">Product Name *</label>
-                                                    <input type="text" class="form-control" id="productName"
-                                                        name="productName" required
-                                                        value="<%= oldInput.productName || '' %>">
+                                                    <label for="brand" class="form-label">Brand Name *</label>
+                                                    <input type="text" class="form-control" id="brand" name="brand"
+                                                        required value="<%= oldInput.brand || '' %>">
                                                 </div>
-
-                                                <!-- Category Selection Group -->
-                                                <div class="mb-3 border p-3 rounded bg-light">
-                                                    <h6 class="mb-3 text-secondary">Category Selection *</h6>
-
-                                                    <!-- Hidden Input for Final Category ID to be submitted -->
-                                                    <input type="hidden" id="finalCategory" name="category" required>
-
-                                                    <!-- 1. Gender Selection -->
-                                                    <div class="mb-3">
-                                                        <label for="genderSelect"
-                                                            class="form-label small text-muted">Gender</label>
-                                                        <select class="form-select" id="genderSelect" required>
-                                                            <option value="">Select Gender</option>
-                                                            <option value="Men">Men</option>
-                                                            <option value="Women">Women</option>
-                                                            <option value="Kids">Kids</option>
-                                                            <option value="Unisex">Unisex</option>
-                                                        </select>
-                                                    </div>
-
-                                                    <!-- 2. Parent Category Selection -->
-                                                    <div class="mb-3">
-                                                        <label for="parentCategorySelect"
-                                                            class="form-label small text-muted">Parent Category</label>
-                                                        <select class="form-select" id="parentCategorySelect" disabled
-                                                            required>
-                                                            <option value="">Select Parent Category</option>
-                                                            <!-- Populated via JS -->
-                                                        </select>
-                                                    </div>
-
-                                                    <!-- 3. Child Category Selection (Optional) -->
-                                                    <div class="mb-0">
-                                                        <label for="childCategorySelect"
-                                                            class="form-label small text-muted">Child Category
-                                                            (Optional)</label>
-                                                        <select class="form-select" id="childCategorySelect" disabled>
-                                                            <option value="">Select Child Category</option>
-                                                            <!-- Populated via JS -->
-                                                        </select>
-                                                        <div class="form-text" id="childCatHelp">Only shows if available
-                                                            under selected parent.</div>
-                                                    </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="model" class="form-label">Model Name *</label>
+                                                    <input type="text" class="form-control" id="model" name="model"
+                                                        required value="<%= oldInput.model || '' %>">
                                                 </div>
+                                            </div>
+                                        </div>
 
+                                        <div class="row">
+                                            <div class="col-md-12">
                                                 <div class="mb-3">
                                                     <label for="description" class="form-label">Description *</label>
                                                     <textarea class="form-control" id="description" name="description"
-                                                        rows="4" required><%= oldInput.description || '' %></textarea>
+                                                        rows="3" required><%= oldInput.description || '' %></textarea>
                                                 </div>
                                             </div>
+                                        </div>
 
-                                            <!-- Right Column: Pricing & Stock -->
+                                        <!-- Category Section -->
+                                        <div class="mb-4 border p-3 rounded bg-light">
+                                            <h6 class="mb-3 text-secondary">Category Selection *</h6>
+                                            <input type="hidden" id="finalCategory" name="category" required>
+
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label class="form-label small text-muted">Gender</label>
+                                                    <select class="form-select" id="genderSelect" required>
+                                                        <option value="">Select Gender</option>
+                                                        <option value="Men">Men</option>
+                                                        <option value="Women">Women</option>
+                                                        <option value="Kids">Kids</option>
+                                                        <option value="Unisex">Unisex</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label small text-muted">Parent Category</label>
+                                                    <select class="form-select" id="parentCategorySelect" disabled
+                                                        required>
+                                                        <option value="">Select Parent Category</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label small text-muted">Child Category
+                                                        (Optional)</label>
+                                                    <select class="form-select" id="childCategorySelect" disabled>
+                                                        <option value="">Select Child Category</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-4">
                                             <div class="col-md-6">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="regularPrice" class="form-label">Regular Price
-                                                            *</label>
-                                                        <input type="number" class="form-control" id="regularPrice"
-                                                            name="regularPrice" min="0" step="0.01" required
-                                                            value="<%= oldInput.regularPrice || '' %>">
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="salePrice" class="form-label">Sale Price *</label>
-                                                        <input type="number" class="form-control" id="salePrice"
-                                                            name="salePrice" min="0" step="0.01" required
-                                                            value="<%= oldInput.salePrice || '' %>">
-                                                        <div class="form-text">Must be less than Regular Price</div>
-                                                    </div>
+                                                <div class="mb-3">
+                                                    <label for="status" class="form-label">Status</label>
+                                                    <select class="form-select" id="status" name="status">
+                                                        <option value="Available">Available</option>
+                                                        <option value="Out of Stock">Out of Stock</option>
+                                                        <option value="Discontinued">Discontinued</option>
+                                                    </select>
                                                 </div>
-
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="stock" class="form-label">Stock Quantity *</label>
-                                                        <input type="number" class="form-control" id="stock"
-                                                            name="stock" min="0" required
-                                                            value="<%= oldInput.stock || '' %>">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3 pt-4">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input" id="isFeatured"
+                                                            name="isFeatured">
+                                                        <label class="form-check-label" for="isFeatured">Show on
+                                                            Homepage
+                                                            (Featured)</label>
                                                     </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="status" class="form-label">Status</label>
-                                                        <select class="form-select" id="status" name="status">
-                                                            <option value="Available" <%=oldInput.status==='Available'
-                                                                ? 'selected' : '' %>>Available</option>
-                                                            <option value="Out of Stock"
-                                                                <%=oldInput.status==='Out of Stock' ? 'selected' : '' %>
-                                                                >Out of Stock</option>
-                                                            <option value="Discontinued"
-                                                                <%=oldInput.status==='Discontinued' ? 'selected' : '' %>
-                                                                >Discontinued</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div class="mb-3 form-check">
-                                                    <input type="checkbox" class="form-check-input" id="isFeatured"
-                                                        name="isFeatured" <%=oldInput.isFeatured ? 'checked' : '' %>>
-                                                    <label class="form-check-label" for="isFeatured">Show on Homepage
-                                                        (Featured)</label>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Image Upload Section -->
-                                        <div class="mb-4">
-                                            <label class="form-label">Product Images (Minimum 3 required) *</label>
-                                            <input type="file" class="form-control" id="imageInput" accept="image/*"
-                                                multiple>
-                                            <div class="form-text">Select images to crop. Cropped images will be
-                                                uploaded.</div>
-
-                                            <!-- Hidden input to store cropped files when submitting (not directly usable, we use JS to construct FormData) -->
-                                            <!-- We will handle submission via JS -->
+                                        <!-- Variants Section -->
+                                        <div
+                                            class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                                            <h5 class="mb-0">Product Variants</h5>
+                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                                data-bs-target="#variantModal">
+                                                + Add Variant
+                                            </button>
                                         </div>
 
-                                        <div class="preview-list" id="previewList"></div>
+                                        <!-- Container for added variants -->
+                                        <div id="variantsContainer"></div>
+
+                                        <!-- Hidden input to store variants data as string -->
+                                        <input type="hidden" name="variantsData" id="variantsData">
 
                                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                                             <a href="/admin/products" class="btn btn-light me-md-2">Cancel</a>
-                                            <button type="submit" class="btn btn-primary" id="submitBtn">Add
+                                            <button type="submit" class="btn btn-success" id="finalSubmitBtn">Create
                                                 Product</button>
                                         </div>
                                     </form>
-                                    <!-- Hidden Data Storage -->
+
+                                    <!-- Hidden Data Storage for Categories -->
                                     <div id="categoryData" style="display:none;"><%- JSON.stringify(categories) %></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Cropper Modal -->
-            <div class="modal fade" id="cropperModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
-                data-bs-keyboard="false">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Crop Image</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body p-0" style="min-height: 400px; background: #000;">
-                            <div class="img-container">
-                                <img id="imageToCrop" src="" alt="Crop Preview"
-                                    style="max-width: 100%; display: block;">
+        </main>
+
+        <!-- Add Variant Modal -->
+        <div class="modal fade" id="variantModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 98vw;">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-dark text-white">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-white text-dark rounded-circle p-2 me-3 d-flex align-items-center justify-content-center"
+                                style="width: 40px; height: 40px;">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title mb-0 text-white">Add New Variant</h5>
+                                <small class="text-white-50">Configure color, images, and size inventory</small>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="cropBtn">Crop & Save</button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body bg-light p-4"
+                        style="overflow-y: auto !important; max-height: 80vh !important;">
+                        <div class="row g-4">
+                            <!-- Col 1: Visuals & Basic Info -->
+                            <div class="col-lg-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-white py-3 border-bottom-0">
+                                        <h6 class="card-title mb-0 fw-bold text-dark"><i
+                                                class="fas fa-palette me-2 text-primary"></i>Visual Configuration</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold text-uppercase text-muted">Color
+                                                Name</label>
+                                            <input type="text" class="form-control" id="vColorName"
+                                                placeholder="e.g. Midnight Blue">
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <label class="form-label small fw-bold text-uppercase text-muted">Base
+                                                SKU</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white text-muted"><i
+                                                        class="fas fa-barcode"></i></span>
+                                                <input type="text" class="form-control" id="vBaseSku"
+                                                    placeholder="e.g. NIKE-MB-001">
+                                            </div>
+                                            <div class="form-text small">Base SKU is used to generate specific size SKUs
+                                                automatically.</div>
+                                        </div>
+
+                                        <!-- Color Representative Image -->
+                                        <div class="mb-4">
+                                            <label class="form-label small fw-bold text-uppercase text-muted">Primary
+                                                Image (Thumbnail)</label>
+                                            <div class="border rounded p-2 bg-light text-center position-relative">
+                                                <input type="file" class="form-control visually-hidden"
+                                                    id="vColorImageInput" accept="image/*">
+                                                <label for="vColorImageInput"
+                                                    class="btn btn-outline-primary btn-sm mb-2 w-100">
+                                                    <i class="fas fa-upload me-1"></i> Choose Image
+                                                </label>
+                                                <div id="vColorImagePreviewContainer"
+                                                    class="d-flex justify-content-center">
+                                                    <div class="text-muted small py-3" id="vColorPlaceholder">No image
+                                                        selected</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Variant Gallery Images -->
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-bold text-uppercase text-muted">Gallery
+                                                Images (Min 3)</label>
+                                            <div class="border rounded p-2 bg-light position-relative">
+                                                <input type="file" class="form-control visually-hidden"
+                                                    id="vGalleryInput" accept="image/*" multiple>
+                                                <label for="vGalleryInput"
+                                                    class="btn btn-outline-secondary btn-sm mb-2 w-100">
+                                                    <i class="fas fa-images me-1"></i> Add Gallery Images
+                                                </label>
+                                                <div class="d-flex flex-wrap gap-2 justify-content-center"
+                                                    id="vGalleryPreviewContainer">
+                                                    <div class="text-muted small py-3 text-center w-100">No images added
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Col 2: Sizes & Prices -->
+                            <div class="col-lg-8">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div
+                                        class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0 fw-bold text-dark"><i
+                                                class="fas fa-cubes me-2 text-success"></i>Inventory & Pricing</h6>
+                                        <span class="badge bg-light text-dark border">Auto-managed</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-4">
+                                            <label
+                                                class="form-label small fw-bold text-uppercase text-muted mb-3">Available
+                                                Sizes (Click to Enable)</label>
+                                            <div class="d-flex flex-wrap gap-1 p-3 bg-light rounded border justify-content-center"
+                                                id="sizeCheckboxGroup">
+                                                <!-- Dynamic Pills -->
+                                            </div>
+                                        </div>
+
+                                        <div class="border rounded overflow-hidden">
+                                            <div
+                                                class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                                <span class="small fw-bold text-uppercase text-muted">Configuration
+                                                    Table</span>
+                                                <small class="text-muted">Fill in stock and price for each size</small>
+                                            </div>
+                                            <div id="sizeInputsContainer" style="max-height: 450px; overflow-y: auto;">
+                                                <div class="text-center text-muted py-5 my-5" id="noSizeSelectedMsg">
+                                                    <i
+                                                        class="fas fa-hand-pointer fa-2x mb-3 text-secondary opacity-50"></i>
+                                                    <p>Select sizes from the list above to begin configuration.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                    <div class="modal-footer bg-white border-top-0 py-3">
+                        <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-dark px-5" id="saveVariantBtn"><i
+                                class="fas fa-save me-2"></i> Save Variant</button>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
+
+        <!-- Cropper Modal (Reused) -->
+        <div class="modal fade" id="cropperModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Crop Image</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-0" style="min-height: 400px; background: #000;">
+                        <div class="img-container">
+                            <img id="imageToCrop" src="" style="max-width: 100%; display: block;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="cropBtn">Crop</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <%- include('../../partials/admin/footer') %>
 
+            <style>
+                /* ... existing styles ... */
+                .size-pill-checkbox {
+                    display: none;
+                }
+
+                .size-pill-label {
+                    display: inline-block;
+                    width: 40px;
+                    height: 40px;
+                    line-height: 40px;
+                    text-align: center;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    margin: 5px;
+                    transition: all 0.2s;
+                    font-weight: 500;
+                    background: #fff;
+                    color: #64748b;
+                }
+
+                .size-pill-checkbox:checked+.size-pill-label {
+                    background-color: #0f172a;
+                    /* Primary Color */
+                    color: #fff;
+                    border-color: #0f172a;
+                    transform: scale(1.1);
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+
+                .variant-table th {
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    color: #64748b;
+                    border-bottom: 2px solid #e2e8f0;
+                    padding-bottom: 10px;
+                }
+
+                .variant-table td {
+                    padding: 10px 5px;
+                    vertical-align: middle;
+                }
+            </style>
+
             <script>
                 document.addEventListener('DOMContentLoaded', function () {
-                    console.log("DOM Loaded. Initializing scripts...");
+                    // ... (keep global vars) ...
+                    let variants = [];
+
+                    // Generate Size Pills (1-12)
+                    const sizeCheckboxGroup = document.getElementById('sizeCheckboxGroup');
+                    for (let i = 1; i <= 12; i++) {
+                        const div = document.createElement('div');
+                        div.className = 'd-inline-block';
+                        div.innerHTML = `
+                            <input class="size-pill-checkbox size-checkbox" type="checkbox" id="sizeCheck${i}" value="${i}">
+                            <label class="size-pill-label" for="sizeCheck${i}">${i}</label>
+                        `;
+                        sizeCheckboxGroup.appendChild(div);
+                    }
+
+                    // ... (keep cropper logic) ...
+                    // ... (keep global vars setup) ...
 
                     // ==========================================
-                    // 1. CATEGORY SELECTION LOGIC (Independent)
+                    // 2. CROPPER HANDLER
                     // ==========================================
+                    let cropper;
+                    let currentCropCallback = null;
+                    const cropperModal = new bootstrap.Modal(document.getElementById('cropperModal'));
+                    const imageToCrop = document.getElementById('imageToCrop');
 
-                    // Load Data
+                    function openCropper(file, callback) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            imageToCrop.src = e.target.result;
+                            currentCropCallback = callback;
+                            cropperModal.show();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+
+                    document.getElementById('cropperModal').addEventListener('shown.bs.modal', function () {
+                        this.removeAttribute('aria-hidden'); // Fix for "Blocked aria-hidden" warning
+                        cropper = new Cropper(imageToCrop, { aspectRatio: 1, viewMode: 2 });
+                    });
+
+                    document.getElementById('cropperModal').addEventListener('hidden.bs.modal', () => {
+                        if (cropper) {
+                            cropper.destroy();
+                            cropper = null;
+                        }
+
+                        // Fix for nested modal scrollbar issue
+                        const variantModal = document.getElementById('variantModal');
+                        if (variantModal && variantModal.classList.contains('show')) {
+                            // Delay to ensure we override Bootstrap's cleanup
+                            setTimeout(() => {
+                                // 1. Force body to emulate modal-open state
+                                document.body.classList.add('modal-open');
+                                document.body.style.overflow = 'hidden';
+                                document.body.style.paddingRight = '0px';
+
+                                // 2. Force the modal container itself to scroll
+                                variantModal.style.overflowY = 'auto'; // CRITICAL: Ensure the modal container scrolls
+                                variantModal.style.overflowX = 'hidden';
+
+                                // 3. Fix modal-body overflow just in case
+                                const modalBody = variantModal.querySelector('.modal-body');
+                                if (modalBody) {
+                                    modalBody.style.overflowY = 'auto';
+                                    // Trigger Reflow
+                                    modalBody.style.display = 'none';
+                                    modalBody.offsetHeight;
+                                    modalBody.style.display = 'block';
+                                }
+                            }, 300); // Increased timeout to be safe
+                        }
+                    });
+
+                    document.getElementById('cropBtn').addEventListener('click', () => {
+                        if (cropper && currentCropCallback) {
+                            cropper.getCroppedCanvas({ width: 800, height: 800 }).toBlob((blob) => {
+                                currentCropCallback(blob);
+                                cropperModal.hide();
+                            }, 'image/jpeg');
+                        }
+                    });
+
+                    // ==========================================
+                    // 3. VARIANT FORM LOGIC
+                    // ==========================================
+                    let tempVariant = {
+                        colorImageBlob: null,
+                        galleryBlobs: []
+                    };
+
+                    // Handle Color Image Input
+                    document.getElementById('vColorImageInput').addEventListener('change', function (e) {
+                        if (e.target.files && e.target.files[0]) {
+                            openCropper(e.target.files[0], (blob) => {
+                                tempVariant.colorImageBlob = blob;
+                                const url = URL.createObjectURL(blob);
+                                document.getElementById('vColorImagePreviewContainer').innerHTML =
+                                    `<img src="${url}" class="img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">`;
+                            });
+                            this.value = '';
+                        }
+                    });
+
+                    // Handle Gallery Input
+                    document.getElementById('vGalleryInput').addEventListener('change', function (e) {
+                        if (e.target.files) {
+                            Array.from(e.target.files).forEach(file => {
+                                openCropper(file, (blob) => {
+                                    tempVariant.galleryBlobs.push(blob);
+                                    renderGalleryPreviews();
+                                });
+                            });
+                            this.value = '';
+                        }
+                    });
+
+                    function renderGalleryPreviews() {
+                        const container = document.getElementById('vGalleryPreviewContainer');
+                        container.innerHTML = '';
+                        tempVariant.galleryBlobs.forEach((blob, idx) => {
+                            const url = URL.createObjectURL(blob);
+                            const div = document.createElement('div');
+                            div.className = 'position-relative m-1';
+                            div.innerHTML = `
+                                <img src="${url}" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
+                                <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0" 
+                                    style="width: 20px; height: 20px; line-height: 1; border-radius: 50%; transform: translate(30%, -30%);"
+                                    onclick="removeGalleryItem(${idx})">&times;</button>
+                            `;
+                            container.appendChild(div);
+                        });
+                    }
+
+                    window.removeGalleryItem = (idx) => {
+                        tempVariant.galleryBlobs.splice(idx, 1);
+                        renderGalleryPreviews();
+                    };
+
+                    // Handle Size Checkboxes
+                    const sizeInputsContainer = document.getElementById('sizeInputsContainer');
+                    const noSizeMsg = document.getElementById('noSizeSelectedMsg');
+
+                    document.querySelectorAll('.size-checkbox').forEach(cb => {
+                        cb.addEventListener('change', function () {
+                            updateSizeRows();
+                        });
+                    });
+
+                    // Update SKUs when Base SKU changes
+                    document.getElementById('vBaseSku').addEventListener('input', updateSkus);
+
+                    function updateSkus() {
+                        const base = document.getElementById('vBaseSku').value.trim();
+                        document.querySelectorAll('.v-sku').forEach(input => {
+                            const size = input.dataset.size;
+                            input.value = base ? `${base}-S${size}` : '';
+                        });
+                    }
+
+                    function updateSizeRows() {
+                        // 1. Capture existing data before rebuilding
+                        const currentValues = {};
+                        document.querySelectorAll('.size-row').forEach(row => {
+                            const size = row.dataset.size;
+                            // Only capture if inputs exist (safeguard)
+                            const qtyInput = row.querySelector('.v-qty');
+                            if (qtyInput) {
+                                currentValues[size] = {
+                                    qty: qtyInput.value,
+                                    reg: row.querySelector('.v-reg').value,
+                                    sale: row.querySelector('.v-sale').value
+                                    // SKU is usually auto-generated or readonly, checking if we need to preserve it
+                                    // In this specific implementation, SKU is fully auto-generated in updateSkus() based on base SKU, 
+                                    // so we don't strictly need to capture it if it's purely derivative.
+                                    // However, capturing it is safe.
+                                };
+                            }
+                        });
+
+
+                        const checkedSizes = Array.from(document.querySelectorAll('.size-checkbox:checked')).map(cb => cb.value);
+
+                        if (checkedSizes.length > 0) {
+                            noSizeMsg.style.display = 'none';
+                        } else {
+                            noSizeMsg.style.display = 'block';
+                            sizeInputsContainer.innerHTML = '';
+                            sizeInputsContainer.appendChild(noSizeMsg);
+                            return;
+                        }
+
+                        // NEW: Table-based Layout
+                        // Create Table Header 
+                        sizeInputsContainer.innerHTML = `
+                            <table class="table table-borderless variant-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%">Size</th>
+                                        <th style="width: 30%">SKU</th>
+                                        <th style="width: 20%">Stock</th>
+                                        <th style="width: 20%">Reg. Price</th>
+                                        <th style="width: 20%">Sale Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="variantTableBody"></tbody>
+                            </table>
+                        `;
+                        const tbody = sizeInputsContainer.querySelector('tbody');
+
+                        checkedSizes.sort((a, b) => a - b).forEach(size => {
+                            const tr = document.createElement('tr');
+                            tr.className = 'size-row'; // Keep class for selector
+                            tr.dataset.size = size;
+
+                            // Restore values if they existed
+                            const saved = currentValues[size] || {};
+                            const valQty = saved.qty || '';
+                            const valReg = saved.reg || '';
+                            const valSale = saved.sale || '';
+                            // SKU is auto-filled by updateSkus, so we can leave it empty or placeholder
+
+                            tr.innerHTML = `
+                                <td><span class="fw-bold fs-5 text-dark">${size}</span></td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm v-sku" data-size="${size}" readonly placeholder="Auto">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm v-qty" data-size="${size}" min="0" required placeholder="0" value="${valQty}">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm v-reg" data-size="${size}" min="0" step="0.01" required placeholder="₹" value="${valReg}">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm v-sale" data-size="${size}" min="0" step="0.01" required placeholder="₹" value="${valSale}">
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+
+                        updateSkus();
+                    }
+
+                    // Reset Modal
+                    document.getElementById('variantModal').addEventListener('show.bs.modal', () => {
+                        tempVariant = { colorImageBlob: null, galleryBlobs: [] };
+                        document.getElementById('vColorName').value = '';
+                        document.getElementById('vBaseSku').value = '';
+                        document.getElementById('vColorImagePreviewContainer').innerHTML = '';
+                        document.getElementById('vGalleryPreviewContainer').innerHTML = '';
+                        document.querySelectorAll('.size-checkbox').forEach(cb => cb.checked = false);
+
+                        // Reset to no selection state
+                        document.getElementById('noSizeSelectedMsg').style.display = 'block';
+                        sizeInputsContainer.innerHTML = '';
+                        sizeInputsContainer.appendChild(document.getElementById('noSizeSelectedMsg'));
+                    });
+
+                    // SAVE VARIANT
+                    document.getElementById('saveVariantBtn').addEventListener('click', () => {
+                        const colorName = document.getElementById('vColorName').value.trim();
+                        const baseSku = document.getElementById('vBaseSku').value.trim();
+                        if (!colorName) return alert("Color Name is required");
+                        if (!baseSku) return alert("Base SKU is required");
+                        if (!tempVariant.colorImageBlob) return alert("Color Image is required");
+                        if (tempVariant.galleryBlobs.length < 3) return alert("At least 3 Gallery Images required");
+
+                        const sizeRows = document.querySelectorAll('.size-row');
+                        if (sizeRows.length === 0) return alert("Select at least one size");
+
+                        let sizesData = [];
+                        let valid = true;
+                        sizeRows.forEach(row => {
+                            const size = row.dataset.size;
+                            const qty = row.querySelector('.v-qty').value;
+                            const reg = row.querySelector('.v-reg').value;
+                            const sale = row.querySelector('.v-sale').value;
+                            const sku = row.querySelector('.v-sku').value;
+
+                            if (!qty || !reg || !sale) {
+                                valid = false;
+                                row.querySelectorAll('input').forEach(i => i.classList.add('is-invalid'));
+                            } else {
+                                row.querySelectorAll('input').forEach(i => i.classList.remove('is-invalid'));
+                                sizesData.push({
+                                    size: Number(size),
+                                    quantity: Number(qty),
+                                    regularPrice: Number(reg),
+                                    salePrice: Number(sale),
+                                    sku: sku
+                                });
+                            }
+                        });
+
+                        if (!valid) return alert("Please fill all size fields");
+
+                        const variant = {
+                            id: Date.now(),
+                            color: colorName,
+                            colorImageBlob: tempVariant.colorImageBlob,
+                            galleryBlobs: tempVariant.galleryBlobs,
+                            sizes: sizesData
+                        };
+
+                        variants.push(variant);
+                        renderVariantsList();
+                        bootstrap.Modal.getInstance(document.getElementById('variantModal')).hide();
+                    });
+
+                    // Render Main List
+                    function renderVariantsList() {
+                        const container = document.getElementById('variantsContainer');
+                        container.innerHTML = '';
+                        variants.forEach((v, idx) => {
+                            const div = document.createElement('div');
+                            div.className = 'variant-card shadow-sm border-0';
+
+                            const colorUrl = URL.createObjectURL(v.colorImageBlob);
+                            let sizesSummary = v.sizes.map(s => `${s.size}`).join(', ');
+
+                            div.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-4 align-items-center">
+                                        <div class="text-center">
+                                            <div class="p-1 border rounded-circle d-inline-block">
+                                                <img src="${colorUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%;">
+                                            </div>
+                                            <div class="small fw-bold mt-1">${v.color}</div>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Variant Info</h6>
+                                            <div class="text-muted small mb-1"><i class="fas fa-boxes me-1"></i> Sizes Configured: <span class="text-dark fw-medium">${sizesSummary}</span></div>
+                                            <div class="text-muted small"><i class="fas fa-images me-1"></i> ${v.galleryBlobs.length} Gallery Images</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteVariant(${idx})">
+                                        <i class="fas fa-trash me-1"></i> Remove
+                                    </button>
+                                </div>
+                            `;
+                            container.appendChild(div);
+                        });
+                    }
+
+                    window.deleteVariant = (idx) => {
+                        variants.splice(idx, 1);
+                        renderVariantsList();
+                    };
+
+                    // ... (keep main form submission logic) ...
+                    document.getElementById('addProductForm').addEventListener('submit', function (e) {
+                        e.preventDefault();
+
+                        if (variants.length === 0) {
+                            return alert("Please add at least one product variant.");
+                        }
+
+                        const category = document.getElementById('finalCategory').value;
+                        if (!category) return alert("Please select a category.");
+
+                        const formData = new FormData(this);
+
+                        const variantsMetadata = variants.map((v, idx) => {
+                            return {
+                                color: v.color,
+                                sizes: v.sizes
+                            };
+                        });
+
+                        formData.append('variants', JSON.stringify(variantsMetadata));
+
+                        let blobError = false;
+
+                        variants.forEach((v, idx) => {
+                            if (v.colorImageBlob instanceof Blob) {
+                                formData.append(`variantColorImage_${idx}`, v.colorImageBlob, `color_${idx}.jpg`);
+                            } else {
+                                blobError = true;
+                            }
+
+                            v.galleryBlobs.forEach((blob, gIdx) => {
+                                if (blob instanceof Blob) {
+                                    formData.append(`variantGalleryImages_${idx}`, blob, `gallery_${idx}_${gIdx}.jpg`);
+                                } else {
+                                    blobError = true;
+                                }
+                            });
+                        });
+
+                        if (blobError) {
+                            return alert("Error preparing images.");
+                        }
+
+                        const submitBtn = document.getElementById('finalSubmitBtn');
+                        submitBtn.disabled = true;
+                        submitBtn.innerText = "Creating Product...";
+
+                        const actionPath = this.getAttribute('action');
+                        // Simplify URL to relative path to avoid protocol issues
+                        const fetchUrl = actionPath;
+                        console.log("DEBUG: Submitting form to:", fetchUrl);
+
+                        // Log FormData keys for debugging
+                        for (let [key, value] of formData.entries()) {
+                            if (value instanceof Blob) {
+                                console.log(`DEBUG FormData: ${key} = Blob(${value.size})`);
+                            } else {
+                                console.log(`DEBUG FormData: ${key} = ${String(value).substring(0, 50)}`);
+                            }
+                        }
+
+                        fetch(fetchUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(async res => {
+                                console.log("DEBUG: Fetch response status:", res.status);
+
+                                // Check Content-Type to determine if JSON (success) or HTML (error page rendered)
+                                const contentType = res.headers.get("content-type");
+
+                                if (contentType && contentType.indexOf("application/json") !== -1) {
+                                    // Handle JSON Success
+                                    const data = await res.json();
+                                    if (data.success && data.redirectUrl) {
+                                        console.log("DEBUG: JSON Success. Redirecting to:", data.redirectUrl);
+                                        window.location.href = data.redirectUrl;
+                                    } else {
+                                        throw new Error("Unknown JSON response");
+                                    }
+                                } else {
+                                    // Handle HTML (Error Page or Redirect followed by HTML)
+                                    // If res.redirected is true, standard fetch might have already followed it.
+                                    // But if we switch backend to JSON for success, this block only handles "Error Render" cases.
+
+                                    if (!res.ok) {
+                                        const text = await res.text();
+                                        throw new Error(`Server Error: ${res.status} ${text.substring(0, 100)}`);
+                                    }
+
+                                    if (res.redirected) {
+                                        console.log("DEBUG: Redirecting to:", res.url);
+                                        window.location.href = res.url;
+                                    } else {
+                                        const text = await res.text();
+                                        console.log("DEBUG: Received text/html response (likely error page)");
+                                        document.open(); document.write(text); document.close();
+                                    }
+                                }
+                            })
+                            .catch(err => {
+                                console.error("DEBUG: Fetch error details:", err);
+                                alert("Error creating product: " + (err.message || "Unknown error"));
+                                submitBtn.disabled = false;
+                                submitBtn.innerText = "Create Product";
+                            });
+
+                    });
+
+
+                    // ... (keep category logic) ...
+                    // ==========================================
+                    // 5. CATEGORY LOGIC (Existing reused)
+                    // ==========================================
                     const dataElement = document.getElementById('categoryData');
                     let allCategories = [];
-                    try {
-                        if (dataElement) {
-                            allCategories = JSON.parse(dataElement.textContent);
-                            console.log("Categories loaded:", allCategories.length);
-                        } else {
-                            console.error("Category data element not found!");
-                        }
-                    } catch (e) {
-                        console.error("Failed to parse category data:", e);
-                    }
+                    if (dataElement) allCategories = JSON.parse(dataElement.textContent);
 
                     const genderSelect = document.getElementById('genderSelect');
                     const parentSelect = document.getElementById('parentCategorySelect');
                     const childSelect = document.getElementById('childCategorySelect');
                     const finalCategoryInput = document.getElementById('finalCategory');
 
-                    if (genderSelect) {
-                        genderSelect.addEventListener('change', function () {
-                            const selectedGender = this.value;
-                            console.log("Gender Changed:", selectedGender);
+                    genderSelect.addEventListener('change', function () {
+                        const selectedGender = this.value;
+                        parentSelect.innerHTML = '<option value="">Select Parent Category</option>';
+                        childSelect.innerHTML = '<option value="">Select Child Category</option>';
+                        finalCategoryInput.value = "";
 
-                            // Reset
-                            parentSelect.innerHTML = '<option value="">Select Parent Category</option>';
-                            childSelect.innerHTML = '<option value="">Select Child Category</option>';
-                            finalCategoryInput.value = "";
-
-                            if (selectedGender) {
-                                const parents = allCategories.filter(cat =>
-                                    cat.gender === selectedGender && (cat.level === 0 || !cat.parentCategory)
-                                );
-
-                                if (parents.length > 0) {
-                                    parents.forEach(p => {
-                                        const opt = document.createElement('option');
-                                        opt.value = p._id;
-                                        opt.textContent = p.name;
-                                        parentSelect.appendChild(opt);
-                                    });
-                                } else {
-                                    const opt = document.createElement('option');
-                                    opt.textContent = "No categories found";
-                                    parentSelect.appendChild(opt);
-                                }
-                                parentSelect.disabled = false; // UNLOCK
-                            } else {
-                                parentSelect.disabled = true;
-                                childSelect.disabled = true;
-                            }
-                        });
-                    }
-
-                    if (parentSelect) {
-                        parentSelect.addEventListener('change', function () {
-                            const parentId = this.value;
-                            console.log("Parent Changed:", parentId);
-
-                            childSelect.innerHTML = '<option value="">Select Child Category</option>';
-
-                            if (parentId) {
-                                finalCategoryInput.value = parentId; // Set Valid Category
-
-                                const children = allCategories.filter(cat => {
-                                    if (!cat.parentCategory) return false;
-                                    const catParentId = cat.parentCategory._id || cat.parentCategory;
-                                    return catParentId.toString() === parentId;
-                                });
-
-                                if (children.length > 0) {
-                                    children.forEach(c => {
-                                        const opt = document.createElement('option');
-                                        opt.value = c._id;
-                                        opt.textContent = c.name;
-                                        childSelect.appendChild(opt);
-                                    });
-                                } else {
-                                    const opt = document.createElement('option');
-                                    opt.textContent = "No subcategories";
-                                    childSelect.appendChild(opt);
-                                }
-                                childSelect.disabled = false; // UNLOCK
-                            } else {
-                                finalCategoryInput.value = "";
-                                childSelect.disabled = true;
-                            }
-                        });
-                    }
-
-                    if (childSelect) {
-                        childSelect.addEventListener('change', function () {
-                            if (this.value) {
-                                finalCategoryInput.value = this.value;
-                            } else {
-                                finalCategoryInput.value = parentSelect.value;
-                            }
-                        });
-                    }
-
-
-                    // ==========================================
-                    // 2. CROPPER LOGIC (Depends on Bootstrap)
-                    // ==========================================
-                    const imageInput = document.getElementById('imageInput');
-                    const cropBtn = document.getElementById('cropBtn');
-                    const form = document.getElementById('addProductForm');
-                    const previewList = document.getElementById('previewList');
-                    let cropper;
-                    let croppedFiles = [];
-
-                    // Helper to safely get Bootstrap Modal
-                    const getModal = () => {
-                        if (typeof bootstrap !== 'undefined') {
-                            return new bootstrap.Modal(document.getElementById('cropperModal'));
-                        } else {
-                            console.error("Bootstrap is not loaded yet!");
-                            alert("System is loading resources. Please try selecting image again in a moment.");
-                            return null;
-                        }
-                    };
-
-                    // Cropper Logic
-                    // ... We can initialize logic but create modal instance lazily or check bootstrap existence
-
-                    imageInput.addEventListener('change', function (e) {
-                        const files = e.target.files;
-                        if (files && files.length > 0) {
-                            const file = files[0];
-                            const reader = new FileReader();
-                            reader.onload = function (e) {
-                                const imageToCrop = document.getElementById('imageToCrop');
-                                imageToCrop.src = e.target.result;
-
-                                const modal = getModal();
-                                if (modal) modal.show();
-                            };
-                            reader.readAsDataURL(file);
-                            imageInput.value = '';
-                        }
-                    });
-
-                    // Initialize Cropper when modal opens
-                    const modalEl = document.getElementById('cropperModal');
-                    modalEl.addEventListener('shown.bs.modal', function () {
-                        const imageToCrop = document.getElementById('imageToCrop');
-                        cropper = new Cropper(imageToCrop, {
-                            aspectRatio: 1,
-                            viewMode: 2,
-                            autoCropArea: 1,
-                        });
-                    });
-
-                    modalEl.addEventListener('hidden.bs.modal', function () {
-                        if (cropper) {
-                            cropper.destroy();
-                            cropper = null;
-                        }
-                    });
-
-                    // Crop Button
-                    cropBtn.addEventListener('click', function () {
-                        if (cropper) {
-                            cropper.getCroppedCanvas({ width: 800, height: 800 }).toBlob((blob) => {
-                                // Add blob to array
-                                const fileName = `cropped-${Date.now()}.jpg`;
-                                const file = new File([blob], fileName, { type: 'image/jpeg' });
-                                croppedFiles.push(file);
-
-                                renderPreviews();
-
-                                // Hide modal
-                                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                                if (modalInstance) modalInstance.hide();
-
-                            }, 'image/jpeg');
-                        }
-                    });
-
-                    // Render Previews function (Handling Reordering)
-                    function renderPreviews() {
-                        previewList.innerHTML = '';
-                        croppedFiles.forEach((file, index) => {
-                            const url = URL.createObjectURL(file);
-                            const container = document.createElement('div');
-                            container.className = 'image-container d-flex flex-column';
-
-                            // Thumbnail
-                            const img = document.createElement('img');
-                            img.src = url;
-                            img.className = 'image-preview flex-grow-1';
-                            img.style.objectFit = 'contain';
-
-                            // Controls
-                            const controls = document.createElement('div');
-                            controls.className = 'd-flex justify-content-between w-100 p-2 bg-light border-top';
-
-                            // Left Arrow (Move Up/Left)
-                            const leftBtn = document.createElement('button');
-                            leftBtn.type = 'button';
-                            leftBtn.className = 'btn btn-sm btn-outline-secondary';
-                            leftBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
-                            leftBtn.disabled = index === 0;
-                            leftBtn.onclick = () => {
-                                if (index > 0) {
-                                    const temp = croppedFiles[index];
-                                    croppedFiles[index] = croppedFiles[index - 1];
-                                    croppedFiles[index - 1] = temp;
-                                    renderPreviews();
-                                }
-                            };
-
-                            // Index Indicator
-                            const indexBadge = document.createElement('span');
-                            indexBadge.className = 'badge bg-secondary align-self-center';
-                            indexBadge.innerText = (index + 1);
-
-                            // Right Arrow (Move Down/Right)
-                            const rightBtn = document.createElement('button');
-                            rightBtn.type = 'button';
-                            rightBtn.className = 'btn btn-sm btn-outline-secondary';
-                            rightBtn.innerHTML = '<i class="fas fa-arrow-right"></i>';
-                            rightBtn.disabled = index === croppedFiles.length - 1;
-                            rightBtn.onclick = () => {
-                                if (index < croppedFiles.length - 1) {
-                                    const temp = croppedFiles[index];
-                                    croppedFiles[index] = croppedFiles[index + 1];
-                                    croppedFiles[index + 1] = temp;
-                                    renderPreviews();
-                                }
-                            };
-
-                            controls.appendChild(leftBtn);
-                            controls.appendChild(indexBadge);
-                            controls.appendChild(rightBtn);
-
-                            // Remove Button (Overlay)
-                            const removeBtn = document.createElement('button');
-                            removeBtn.innerHTML = '×';
-                            removeBtn.className = 'remove-image';
-                            removeBtn.type = 'button';
-                            removeBtn.onclick = function () {
-                                croppedFiles.splice(index, 1);
-                                renderPreviews();
-                            };
-
-                            container.appendChild(removeBtn);
-                            container.appendChild(img);
-                            container.appendChild(controls);
-
-                            previewList.appendChild(container);
-                        });
-                    }
-
-                    // Form Submit
-                    form.addEventListener('submit', function (e) {
-                        e.preventDefault();
-                        if (croppedFiles.length < 3) {
-                            alert('Please add at least 3 images.');
-                            return;
-                        }
-                        if (!finalCategoryInput.value) {
-                            alert('Please select a valid category.');
-                            return;
-                        }
-
-                        const formData = new FormData(form);
-                        croppedFiles.forEach((file) => formData.append('productImages', file));
-
-                        const submitBtn = document.getElementById('submitBtn');
-                        const originalText = submitBtn.innerText;
-                        submitBtn.disabled = true;
-                        submitBtn.innerText = 'Uploading...';
-
-                        fetch(form.action, { method: 'POST', body: formData })
-                            .then(response => {
-                                if (response.redirected) window.location.href = response.url;
-                                else return response.text().then(html => {
-                                    document.open(); document.write(html); document.close();
-                                });
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                alert('An error occurred during upload.');
-                                submitBtn.disabled = false;
-                                submitBtn.innerText = originalText;
+                        if (selectedGender) {
+                            const parents = allCategories.filter(cat => cat.gender === selectedGender && (!cat.parentCategory));
+                            parents.forEach(p => {
+                                const opt = document.createElement('option');
+                                opt.value = p._id; opt.textContent = p.name;
+                                parentSelect.appendChild(opt);
                             });
+                            parentSelect.disabled = false;
+                        } else {
+                            parentSelect.disabled = true;
+                        }
+                    });
+
+                    parentSelect.addEventListener('change', function () {
+                        const parentId = this.value;
+                        childSelect.innerHTML = '<option value="">Select Child Category</option>';
+                        if (parentId) {
+                            finalCategoryInput.value = parentId;
+                            const children = allCategories.filter(cat => cat.parentCategory && (cat.parentCategory._id || cat.parentCategory) == parentId);
+                            children.forEach(c => {
+                                const opt = document.createElement('option');
+                                opt.value = c._id; opt.textContent = c.name;
+                                childSelect.appendChild(opt);
+                            });
+                            childSelect.disabled = false;
+                        } else {
+                            childSelect.disabled = true;
+                            finalCategoryInput.value = "";
+                        }
+                    });
+
+                    childSelect.addEventListener('change', function () {
+                        if (this.value) finalCategoryInput.value = this.value;
+                        else finalCategoryInput.value = parentSelect.value;
                     });
                 });
             </script>

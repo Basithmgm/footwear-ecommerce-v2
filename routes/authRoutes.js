@@ -41,8 +41,8 @@ router.get("/otp", guest, noCache, authController.getOTPPage);
 router.get("/forgot-password", guest, noCache, authController.getForgotPassword);
 
 // Profile routes - USE THE CONTROLLER
-router.get('/profile', auth, profileController.getProfile);
-router.get('/profile/edit', auth, profileController.getEditProfile);
+router.get('/profile', auth, noCache, profileController.getProfile);
+router.get('/profile/edit', auth, noCache, profileController.getEditProfile);
 
 // ============================================
 // FORM SUBMISSIONS (POST)
@@ -60,7 +60,20 @@ router.get("/profile/change-password", auth, profileController.getChangePassword
 router.get("/profile/verify-email", auth, profileController.getVerifyEmail);
 
 // Handle file upload
-router.post("/profile/update", auth, uploadProfile.single('profileImage'), profileController.updateProfile);
+// Wrapper to handle upload errors gracefully
+const handleProfileUpload = (req, res, next) => {
+    const upload = uploadProfile.single('profileImage');
+    upload(req, res, function (err) {
+        if (err) {
+            console.error("Profile upload error:", err);
+            // Multer errors (limits, file type) or Cloudinary errors
+            return res.redirect('/profile/edit?error=' + encodeURIComponent(err.message));
+        }
+        next();
+    });
+};
+
+router.post("/profile/update", auth, handleProfileUpload, profileController.updateProfile);
 router.post("/profile/verify-email", auth, profileController.verifyEmailOTP);
 router.post("/profile/change-password", auth, profileController.changeProfilePassword);
 

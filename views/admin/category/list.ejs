@@ -9,171 +9,246 @@
                 </a>
             </div>
 
-            <% if (error) { %>
-                <div class="alert alert-danger">
-                    <%= error %>
-                </div>
-                <% } %>
-                    <% if (success) { %>
-                        <div class="alert alert-success">
-                            <%= success %>
+
+
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Gender</th>
+                                    <th>Group Name</th>
+                                    <th>Level</th>
+                                    <th>Parent Category</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (categories.length> 0) { %>
+                                    <% categories.forEach(cat=> { %>
+                                        <tr>
+                                            <td class="ps-4">
+                                                <% let badgeColor='#6c757d' ; let textColor='white' ; if
+                                                    (cat.gender==='Women' ) { badgeColor='#FF8DA1' ; } else if
+                                                    (cat.gender==='Men' ) { badgeColor='#01A6EA' ; } else if
+                                                    (cat.gender==='Unisex' ) { badgeColor='#A649A4' ; } else if
+                                                    (cat.gender==='Kids' ) { badgeColor='#FFCC10' ; textColor='black' ;
+                                                    } %>
+                                                    <span class="badge"
+                                                        style="background-color: <%= badgeColor %>; color: <%= textColor %>;">
+                                                        <%= cat.gender %>
+                                                    </span>
+                                            </td>
+                                            <td>
+                                                <% if(cat.level> 0) { %>
+                                                    <span class="text-muted"
+                                                        style="margin-left: <%= cat.level * 20 %>px;">↳
+                                                    </span>
+                                                    <% } %>
+                                                        <strong>
+                                                            <%= cat.name %>
+                                                        </strong>
+                                            </td>
+                                            <td>
+                                                <% if (cat.level===0) { %>
+                                                    <span class="badge badge-level-main">Main</span>
+                                                    <% } else if (cat.level===1) { %>
+                                                        <span class="badge badge-level-sub">Sub</span>
+                                                        <% } else { %>
+                                                            <span class="badge badge-level-child">Child</span>
+                                                            <% } %>
+                                            </td>
+                                            <td>
+                                                <% if (cat.level===0) { %>
+                                                    <a href="/admin/categories/add?parent_id=<%= cat._id %>&page=<%= currentPage %>"
+                                                        class="btn btn-sm btn-light border shadow-sm"
+                                                        style="font-size: 0.75rem; border-radius: 20px;">
+                                                        <i class="fas fa-plus me-1 text-primary"></i>
+                                                        Add Subcategory
+                                                    </a>
+                                                    <% } else { %>
+                                                        <%= cat.parentCategory ? cat.parentCategory.name : '-' %>
+                                                            <% } %>
+                                            </td>
+                                            <td class="text-center">
+                                                <form action="/admin/categories/toggle-block/<%= cat._id %>"
+                                                    method="POST" class="d-inline-block m-0">
+                                                    <div class="d-flex align-items-center justify-content-center"
+                                                        style="gap: 10px;">
+                                                        <div class="d-flex align-items-center justify-content-center">
+                                                            <div class="form-check form-switch m-0 p-0 d-flex align-items-center"
+                                                                style="gap: 10px; min-height: auto;">
+                                                                <input class="form-check-input m-0" type="checkbox"
+                                                                    role="switch" id="status_<%= cat._id %>"
+                                                                    data-name="<%= cat.name %>" <%=!cat.isBlocked
+                                                                    ? 'checked' : '' %>
+                                                                title="<%= cat.isBlocked ? 'Unblock' : 'Block' %>"
+                                                                    style="cursor: pointer; width: 40px; height: 20px;
+                                                                    float: none !important; margin-left: 0 !important;
+                                                                    position: static !important;">
+                                                                    <label class="mb-0" for="status_<%= cat._id %>"
+                                                                        style="cursor: pointer; min-width: 50px; text-align: left; white-space: nowrap; font-weight: 500;">
+                                                                        <%= !cat.isBlocked ? 'Active' : 'Blocked' %>
+                                                                    </label>
+                                                            </div>
+                                                        </div>
+                                                </form>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-flex justify-content-center align-items-center gap-2">
+                                                    <a href="/admin/categories/edit/<%= cat._id %>?page=<%= currentPage %>"
+                                                        class="btn btn-icon edit" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <form action="/admin/categories/delete/<%= cat._id %>" method="POST"
+                                                        class="d-inline" data-name="<%= cat.name %>">
+                                                        <button type="submit" class="btn btn-icon delete"
+                                                            title="Delete">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <% }) %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="6" class="text-center py-4 text-muted">
+                                                        No categories found.</td>
+                                                </tr>
+                                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <% if (locals.totalPages> 1) { %>
+                        <div class="d-flex justify-content-center py-3 border-top">
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination mb-0">
+                                    <!-- Previous -->
+                                    <li class="page-item <%= currentPage == 1 ? 'disabled' : '' %>">
+                                        <a class="page-link" href="?page=<%= currentPage - 1 %>" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+
+                                    <!-- Page Numbers -->
+                                    <% for(let i=1; i <=totalPages; i++) { %>
+                                        <li class="page-item <%= currentPage == i ? 'active' : '' %>">
+                                            <a class="page-link" href="?page=<%= i %>">
+                                                <%= i %>
+                                            </a>
+                                        </li>
+                                        <% } %>
+
+                                            <!-- Next -->
+                                            <li class="page-item <%= currentPage == totalPages ? 'disabled' : '' %>">
+                                                <a class="page-link" href="?page=<%= currentPage + 1 %>"
+                                                    aria-label="Next">
+                                                    <span aria-hidden="true">&raquo;</span>
+                                                </a>
+                                            </li>
+                                </ul>
+                            </nav>
                         </div>
                         <% } %>
 
-                            <div class="card shadow-sm">
-                                <div class="card-body p-0">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0">
-                                            <thead class="bg-light">
-                                                <tr>
-                                                    <th class="ps-4">Gender</th>
-                                                    <th>Group Name</th>
-                                                    <th>Level</th>
-                                                    <th>Parent Category</th>
-                                                    <th class="text-center">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <% if (categories.length> 0) { %>
-                                                    <% categories.forEach(cat=> { %>
-                                                        <tr>
-                                                            <td class="ps-4">
-                                                                <% let badgeColor='#6c757d' ; let textColor='white' ; if
-                                                                    (cat.gender==='Women' ) { badgeColor='#FF8DA1' ; }
-                                                                    else if (cat.gender==='Men' ) { badgeColor='#01A6EA'
-                                                                    ; } else if (cat.gender==='Unisex' ) {
-                                                                    badgeColor='#A649A4' ; } else if
-                                                                    (cat.gender==='Kids' ) { badgeColor='#FFCC10' ;
-                                                                    textColor='black' ; } %>
-                                                                    <span class="badge"
-                                                                        style="background-color: <%= badgeColor %>; color: <%= textColor %>;">
-                                                                        <%= cat.gender %>
-                                                                    </span>
-                                                            </td>
-                                                            <td>
-                                                                <% if(cat.level> 0) { %>
-                                                                    <span class="text-muted"
-                                                                        style="margin-left: <%= cat.level * 20 %>px;">↳
-                                                                    </span>
-                                                                    <% } %>
-                                                                        <strong>
-                                                                            <%= cat.name %>
-                                                                        </strong>
-                                                            </td>
-                                                            <td>
-                                                                <% if (cat.level===0) { %>
-                                                                    <span class="badge bg-secondary">Main</span>
-                                                                    <% } else if (cat.level===1) { %>
-                                                                        <span class="badge bg-info">Sub</span>
-                                                                        <% } else { %>
-                                                                            <span
-                                                                                class="badge bg-light text-dark">Child</span>
-                                                                            <% } %>
-                                                            </td>
-                                                            <td>
-                                                                <% if (cat.level===0) { %>
-                                                                    <a href="/admin/categories/add?parent_id=<%= cat._id %>&page=<%= currentPage %>"
-                                                                        class="btn btn-sm btn-light border"
-                                                                        style="font-size: 0.75rem;">
-                                                                        <i class="fas fa-plus me-1"></i> Add Subcategory
-                                                                    </a>
-                                                                    <% } else { %>
-                                                                        <%= cat.parentCategory ? cat.parentCategory.name
-                                                                            : '-' %>
-                                                                            <% } %>
-                                                            </td>
-                                                            <td class="text-center">
-                                                                <div
-                                                                    class="d-flex justify-content-center align-items-center gap-3">
-
-                                                                    <!-- Toggle Form with Label -->
-                                                                    <div class="d-flex align-items-center">
-                                                                        <span class="me-2 text-muted fw-bold"
-                                                                            style="font-size: 0.85rem;">Block</span>
-                                                                        <form
-                                                                            action="/admin/categories/toggle-block/<%= cat._id %>"
-                                                                            method="POST" class="d-inline m-0">
-                                                                            <div
-                                                                                class="form-check form-switch m-0 d-flex align-items-center">
-                                                                                <input class="form-check-input"
-                                                                                    type="checkbox" role="switch"
-                                                                                    onchange="this.form.submit()"
-                                                                                    <%=!cat.isBlocked ? 'checked' : ''
-                                                                                    %>
-                                                                                title="<%= cat.isBlocked ? 'Unblock'
-                                                                                    : 'Block' %>"
-                                                                                    style="cursor: pointer; width: 3em;
-                                                                                    height: 1.5em;">
-                                                                            </div>
-                                                                        </form>
-                                                                    </div>
-
-                                                                    <div class="btn-group">
-                                                                        <a href="/admin/categories/edit/<%= cat._id %>?page=<%= currentPage %>"
-                                                                            class="btn btn-sm btn-outline-secondary">
-                                                                            <i class="fas fa-edit"></i>
-                                                                        </a>
-                                                                        <form
-                                                                            action="/admin/categories/delete/<%= cat._id %>"
-                                                                            method="POST" class="d-inline"
-                                                                            onsubmit="return confirm('Are you sure? This will delete the category.');">
-                                                                            <button type="submit"
-                                                                                class="btn btn-sm btn-outline-danger ms-1">
-                                                                                <i class="fas fa-trash"></i>
-                                                                            </button>
-                                                                        </form>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        <% }) %>
-                                                            <% } else { %>
-                                                                <tr>
-                                                                    <td colspan="6" class="text-center py-4 text-muted">
-                                                                        No categories found.</td>
-                                                                </tr>
-                                                                <% } %>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <!-- Pagination -->
-                                    <% if (locals.totalPages> 1) { %>
-                                        <div class="d-flex justify-content-center py-3 border-top">
-                                            <nav aria-label="Page navigation">
-                                                <ul class="pagination mb-0">
-                                                    <!-- Previous -->
-                                                    <li class="page-item <%= currentPage == 1 ? 'disabled' : '' %>">
-                                                        <a class="page-link" href="?page=<%= currentPage - 1 %>"
-                                                            aria-label="Previous">
-                                                            <span aria-hidden="true">&laquo;</span>
-                                                        </a>
-                                                    </li>
-
-                                                    <!-- Page Numbers -->
-                                                    <% for(let i=1; i <=totalPages; i++) { %>
-                                                        <li class="page-item <%= currentPage == i ? 'active' : '' %>">
-                                                            <a class="page-link" href="?page=<%= i %>">
-                                                                <%= i %>
-                                                            </a>
-                                                        </li>
-                                                        <% } %>
-
-                                                            <!-- Next -->
-                                                            <li
-                                                                class="page-item <%= currentPage == totalPages ? 'disabled' : '' %>">
-                                                                <a class="page-link" href="?page=<%= currentPage + 1 %>"
-                                                                    aria-label="Next">
-                                                                    <span aria-hidden="true">&raquo;</span>
-                                                                </a>
-                                                            </li>
-                                                </ul>
-                                            </nav>
-                                        </div>
-                                        <% } %>
-
-                                </div>
-                            </div>
+                </div>
+            </div>
         </main>
 
         <%- include('../../partials/admin/footer') %>
+
+            <script src="/js/sweetalert2.all.min.js"></script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                // Success Message
+                <% if (success) { %>
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: '<%= success %>',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                <% } %>
+                <% if (error) { %>
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: '<%= error %>'
+                        });
+                <% } %>
+
+                // Event Delegation for Table Actions
+                const table = document.querySelector('.table');
+                    if (table) {
+                        table.addEventListener('click', function (e) {
+                            const deleteBtn = e.target.closest('button.btn-icon.delete');
+                            if (deleteBtn) {
+                                e.preventDefault();
+                                const form = deleteBtn.closest('form');
+                                const name = form.getAttribute('data-name') || 'this category';
+
+                                Swal.fire({
+                                    title: 'Delete Category?',
+                                    text: `Are you sure you want to delete ${name}?`,
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#d33',
+                                    cancelButtonColor: '#6c757d',
+                                    confirmButtonText: 'Yes, delete it!',
+                                    cancelButtonText: 'No'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        form.submit();
+                                    }
+                                });
+                            }
+                        });
+
+                        table.addEventListener('change', function (e) {
+                            // Handle Block/Unblock Toggle
+                            if (e.target.classList.contains('form-check-input')) {
+                                e.preventDefault();
+                                const checkbox = e.target;
+                                const form = checkbox.closest('form');
+                                const name = checkbox.getAttribute('data-name') || 'this category';
+                                const isChecked = checkbox.checked; // State AFTER click
+                                // Logic: If checked now, it means we WANT to Unblock (since it was blocked/unchecked before? No wait.)
+                                // Let's look at the UI: 
+                                // !cat.isBlocked ? 'checked' : ''
+                                // So CHECKED = Active (Not Blocked). UNCHECKED = Blocked.
+                                // If I click to CHECK it, I am Unblocking.
+                                // If I click to UNCHECK it, I am Blocking.
+
+                                const action = isChecked ? 'Unblock' : 'Block';
+                                const confirmText = isChecked ? "This will make the category visible in the shop." : "This will hide the category from the shop.";
+                                const confirmBtnColor = isChecked ? '#28a745' : '#d33';
+
+                                // Revert state temporarily until confirmed
+                                checkbox.checked = !isChecked;
+
+                                Swal.fire({
+                                    title: `${action} Category?`,
+                                    text: confirmText,
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: confirmBtnColor,
+                                    cancelButtonColor: '#6c757d',
+                                    confirmButtonText: `Yes, ${action} it!`,
+                                    cancelButtonText: 'No'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        checkbox.checked = isChecked; // Set back to desired state
+                                        form.submit();
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            </script>

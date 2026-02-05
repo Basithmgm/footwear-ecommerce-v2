@@ -1,15 +1,16 @@
 <%- include('../../partials/admin/header') %>
     <%- include('../../partials/admin/sidebar', { path: '/admin/products' }) %>
 
-        <!-- Cropper.js CDN -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+        <!-- Cropper.js Local -->
+        <link rel="stylesheet" href="/css/cropper.min.css" />
+        <script src="/js/cropper.min.js"></script>
+        <script src="/js/sweetalert2.all.min.js"></script>
 
         <style>
             .image-container {
                 width: 150px;
                 height: 150px;
-                margin: 10px;
+                margin: 5px;
                 overflow: hidden;
                 border: 1px solid #ddd;
                 display: flex;
@@ -22,29 +23,82 @@
             .image-preview {
                 max-width: 100%;
                 max-height: 100%;
-            }
-
-            .preview-list {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 15px;
+                object-fit: contain;
             }
 
             .remove-image {
                 position: absolute;
-                top: 5px;
-                right: 5px;
+                top: 2px;
+                right: 2px;
                 background: rgba(255, 0, 0, 0.7);
                 color: white;
                 border: none;
                 border-radius: 50%;
-                width: 25px;
-                height: 25px;
+                width: 20px;
+                height: 20px;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 14px;
+                font-size: 12px;
+            }
+
+            .variant-card {
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 20px;
+                background-color: #fff;
+            }
+
+            .size-row {
+                background-color: #f8f9fa;
+                padding: 10px;
+                margin-bottom: 5px;
+                border-radius: 4px;
+            }
+
+            .size-pill-checkbox {
+                display: none;
+            }
+
+            .size-pill-label {
+                display: inline-block;
+                width: 40px;
+                height: 40px;
+                line-height: 40px;
+                text-align: center;
+                border: 1px solid #e2e8f0;
+                border-radius: 50%;
+                cursor: pointer;
+                margin: 5px;
+                transition: all 0.2s;
+                font-weight: 500;
+                background: #fff;
+                color: #64748b;
+            }
+
+            .size-pill-checkbox:checked+.size-pill-label {
+                background-color: #0f172a;
+                /* Primary Color */
+                color: #fff;
+                border-color: #0f172a;
+                transform: scale(1.1);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            .variant-table th {
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #64748b;
+                border-bottom: 2px solid #e2e8f0;
+                padding-bottom: 10px;
+            }
+
+            .variant-table td {
+                padding: 10px 5px;
+                vertical-align: middle;
             }
         </style>
 
@@ -54,13 +108,13 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item"><a href="/admin/products">Products</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Edit</li>
+                        <li class="breadcrumb-item active" aria-current="page">Edit Product</li>
                     </ol>
                 </nav>
             </div>
 
             <div class="row justify-content-center">
-                <div class="col-md-10">
+                <div class="col-md-11">
                     <div class="card shadow-sm">
                         <div class="card-body p-4">
                             <% if (typeof error !=='undefined' && error) { %>
@@ -71,267 +125,965 @@
 
                                     <form action="/admin/products/edit/<%= product._id %>" method="POST"
                                         enctype="multipart/form-data" id="editProductForm">
+
+                                        <!-- Basic Info Section -->
+                                        <h5 class="mb-3 border-bottom pb-2">Basic Information</h5>
                                         <div class="row">
-                                            <!-- Left Column: Basic Info -->
                                             <div class="col-md-6">
                                                 <div class="mb-3">
-                                                    <label for="productName" class="form-label">Product Name *</label>
-                                                    <input type="text" class="form-control" id="productName"
-                                                        name="productName" required value="<%= product.productName %>">
+                                                    <label for="brand" class="form-label">Brand Name *</label>
+                                                    <input type="text" class="form-control" id="brand" name="brand"
+                                                        required value="<%= product.brand || '' %>">
                                                 </div>
-
+                                            </div>
+                                            <div class="col-md-6">
                                                 <div class="mb-3">
-                                                    <label for="category" class="form-label">Category *</label>
-                                                    <select class="form-select" id="category" name="category" required>
-                                                        <option value="">Select Category</option>
-                                                        <% categories.forEach(cat=> { %>
-                                                            <option value="<%= cat._id %>" <%=product.category &&
-                                                                product.category._id.toString()===cat._id.toString()
-                                                                ? 'selected' : '' %>>
-                                                                <%= cat.gender %> - <%= cat.name %>
-                                                            </option>
-                                                            <% }) %>
-                                                    </select>
+                                                    <label for="model" class="form-label">Model Name *</label>
+                                                    <input type="text" class="form-control" id="model" name="model"
+                                                        required value="<%= product.model || '' %>">
                                                 </div>
+                                            </div>
+                                        </div>
 
+                                        <div class="row">
+                                            <div class="col-md-12">
                                                 <div class="mb-3">
                                                     <label for="description" class="form-label">Description *</label>
                                                     <textarea class="form-control" id="description" name="description"
-                                                        rows="4" required><%= product.description %></textarea>
+                                                        rows="3" required><%= product.description || '' %></textarea>
                                                 </div>
                                             </div>
+                                        </div>
 
-                                            <!-- Right Column: Pricing & Stock -->
-                                            <div class="col-md-6">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="regularPrice" class="form-label">Regular Price
-                                                            *</label>
-                                                        <input type="number" class="form-control" id="regularPrice"
-                                                            name="regularPrice" min="0" step="0.01" required
-                                                            value="<%= product.regularPrice %>">
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="salePrice" class="form-label">Sale Price *</label>
-                                                        <input type="number" class="form-control" id="salePrice"
-                                                            name="salePrice" min="0" step="0.01" required
-                                                            value="<%= product.salePrice %>">
-                                                    </div>
+                                        <!-- Category Section -->
+                                        <div class="mb-4 border p-3 rounded bg-light">
+                                            <h6 class="mb-3 text-secondary">Category Selection *</h6>
+                                            <input type="hidden" id="finalCategory" name="category"
+                                                value="<%= product.category ? product.category._id : '' %>">
+
+                                            <!-- Pre-calculate gender/parent/child logic in script or EJS helper if complex, 
+                                                 but here we rely on existing categories list and JS to populate. 
+                                                 For Edit, we try to pre-select. -->
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label class="form-label small text-muted">Gender</label>
+                                                    <select class="form-select" id="genderSelect" required>
+                                                        <option value="">Select Gender</option>
+                                                        <option value="Men" <%=product.category &&
+                                                            product.category.gender==='Men' ? 'selected' : '' %>>Men
+                                                        </option>
+                                                        <option value="Women" <%=product.category &&
+                                                            product.category.gender==='Women' ? 'selected' : '' %>>Women
+                                                        </option>
+                                                        <option value="Kids" <%=product.category &&
+                                                            product.category.gender==='Kids' ? 'selected' : '' %>>Kids
+                                                        </option>
+                                                        <option value="Unisex" <%=product.category &&
+                                                            product.category.gender==='Unisex' ? 'selected' : '' %>
+                                                            >Unisex</option>
+                                                    </select>
                                                 </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label small text-muted">Parent Category</label>
+                                                    <select class="form-select" id="parentCategorySelect" required>
+                                                        <option value="">Select Parent Category</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label small text-muted">Child Category
+                                                        (Optional)</label>
+                                                    <select class="form-select" id="childCategorySelect">
+                                                        <option value="">Select Child Category</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="stock" class="form-label">Stock Quantity *</label>
-                                                        <input type="number" class="form-control" id="stock"
-                                                            name="stock" min="0" required value="<%= product.stock %>">
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="status" class="form-label">Status</label>
-                                                        <select class="form-select" id="status" name="status">
-                                                            <option value="Available" <%=product.status==='Available'
-                                                                ? 'selected' : '' %>>Available</option>
-                                                            <option value="Out of Stock"
-                                                                <%=product.status==='Out of Stock' ? 'selected' : '' %>
-                                                                >Out of Stock</option>
-                                                            <option value="Discontinued"
-                                                                <%=product.status==='Discontinued' ? 'selected' : '' %>
-                                                                >Discontinued</option>
-                                                        </select>
+                                        <div class="row mb-4">
+                                            <div class="col-md-12">
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input" id="isFeatured"
+                                                            name="isFeatured" <%=product.isFeatured ? 'checked' : '' %>>
+                                                        <label class="form-check-label" for="isFeatured">Show on
+                                                            Homepage (Featured)</label>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Current Images Section -->
-                                        <div class="mb-4">
-                                            <label class="form-label">Current Images</label>
-                                            <div class="preview-list" id="currentImagesList">
-                                                <% product.productImages.forEach((img, index)=> { %>
-                                                    <div class="image-container" id="existing-img-<%= index %>">
-                                                        <img src="<%= img %>" class="image-preview">
-                                                        <input type="hidden" name="existingImages" value="<%= img %>">
-                                                        <button type="button" class="remove-image"
-                                                            onclick="removeExistingImage('<%= index %>')">×</button>
-                                                    </div>
-                                                    <% }) %>
-                                            </div>
+                                        <!-- Variants Section -->
+                                        <div
+                                            class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                                            <h5 class="mb-0">Product Variants</h5>
+                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                                data-bs-target="#variantModal">
+                                                + Add New Variant
+                                            </button>
                                         </div>
 
+                                        <!-- Container for variants (populated via JS from existing data) -->
+                                        <div id="variantsContainer"></div>
 
-                                        <!-- New Image Upload Section -->
-                                        <div class="mb-4">
-                                            <label class="form-label">Add New Images</label>
-                                            <input type="file" class="form-control" id="imageInput" accept="image/*"
-                                                multiple>
-                                            <div class="form-text">Select images to crop. New images will be added to
-                                                the product.</div>
-                                        </div>
-
-                                        <div class="preview-list" id="previewList"></div>
+                                        <!-- Hidden input to store variants data as string (both old and new metadata) -->
+                                        <input type="hidden" name="variantsData" id="variantsData">
 
                                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                                             <a href="/admin/products" class="btn btn-light me-md-2">Cancel</a>
-                                            <button type="submit" class="btn btn-primary" id="submitBtn">Update
+                                            <button type="submit" class="btn btn-success" id="finalSubmitBtn">Update
                                                 Product</button>
                                         </div>
                                     </form>
+
+                                    <!-- Hidden Data Storage -->
+                                    <div id="categoryData" style="display:none;"><%- JSON.stringify(categories) %></div>
+                                    <div id="existingProductData" style="display:none;"><%- JSON.stringify(product) %>
+                                    </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Cropper Modal (Same as Add) -->
-            <div class="modal fade" id="cropperModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
-                data-bs-keyboard="false">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Crop Image</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body p-0" style="min-height: 400px; background: #000;">
-                            <div class="img-container">
-                                <img id="imageToCrop" src="" alt="Crop Preview"
-                                    style="max-width: 100%; display: block;">
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="cropBtn">Crop & Save</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </main>
 
-        <script>
-            function removeExistingImage(index) {
-                document.getElementById('existing-img-' + index).remove();
-            }
+        <!-- Add/Edit Variant Modal -->
+        <div class="modal fade" id="variantModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 98vw;">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-dark text-white">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-white text-dark rounded-circle p-2 me-3 d-flex align-items-center justify-content-center"
+                                style="width: 40px; height: 40px;">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title mb-0 text-white" id="variantModalTitle">Add/Edit Variant</h5>
+                                <small class="text-white-50">Configure color, images, and size inventory</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body bg-light p-4"
+                        style="overflow-y: auto !important; max-height: 80vh !important;">
+                        <div class="row g-4">
+                            <!-- Col 1: Visuals & Basic Info -->
+                            <div class="col-lg-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-white py-3 border-bottom-0">
+                                        <h6 class="card-title mb-0 fw-bold text-dark"><i
+                                                class="fas fa-palette me-2 text-primary"></i>Visual Configuration</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold text-uppercase text-muted">Color
+                                                Name</label>
+                                            <input type="text" class="form-control" id="vColorName"
+                                                placeholder="e.g. Midnight Blue">
+                                        </div>
 
-            let cropper;
-            const imageInput = document.getElementById('imageInput');
-            const imageToCrop = document.getElementById('imageToCrop');
-            const previewList = document.getElementById('previewList');
-            const cropperModal = new bootstrap.Modal(document.getElementById('cropperModal'));
-            const cropBtn = document.getElementById('cropBtn');
-            const form = document.getElementById('editProductForm');
+                                        <div class="mb-4">
+                                            <label class="form-label small fw-bold text-uppercase text-muted">Base
+                                                SKU</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white text-muted"><i
+                                                        class="fas fa-barcode"></i></span>
+                                                <input type="text" class="form-control" id="vBaseSku"
+                                                    placeholder="e.g. NIKE-MB-001">
+                                            </div>
+                                            <div class="form-text small">Base SKU is used to generate specific size SKUs
+                                                automatically.</div>
+                                        </div>
 
-            let croppedFiles = [];
+                                        <!-- Color Representative Image -->
+                                        <div class="mb-4">
+                                            <label class="form-label small fw-bold text-uppercase text-muted">Primary
+                                                Image (Thumbnail)</label>
+                                            <div class="border rounded p-2 bg-light text-center position-relative">
+                                                <input type="file" class="d-none" id="vColorImageInput"
+                                                    accept="image/*">
+                                                <label for="vColorImageInput"
+                                                    class="btn btn-outline-primary btn-sm mb-2 w-100">
+                                                    <i class="fas fa-upload me-1"></i> Choose Image
+                                                </label>
+                                                <div id="vColorImagePreviewContainer"
+                                                    class="d-flex justify-content-center"></div>
+                                                <div id="existingColorImageInfo" class="small text-success mt-1"
+                                                    style="display:none;"></div>
+                                            </div>
+                                        </div>
 
-            imageInput.addEventListener('change', function (e) {
-                const files = e.target.files;
-                if (files && files.length > 0) {
-                    const file = files[0];
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        imageToCrop.src = e.target.result;
-                        cropperModal.show();
-                    };
-                    reader.readAsDataURL(file);
-                    imageInput.value = '';
-                }
-            });
+                                        <!-- Variant Gallery Images -->
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-bold text-uppercase text-muted">Gallery
+                                                Images (Min 3)</label>
+                                            <div class="border rounded p-2 bg-light position-relative">
+                                                <input type="file" class="d-none" id="vGalleryInput" accept="image/*"
+                                                    multiple>
+                                                <label for="vGalleryInput"
+                                                    class="btn btn-outline-secondary btn-sm mb-2 w-100">
+                                                    <i class="fas fa-images me-1"></i> Add Gallery Images
+                                                </label>
+                                                <div class="d-flex flex-wrap gap-2 justify-content-center"
+                                                    id="vGalleryPreviewContainer"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-            document.getElementById('cropperModal').addEventListener('shown.bs.modal', function () {
-                cropper = new Cropper(imageToCrop, {
-                    aspectRatio: 1,
-                    viewMode: 2,
-                    autoCropArea: 1,
-                });
-            });
+                            <!-- Col 2: Sizes & Prices -->
+                            <div class="col-lg-8">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div
+                                        class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0 fw-bold text-dark"><i
+                                                class="fas fa-cubes me-2 text-success"></i>Inventory & Pricing</h6>
+                                        <span class="badge bg-light text-dark border">Auto-managed</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-4">
+                                            <label
+                                                class="form-label small fw-bold text-uppercase text-muted mb-3">Available
+                                                Sizes (Click to Enable)</label>
+                                            <div class="d-flex flex-wrap gap-1 p-3 bg-light rounded border justify-content-center"
+                                                id="sizeCheckboxGroup">
+                                                <!-- Dynamic Pills -->
+                                            </div>
+                                        </div>
 
-            document.getElementById('cropperModal').addEventListener('hidden.bs.modal', function () {
-                if (cropper) {
-                    cropper.destroy();
-                    cropper = null;
-                }
-            });
+                                        <div class="border rounded overflow-hidden">
+                                            <div
+                                                class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                                <span class="small fw-bold text-uppercase text-muted">Configuration
+                                                    Table</span>
+                                                <small class="text-muted">Fill in stock and price for each size</small>
+                                            </div>
+                                            <div id="sizeInputsContainer" style="max-height: 450px; overflow-y: auto;">
+                                                <div class="text-center text-muted py-5 my-5" id="noSizeSelectedMsg">
+                                                    <i
+                                                        class="fas fa-hand-pointer fa-2x mb-3 text-secondary opacity-50"></i>
+                                                    <p>Select sizes from the list above to begin configuration.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-white border-top-0 py-3">
+                        <input type="hidden" id="editingVariantIndex" value="-1">
+                        <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-dark px-5" id="saveVariantBtn"><i
+                                class="fas fa-save me-2"></i> Save Variant</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            cropBtn.addEventListener('click', function () {
-                if (cropper) {
-                    cropper.getCroppedCanvas({
-                        width: 800,
-                        height: 800,
-                    }).toBlob((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        const container = document.createElement('div');
-                        container.className = 'image-container';
-
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.className = 'image-preview';
-
-                        const removeBtn = document.createElement('button');
-                        removeBtn.innerHTML = '×';
-                        removeBtn.className = 'remove-image';
-                        removeBtn.type = 'button';
-                        removeBtn.onclick = function () {
-                            const index = croppedFiles.indexOf(blob);
-                            if (index > -1) {
-                                croppedFiles.splice(index, 1);
-                            }
-                            container.remove();
-                        };
-
-                        container.appendChild(img);
-                        container.appendChild(removeBtn);
-                        previewList.appendChild(container);
-
-                        const fileName = `cropped-${Date.now()}.jpg`;
-                        const file = new File([blob], fileName, { type: 'image/jpeg' });
-                        croppedFiles.push(file);
-
-                        cropperModal.hide();
-                    }, 'image/jpeg');
-                }
-            });
-
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-
-                // Count total images (existing + new)
-                const existingCount = document.querySelectorAll('input[name="existingImages"]').length;
-                const newCount = croppedFiles.length;
-
-                if ((existingCount + newCount) < 3) {
-                    alert('Product must have at least 3 images.');
-                    return;
-                }
-
-                const formData = new FormData(form);
-
-                croppedFiles.forEach((file) => {
-                    formData.append('productImages', file);
-                });
-
-                const submitBtn = document.getElementById('submitBtn');
-                const originalText = submitBtn.innerText;
-                submitBtn.disabled = true;
-                submitBtn.innerText = 'Updating...';
-
-                fetch(form.action, {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => {
-                        if (response.redirected) {
-                            window.location.href = response.url;
-                        } else {
-                            return response.text().then(html => {
-                                document.open();
-                                document.write(html);
-                                document.close();
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('An error occurred during update.');
-                        submitBtn.disabled = false;
-                        submitBtn.innerText = originalText;
-                    });
-            });
-        </script>
+        <!-- Cropper Modal (Reused) -->
+        <div class="modal fade" id="cropperModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Crop Image</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-0" style="min-height: 400px; background: #000;">
+                        <div class="img-container">
+                            <img id="imageToCrop" src="" style="max-width: 100%; display: block;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="cropBtn">Crop</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <%- include('../../partials/admin/footer') %>
+
+            <!-- Data Injection -->
+            <script>
+                // Safely initialized from hidden divs below if direct injection fails
+                // But we will use the hidden divs as primary source to avoid syntax errors
+            </script>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    try {
+                        // ==========================================
+                        // 1. DATA INIT & GLOBAL VARS
+                        // ==========================================
+                        const productDataEl = document.getElementById('existingProductData');
+                        const categoriesDataEl = document.getElementById('categoryData');
+
+                        let existingProduct = {};
+                        let allCategories = [];
+
+                        try {
+                            if (productDataEl) existingProduct = JSON.parse(productDataEl.textContent);
+                        } catch (e) { console.error("Failed to parse product data", e); }
+
+                        try {
+                            if (categoriesDataEl) allCategories = JSON.parse(categoriesDataEl.textContent);
+                        } catch (e) { console.error("Failed to parse category data", e); }
+
+                        console.log("DEBUG: Script Start", existingProduct);
+
+                        // Generate Size Pills (1-12)
+                        const sizeCheckboxGroup = document.getElementById('sizeCheckboxGroup');
+                        if (sizeCheckboxGroup) {
+                            sizeCheckboxGroup.innerHTML = '';
+                            for (let i = 1; i <= 12; i++) {
+                                const div = document.createElement('div');
+                                div.className = 'd-inline-block';
+                                div.innerHTML = `
+                                    <input class="size-pill-checkbox size-checkbox" type="checkbox" id="sizeCheck${i}" value="${i}">
+                                    <label class="size-pill-label" for="sizeCheck${i}">${i}</label>
+                                `;
+                                sizeCheckboxGroup.appendChild(div);
+                            }
+                        }
+
+                        // VARIANTS & GLOBAL STATE
+                        // Initialize variants from existing or empty
+                        let variants = (existingProduct.variants || []).map((v, i) => ({
+                            ...v,
+                            id: v._id || Date.now() + i,
+                            isExisting: true,
+                            isBlocked: (v.sizes && v.sizes.some(s => s.isBlocked)) || false,
+                            colorImageBlob: null,
+                            galleryBlobs: [],
+                            existingGallery: v.variantImages || []
+                        }));
+
+                        // Temporary variant for Add/Edit Modal
+                        let tempVariant = {
+                            colorImageBlob: null,
+                            galleryBlobs: [],
+                            existingGallery: [],
+                            isExisting: false
+                        };
+
+                        // ==========================================
+                        // 2. VARIANT LIST & EVENT DELEGATION
+                        // ==========================================
+                        const container = document.getElementById('variantsContainer');
+
+                        function renderVariantsList() {
+                            container.innerHTML = '';
+                            variants.forEach((v, idx) => {
+                                const div = document.createElement('div');
+                                div.className = 'variant-card shadow-sm border-0';
+
+                                // Preview URL
+                                let colorUrl = '/images/placeholder.png';
+                                if (v.colorImageBlob) colorUrl = URL.createObjectURL(v.colorImageBlob);
+                                else if (v.colorImage) colorUrl = v.colorImage;
+
+                                let sizesSummary = v.sizes.map(s => `${s.size}`).join(', ');
+                                let galleryCount = (v.existingGallery ? v.existingGallery.length : 0) + (v.galleryBlobs ? v.galleryBlobs.length : 0);
+
+                                let isBlocked = v.isBlocked || false;
+                                let blockBtnClass = isBlocked ? 'btn-success' : 'btn-warning';
+                                let blockBtnText = isBlocked ? 'Unblock' : 'Block';
+
+                                div.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-4 align-items-center">
+                                        <div class="text-center position-relative">
+                                            <div class="p-1 border rounded-circle d-inline-block">
+                                                <img src="${colorUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; opacity: ${isBlocked ? '0.5' : '1'}">
+                                            </div>
+                                            <div class="small fw-bold mt-1">${v.color}</div>
+                                            ${isBlocked ? '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6em;">Blocked</span>' : ''}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Variant Info</h6>
+                                            <div class="text-muted small mb-1"><i class="fas fa-boxes me-1"></i> Sizes Configured: <span class="text-dark fw-medium">${sizesSummary}</span></div>
+                                            <div class="text-muted small"><i class="fas fa-images me-1"></i> ${galleryCount} Gallery Images</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button type="button" class="btn ${blockBtnClass} btn-sm btn-action" style="width: auto; min-width: 70px;" data-action="block" data-index="${idx}">${blockBtnText}</button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm btn-action" style="width: auto; min-width: 60px;" data-action="edit" data-index="${idx}">Edit</button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm btn-action" style="width: auto; min-width: 70px;" data-action="remove" data-index="${idx}">Remove</button>
+                                    </div>
+                                </div>
+                            `;
+                                container.appendChild(div);
+                            });
+                        }
+
+                        // Event Delegation for Variant Actions
+                        container.addEventListener('click', (e) => {
+                            const btn = e.target.closest('.btn-action');
+                            if (!btn) return;
+
+                            const action = btn.dataset.action;
+                            const idx = parseInt(btn.dataset.index);
+
+                            if (action === 'block') {
+                                variants[idx].isBlocked = !variants[idx].isBlocked;
+                                renderVariantsList();
+                            } else if (action === 'edit') {
+                                openEditVariantModal(idx);
+                            } else if (action === 'remove') {
+                                confirmRemoveVariant(idx);
+                            }
+                        });
+
+
+                        function confirmRemoveVariant(idx) {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    title: 'Remove Variant?',
+                                    text: 'Are you sure you want to remove this variant?',
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#d33',
+                                    confirmButtonText: 'Yes, remove it!'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        variants.splice(idx, 1);
+                                        renderVariantsList();
+                                        Swal.fire('Removed!', 'Variant removed.', 'success');
+                                    }
+                                });
+                            } else {
+                                if (confirm("Remove this variant?")) {
+                                    variants.splice(idx, 1);
+                                    renderVariantsList();
+                                }
+                            }
+                        }
+
+                        // ==========================================
+                        // 3. EDIT MODAL LOGIC
+                        // ==========================================
+                        let variantModal;
+                        try {
+                            variantModal = new bootstrap.Modal(document.getElementById('variantModal'));
+                        } catch (e) { console.error("Variant Modal Init Failed", e); }
+
+
+                        function openEditVariantModal(idx) {
+                            const v = variants[idx];
+                            document.getElementById('editingVariantIndex').value = idx;
+                            document.getElementById('variantModalTitle').innerText = "Edit Variant";
+
+                            // Deep copy variant logic
+                            tempVariant = {
+                                ...v,
+                                sizes: v.sizes.map(s => ({ ...s })),
+                                galleryBlobs: [...(v.galleryBlobs || [])],
+                                existingGallery: [...(v.existingGallery || [])]
+                            };
+
+                            document.getElementById('vColorName').value = v.color || '';
+                            const skuEl = document.getElementById('vBaseSku');
+                            if (skuEl) skuEl.value = (v.sizes[0] && v.sizes[0].sku) ? v.sizes[0].sku.split('-S')[0] : '';
+
+                            // Image Previews
+                            const previewContainer = document.getElementById('vColorImagePreviewContainer');
+                            const existingInfo = document.getElementById('existingColorImageInfo');
+                            if (v.colorImage) {
+                                previewContainer.innerHTML = `<img src="${v.colorImage}" class="img-thumbnail" style="width: 100px;">`;
+                                existingInfo.style.display = 'block';
+                            } else if (v.colorImageBlob) {
+                                const url = URL.createObjectURL(v.colorImageBlob);
+                                previewContainer.innerHTML = `<img src="${url}" class="img-thumbnail" style="width: 100px;">`;
+                                existingInfo.style.display = 'none';
+                            } else {
+                                previewContainer.innerHTML = '';
+                                existingInfo.style.display = 'none';
+                            }
+
+                            renderGalleryPreviews();
+
+                            // Checkboxes
+                            document.querySelectorAll('.size-checkbox').forEach(cb => {
+                                cb.checked = false;
+                            });
+                            v.sizes.forEach(s => {
+                                const cb = document.getElementById(`sizeCheck${s.size}`);
+                                if (cb) cb.checked = true;
+                            });
+                            updateSizeRows();
+
+                            if (variantModal) variantModal.show();
+                        }
+
+                        // SAVE VARIANT BUTTON
+                        document.getElementById('saveVariantBtn').addEventListener('click', () => {
+                            const idx = parseInt(document.getElementById('editingVariantIndex').value);
+                            const isEdit = idx >= 0;
+
+                            const colorName = document.getElementById('vColorName').value.trim();
+                            const baseSku = document.getElementById('vBaseSku').value.trim();
+
+                            if (!colorName) return alert("Color Name is required");
+                            if (!baseSku) return alert("Base SKU is required");
+
+                            // Validation: Image
+                            const hasExistingColor = tempVariant.colorImage && tempVariant.isExisting;
+                            if (!tempVariant.colorImageBlob && !hasExistingColor) return alert("Color Image is required");
+
+                            // Gallery
+                            const totalGallery = (tempVariant.existingGallery ? tempVariant.existingGallery.length : 0) + tempVariant.galleryBlobs.length;
+                            if (totalGallery < 3) return alert("At least 3 Gallery Images required");
+
+                            // Sizes
+                            const sizeRows = document.querySelectorAll('.size-row');
+                            if (sizeRows.length === 0) return alert("Select at least one size");
+
+                            let sizesData = [];
+                            let valid = true;
+                            sizeRows.forEach(row => {
+                                const size = row.dataset.size;
+                                const qty = row.querySelector('.v-qty').value;
+                                const reg = row.querySelector('.v-reg').value;
+                                const sale = row.querySelector('.v-sale').value;
+                                const sku = row.querySelector('.v-sku').value;
+
+                                if (!qty || !reg || !sale) {
+                                    valid = false;
+                                    row.style.border = "1px solid red";
+                                } else {
+                                    row.style.border = "none";
+                                    sizesData.push({
+                                        size: Number(size),
+                                        quantity: Number(qty),
+                                        regularPrice: Number(reg),
+                                        salePrice: Number(sale),
+                                        sku: sku
+                                    });
+                                }
+                            });
+
+                            if (!valid) return alert("Please fill all size fields");
+
+                            const variant = {
+                                ...tempVariant,
+                                color: colorName,
+                                sizes: sizesData,
+                            };
+
+                            if (!variant.id) variant.id = Date.now();
+
+                            if (isEdit) {
+                                variants[idx] = variant;
+                            } else {
+                                variants.push(variant);
+                            }
+
+                            renderVariantsList();
+                            if (variantModal) variantModal.hide();
+                        });
+
+                        // Reset Modal on Hide
+                        document.getElementById('variantModal').addEventListener('hidden.bs.modal', () => {
+                            tempVariant = { colorImageBlob: null, galleryBlobs: [], existingGallery: [] };
+                            document.getElementById('vColorName').value = '';
+                            document.getElementById('vBaseSku').value = '';
+                            document.getElementById('vColorImagePreviewContainer').innerHTML = '';
+                            document.getElementById('vGalleryPreviewContainer').innerHTML = '';
+                            document.querySelectorAll('.size-checkbox').forEach(cb => cb.checked = false);
+                            document.getElementById('editingVariantIndex').value = "-1";
+                            document.getElementById('variantModalTitle').innerText = "Add New Variant";
+                            document.getElementById('existingColorImageInfo').style.display = 'none';
+                            updateSizeRows();
+                        });
+
+
+                        // ==========================================
+                        // 4. CROPPER & HELPERS
+                        // ==========================================
+                        let cropperModal;
+                        let cropper;
+                        try {
+                            cropperModal = new bootstrap.Modal(document.getElementById('cropperModal'));
+                        } catch (e) { console.error("Cropper Modal Init Failed", e); }
+
+                        let currentCropCallback = null;
+                        const imageToCrop = document.getElementById('imageToCrop');
+
+                        function openCropper(file, callback) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                imageToCrop.src = e.target.result;
+                                currentCropCallback = callback;
+                                if (cropperModal) cropperModal.show();
+                            };
+                            reader.readAsDataURL(file);
+                        }
+
+                        document.getElementById('cropperModal').addEventListener('shown.bs.modal', function () {
+                            this.removeAttribute('aria-hidden'); // Fix for accessibility warning
+                            cropper = new Cropper(imageToCrop, { aspectRatio: 1, viewMode: 2 });
+                        });
+                        document.getElementById('cropperModal').addEventListener('hidden.bs.modal', () => {
+                            if (cropper) {
+                                cropper.destroy();
+                                cropper = null;
+                            }
+
+                            // Fix for nested modal scrollbar issue
+                            const variantModal = document.getElementById('variantModal');
+                            if (variantModal && variantModal.classList.contains('show')) {
+                                // Delay to ensure we override Bootstrap's cleanup
+                                setTimeout(() => {
+                                    // 1. Force body to emulate modal-open state
+                                    document.body.classList.add('modal-open');
+                                    document.body.style.overflow = 'hidden';
+                                    document.body.style.paddingRight = '0px';
+
+                                    // 2. Force the modal container itself to scroll
+                                    variantModal.style.overflowY = 'auto'; // CRITICAL: Ensure the modal container scrolls
+                                    variantModal.style.overflowX = 'hidden';
+
+                                    // 3. Fix modal-body overflow just in case
+                                    const modalBody = variantModal.querySelector('.modal-body');
+                                    if (modalBody) {
+                                        modalBody.style.overflowY = 'auto';
+                                        // Force a repaint if needed
+                                        modalBody.style.display = 'none';
+                                        modalBody.offsetHeight; // Trigger reflow
+                                        modalBody.style.display = 'block';
+                                    }
+                                }, 300); // Increased timeout to be safe
+                            }
+                        });
+                        document.getElementById('cropBtn').addEventListener('click', () => {
+                            if (cropper && currentCropCallback) {
+                                cropper.getCroppedCanvas({ width: 800, height: 800 }).toBlob((blob) => {
+                                    currentCropCallback(blob);
+                                    if (cropperModal) cropperModal.hide();
+                                }, 'image/jpeg');
+                            }
+                        });
+
+                        // Image Inputs
+                        document.getElementById('vColorImageInput').addEventListener('change', function (e) {
+                            if (e.target.files && e.target.files[0]) {
+                                openCropper(e.target.files[0], (blob) => {
+                                    tempVariant.colorImageBlob = blob;
+                                    const url = URL.createObjectURL(blob);
+                                    document.getElementById('vColorImagePreviewContainer').innerHTML =
+                                        `<img src="${url}" class="img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">`;
+                                });
+                                this.value = '';
+                            }
+                        });
+
+                        document.getElementById('vGalleryInput').addEventListener('change', function (e) {
+                            if (e.target.files) {
+                                Array.from(e.target.files).forEach(file => {
+                                    openCropper(file, (blob) => {
+                                        tempVariant.galleryBlobs.push(blob);
+                                        renderGalleryPreviews();
+                                    });
+                                });
+                                this.value = '';
+                            }
+                        });
+
+                        function renderGalleryPreviews() {
+                            const container = document.getElementById('vGalleryPreviewContainer');
+                            container.innerHTML = '';
+                            if (tempVariant.existingGallery) {
+                                tempVariant.existingGallery.forEach((url, idx) => {
+                                    const div = document.createElement('div');
+                                    div.className = 'position-relative m-1';
+                                    div.innerHTML = `
+                                    <img src="${url}" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid #ddd; opacity: 0.8; border-radius: 4px;">
+
+                                    <button type="button" class="btn btn-danger btn-sm p-0 position-absolute" 
+                                        style="width: 24px; height: 24px; line-height: 1; border-radius: 50%; top: 5px; right: 5px; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                                        data-gallery-type="existing" data-idx="${idx}">&times;</button>
+                                `;
+                                    container.appendChild(div);
+                                });
+                            }
+                            tempVariant.galleryBlobs.forEach((blob, idx) => {
+                                const url = URL.createObjectURL(blob);
+                                const div = document.createElement('div');
+                                div.className = 'position-relative m-1';
+                                div.innerHTML = `
+                                <img src="${url}" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
+                                <span class="position-absolute bottom-0 start-0 badge bg-success" style="font-size:8px;">New</span>
+                                <button type="button" class="btn btn-danger btn-sm p-0 position-absolute" 
+                                    style="width: 24px; height: 24px; line-height: 1; border-radius: 50%; top: 5px; right: 5px; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                                    data-gallery-type="new" data-idx="${idx}">&times;</button>
+                            `;
+                                container.appendChild(div);
+                            });
+                        }
+
+                        // Gallery Remove Delegation
+                        document.getElementById('vGalleryPreviewContainer').addEventListener('click', (e) => {
+                            const btn = e.target.closest('button');
+                            if (!btn) return;
+                            const type = btn.dataset.galleryType;
+                            const idx = parseInt(btn.dataset.idx);
+                            if (type === 'existing') {
+                                tempVariant.existingGallery.splice(idx, 1);
+                            } else if (type === 'new') {
+                                tempVariant.galleryBlobs.splice(idx, 1);
+                            }
+                            renderGalleryPreviews();
+                        });
+
+                        // Size Logic
+                        const sizeInputsContainer = document.getElementById('sizeInputsContainer');
+                        const noSizeMsg = document.getElementById('noSizeSelectedMsg');
+
+                        document.querySelectorAll('.size-checkbox').forEach(cb => {
+                            cb.addEventListener('change', updateSizeRows);
+                        });
+                        document.getElementById('vBaseSku').addEventListener('input', updateSkus);
+
+                        function updateSkus() {
+                            const base = document.getElementById('vBaseSku').value.trim();
+                            document.querySelectorAll('.v-sku').forEach(input => {
+                                const size = input.dataset.size;
+                                if (!input.value || (base && input.value.includes(base))) {
+                                    input.value = base ? `${base}-S${size}` : '';
+                                }
+                            });
+                        }
+
+
+                        function updateSizeRows() {
+                            const checkedSizes = Array.from(document.querySelectorAll('.size-checkbox:checked')).map(cb => cb.value);
+
+                            if (checkedSizes.length > 0) {
+                                noSizeMsg.style.display = 'none';
+                            } else {
+                                noSizeMsg.style.display = 'block';
+                                sizeInputsContainer.innerHTML = '';
+                                sizeInputsContainer.appendChild(noSizeMsg);
+                                return;
+                            }
+
+                            // Table Header Structure
+                            sizeInputsContainer.innerHTML = `
+                                <table class="table table-borderless variant-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 10%">Size</th>
+                                            <th style="width: 30%">SKU</th>
+                                            <th style="width: 20%">Stock</th>
+                                            <th style="width: 20%">Reg. Price</th>
+                                            <th style="width: 20%">Sale Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="variantTableBody"></tbody>
+                                </table>
+                            `;
+                            const tbody = sizeInputsContainer.querySelector('tbody');
+
+                            // Preserve existing input values if any (from DOM)
+                            let currentValues = {};
+                            document.querySelectorAll('.size-row').forEach(row => {
+                                // Scrape data from either old divs or new trs
+                                const size = row.dataset.size;
+                                const qtyInput = row.querySelector('.v-qty');
+                                const regInput = row.querySelector('.v-reg');
+                                const saleInput = row.querySelector('.v-sale');
+                                const skuInput = row.querySelector('.v-sku');
+
+                                if (qtyInput) currentValues[size] = {
+                                    qty: qtyInput.value,
+                                    reg: regInput.value,
+                                    sale: saleInput.value,
+                                    sku: skuInput.value
+                                };
+                            });
+
+                            checkedSizes.sort((a, b) => a - b).forEach(size => {
+                                const existing = currentValues[size] || {};
+                                // Use tempVariant as fallback (initial load from loaded product)
+                                const loadedSize = (tempVariant.sizes || []).find(s => s.size == size);
+
+                                const valQty = existing.qty !== undefined ? existing.qty : (loadedSize ? loadedSize.quantity : '');
+                                const valReg = existing.reg !== undefined ? existing.reg : (loadedSize ? loadedSize.regularPrice : '');
+                                const valSale = existing.sale !== undefined ? existing.sale : (loadedSize ? loadedSize.salePrice : '');
+                                const valSku = existing.sku !== undefined ? existing.sku : (loadedSize ? loadedSize.sku : '');
+
+                                const tr = document.createElement('tr');
+                                tr.className = 'size-row';
+                                tr.dataset.size = size;
+                                tr.innerHTML = `
+                                    <td><span class="fw-bold fs-5 text-dark">${size}</span></td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm v-sku" data-size="${size}" readonly value="${valSku}" placeholder="Auto">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm v-qty" data-size="${size}" min="0" required value="${valQty}" placeholder="0">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm v-reg" data-size="${size}" min="0" step="0.01" required value="${valReg}" placeholder="₹">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm v-sale" data-size="${size}" min="0" step="0.01" required value="${valSale}" placeholder="₹">
+                                    </td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+
+                            // Auto-SKU logic for empty fields
+                            const base = document.getElementById('vBaseSku').value.trim();
+                            if (base) {
+                                document.querySelectorAll('.v-sku').forEach(input => {
+                                    if (!input.value) input.value = `${base}-S${input.dataset.size}`;
+                                });
+                            }
+                        }
+
+                        // ==========================================
+                        // 5. UPDATE PRODUCT FORM SUBMISSION
+                        // ==========================================
+                        document.getElementById('editProductForm').addEventListener('submit', function (e) {
+                            e.preventDefault();
+
+                            if (variants.length === 0) return alert("Please add at least one product variant.");
+                            if (!document.getElementById('finalCategory').value) return alert("Please select a category.");
+
+                            const formData = new FormData(this);
+                            const variantsMetadata = variants.map((v, idx) => {
+                                return {
+                                    id: v.id,
+                                    color: v.color,
+                                    sizes: v.sizes,
+                                    existingGallery: v.existingGallery || [],
+                                    colorImage: v.colorImage,
+                                    isExisting: v.isExisting,
+                                    isBlocked: v.isBlocked || false
+                                };
+                            });
+                            formData.append('variants', JSON.stringify(variantsMetadata));
+                            variants.forEach((v, idx) => {
+                                if (v.colorImageBlob) {
+                                    formData.append(`variantColorImage_${idx}`, v.colorImageBlob, `color_${idx}.jpg`);
+                                }
+                                if (v.galleryBlobs && v.galleryBlobs.length > 0) {
+                                    v.galleryBlobs.forEach((blob, gIdx) => {
+                                        formData.append(`variantGalleryImages_${idx}`, blob, `gallery_${idx}_${gIdx}.jpg`);
+                                    });
+                                }
+                            });
+
+                            const submitBtn = document.getElementById('finalSubmitBtn');
+                            submitBtn.disabled = true;
+                            submitBtn.innerText = "Updating Product...";
+
+                            fetch(this.action, {
+                                method: 'POST',
+                                body: formData
+                            })
+                                .then(res => {
+                                    if (res.redirected) {
+                                        window.location.href = res.url;
+                                    } else {
+                                        if (!res.ok) {
+                                            return res.text().then(text => { throw new Error(text || "Server Error " + res.status); });
+                                        }
+                                        return res.text().then(text => {
+                                            document.open(); document.write(text); document.close();
+                                        });
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error("Update Failed:", err);
+                                    alert("Update Failed: " + err.message); // Show specifics
+                                    submitBtn.disabled = false;
+                                    submitBtn.innerText = "Update Product";
+                                });
+                        });
+
+                        // Category Logic
+                        const finalCategoryInput = document.getElementById('finalCategory');
+                        const genderSelect = document.getElementById('genderSelect');
+                        const parentSelect = document.getElementById('parentCategorySelect');
+                        const childSelect = document.getElementById('childCategorySelect');
+
+                        function populateParents(gender, selectedParentId) {
+                            parentSelect.innerHTML = '<option value="">Select Parent Category</option>';
+                            if (!gender) { parentSelect.disabled = true; return; }
+                            const parents = allCategories.filter(cat => cat.gender === gender && (!cat.parentCategory));
+                            parents.forEach(p => {
+                                const opt = document.createElement('option');
+                                opt.value = p._id; opt.textContent = p.name;
+                                if (selectedParentId && p._id.toString() === selectedParentId.toString()) opt.selected = true;
+                                parentSelect.appendChild(opt);
+                            });
+                            parentSelect.disabled = false;
+                        }
+
+                        function populateChildren(parentId, selectedChildId) {
+                            childSelect.innerHTML = '<option value="">Select Child Category</option>';
+                            if (!parentId) { childSelect.disabled = true; return; }
+                            // Use safe type comparison
+                            const children = allCategories.filter(cat => cat.parentCategory &&
+                                (cat.parentCategory._id || cat.parentCategory).toString() == parentId.toString());
+
+                            children.forEach(c => {
+                                const opt = document.createElement('option');
+                                opt.value = c._id; opt.textContent = c.name;
+                                if (selectedChildId && c._id.toString() === selectedChildId.toString()) opt.selected = true;
+                                childSelect.appendChild(opt);
+                            });
+                            childSelect.disabled = false;
+                        }
+
+                        // Initial Category Check
+                        const currentCatIdInput = finalCategoryInput.value;
+                        if (currentCatIdInput) {
+                            const curCat = allCategories.find(c => String(c._id) === String(currentCatIdInput));
+                            if (curCat) {
+                                if (curCat.gender) genderSelect.value = curCat.gender;
+                                if (curCat.parentCategory) {
+                                    const pId = (curCat.parentCategory._id || curCat.parentCategory).toString();
+                                    populateParents(curCat.gender, pId);
+                                    populateChildren(pId, String(curCat._id));
+                                } else {
+                                    populateParents(curCat.gender, String(curCat._id));
+                                    populateChildren(String(curCat._id), null);
+                                }
+                            }
+                        }
+
+                        genderSelect.addEventListener('change', function () {
+                            finalCategoryInput.value = "";
+                            populateParents(this.value, null);
+                            childSelect.innerHTML = '<option value="">Select Child Category</option>';
+                            childSelect.disabled = true;
+                        });
+
+                        parentSelect.addEventListener('change', function () {
+                            if (this.value) {
+                                finalCategoryInput.value = this.value;
+                                populateChildren(this.value, null);
+                            } else {
+                                finalCategoryInput.value = "";
+                                childSelect.disabled = true;
+                            }
+                        });
+
+                        childSelect.addEventListener('change', function () {
+                            if (this.value) finalCategoryInput.value = this.value;
+                            else finalCategoryInput.value = parentSelect.value;
+                        });
+
+
+                        // Initial Render Trigger
+                        renderVariantsList();
+
+                    } catch (error) {
+                        console.error("Critical Script Error:", error);
+                    }
+                });
+            </script>

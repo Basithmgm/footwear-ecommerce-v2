@@ -36,11 +36,41 @@
                   <li><a href="/shop">Shop All Products</a></li>
                 </ul>
               </li>
-              <li class="has-dropdown">
+              <li class="has-dropdown <%= (locals.activeMenu === 'men') ? 'active' : '' %>">
                 <a href="/men">Men</a>
+                <ul class="dropdown">
+                  <% if (locals.navCategories && locals.navCategories.men && locals.navCategories.men.length> 0) { %>
+                    <% locals.navCategories.men.forEach(cat=> { %>
+                      <!-- Show only parent categories level 0 or main ones if you wish, currently showing all active men categories -->
+                      <% if (!cat.parentCategory) { %>
+                        <li><a href="/men?category=<%= cat._id %>">
+                            <%= cat.name %>
+                          </a></li>
+                        <% } %>
+                          <% }); %>
+                            <li><a href="/men">View All Men</a></li>
+                            <% } else { %>
+                              <li><a href="/men">Shop Men</a></li>
+                              <% } %>
+                </ul>
               </li>
-              <li class="has-dropdown">
+              <li class="has-dropdown <%= (locals.activeMenu === 'women') ? 'active' : '' %>">
                 <a href="/women">Women</a>
+                <ul class="dropdown">
+                  <% if (locals.navCategories && locals.navCategories.women && locals.navCategories.women.length> 0) {
+                    %>
+                    <% locals.navCategories.women.forEach(cat=> { %>
+                      <% if (!cat.parentCategory) { %>
+                        <li><a href="/women?category=<%= cat._id %>">
+                            <%= cat.name %>
+                          </a></li>
+                        <% } %>
+                          <% }); %>
+                            <li><a href="/women">View All Women</a></li>
+                            <% } else { %>
+                              <li><a href="/women">Shop Women</a></li>
+                              <% } %>
+                </ul>
               </li>
               <li><a href="/about">About</a></li>
               <li><a href="/contact">Contact</a></li>
@@ -60,8 +90,7 @@
                   </ul>
                 </li>
                 <% } else { %>
-                  <li class="auth-item"><a href="/login" class="auth-link"
-                      onclick="window.location.href='/login'; return false;">Sign In</a></li>
+                  <li class="auth-item"><a href="/login" class="auth-link">Sign In</a></li>
                   <% } %>
             </ul>
           </div>

@@ -17,80 +17,74 @@
                 <div class="col-md-8">
                     <div class="card shadow-sm">
                         <div class="card-body p-4">
-                            <% if (error) { %>
-                                <div class="alert alert-danger">
-                                    <%= error %>
+
+
+                            <form id="editCategoryForm" action="/admin/categories/edit/<%= category._id %>"
+                                method="POST">
+                                <input type="hidden" name="redirectPage"
+                                    value="<%= typeof redirectPage !== 'undefined' ? redirectPage : 1 %>">
+                                <!-- Category Name -->
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Category Name *</label>
+                                    <input type="text" class="form-control" id="name" name="name"
+                                        value="<%= category.name %>" required>
                                 </div>
-                                <% } %>
 
-                                    <form action="/admin/categories/edit/<%= category._id %>" method="POST">
-                                        <input type="hidden" name="redirectPage"
-                                            value="<%= typeof redirectPage !== 'undefined' ? redirectPage : 1 %>">
-                                        <!-- Category Name -->
-                                        <div class="mb-3">
-                                            <label for="name" class="form-label">Category Name *</label>
-                                            <input type="text" class="form-control" id="name" name="name"
-                                                value="<%= category.name %>" required>
-                                        </div>
+                                <!-- Parent Category Selection -->
+                                <div class="mb-3">
+                                    <label for="parentCategory" class="form-label">Parent Category
+                                        (Locked)</label>
+                                    <select class="form-select bg-light" id="parentCategory" name="parentCategory"
+                                        disabled>
+                                        <option value="">None (Main Category)</option>
+                                        <% parentCategories.forEach(parent=> { %>
+                                            <option value="<%= parent._id %>" data-gender="<%= parent.gender %>"
+                                                <%=(category.parentCategory &&
+                                                category.parentCategory.toString()===parent._id.toString()) ? 'selected'
+                                                : '' %>>
+                                                <%= parent.gender %> - <%= parent.name %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                    <div class="form-text text-muted">Parent category cannot be changed after
+                                        creation.</div>
+                                </div>
 
-                                        <!-- Parent Category Selection -->
-                                        <div class="mb-3">
-                                            <label for="parentCategory" class="form-label">Parent Category</label>
-                                            <select class="form-select" id="parentCategory" name="parentCategory"
-                                                onchange="updateGenderField()">
-                                                <option value="">None (Main Category)</option>
-                                                <% parentCategories.forEach(parent=> { %>
-                                                    <option value="<%= parent._id %>" data-gender="<%= parent.gender %>"
-                                                        <%=(category.parentCategory &&
-                                                        category.parentCategory.toString()===parent._id.toString())
-                                                        ? 'selected' : '' %>>
-                                                        <%= parent.gender %> - <%= parent.name %>
-                                                    </option>
-                                                    <% }) %>
-                                            </select>
-                                        </div>
+                                <!-- Gender Selection -->
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Gender *</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="Kids" <%=category.gender==='Kids' ? 'selected' : '' %>
+                                            >Kids</option>
+                                        <option value="Men" <%=category.gender==='Men' ? 'selected' : '' %>>Men
+                                        </option>
+                                        <option value="Unisex" <%=category.gender==='Unisex' ? 'selected' : '' %>>Unisex
+                                        </option>
+                                        <option value="Women" <%=category.gender==='Women' ? 'selected' : '' %>
+                                            >Women</option>
+                                    </select>
+                                </div>
 
-                                        <!-- Gender Selection -->
-                                        <div class="mb-3">
-                                            <label for="gender" class="form-label">Gender *</label>
-                                            <select class="form-select" id="gender" name="gender" required>
-                                                <option value="Kids" <%=category.gender==='Kids' ? 'selected' : '' %>
-                                                    >Kids</option>
-                                                <option value="Men" <%=category.gender==='Men' ? 'selected' : '' %>>Men
-                                                </option>
-                                                <option value="Unisex" <%=category.gender==='Unisex' ? 'selected' : ''
-                                                    %>>Unisex</option>
-                                                <option value="Women" <%=category.gender==='Women' ? 'selected' : '' %>
-                                                    >Women</option>
-                                            </select>
-                                        </div>
+                                <!-- Description -->
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description"
+                                        rows="3"><%= category.description || '' %></textarea>
+                                </div>
 
-                                        <!-- Blocking -->
-                                        <div class="mb-3 form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="isBlocked"
-                                                name="isBlocked" <%=category.isBlocked ? 'checked' : '' %>>
-                                            <label class="form-check-label" for="isBlocked">Block Category (Hides
-                                                products in Shop)</label>
-                                        </div>
-
-                                        <!-- Description -->
-                                        <div class="mb-3">
-                                            <label for="description" class="form-label">Description</label>
-                                            <textarea class="form-control" id="description" name="description"
-                                                rows="3"><%= category.description || '' %></textarea>
-                                        </div>
-
-                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                            <a href="/admin/categories" class="btn btn-light me-md-2">Cancel</a>
-                                            <button type="submit" class="btn btn-primary">Update Category</button>
-                                        </div>
-                                    </form>
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="/admin/categories" class="btn btn-light me-md-2">Cancel</a>
+                                    <button type="button" id="updateCategoryBtn" class="btn btn-primary">Update
+                                        Category</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
 
+        <script src="/js/sweetalert2.all.min.js"></script>
         <script>
             function updateGenderField() {
                 const parentSelect = document.getElementById('parentCategory');
@@ -111,6 +105,42 @@
             }
             // Run on load to set initial state
             document.addEventListener('DOMContentLoaded', updateGenderField);
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const updateBtn = document.getElementById('updateCategoryBtn');
+                const form = document.getElementById('editCategoryForm');
+
+                // Check for Server-Side Error and Show SweetAlert
+                <% if (error) { %>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: '<%= error %>',
+                        confirmButtonColor: '#d33'
+                    });
+                <% } %>
+
+                if (updateBtn && form) {
+                    updateBtn.addEventListener('click', function (e) {
+
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Update Category?',
+                            text: "Are you sure you want to save these changes?",
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Yes, update it!',
+                            cancelButtonText: 'No'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    });
+                }
+            });
         </script>
 
         <%- include('../../partials/admin/footer') %>

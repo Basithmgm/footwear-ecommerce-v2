@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - Footwear</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom.css">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .error-container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .error-code {
+            font-size: 80px;
+            font-weight: 700;
+            color: #dc3545;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .error-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .error-text {
+            color: #6c757d;
+            margin-bottom: 25px;
+        }
+
+        .btn-home {
+            display: inline-block;
+            background-color: #333;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .btn-home:hover {
+            background-color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-container">
+        <div class="error-code">404</div>
+        <div class="error-title">Page Not Found</div>
+        <p class="error-text">Oops! The page you are looking for does not exist or has been moved.</p>
+        <a href="<%= locals.homeLink || '/' %>" class="btn-home">
+            <%= locals.homeText || 'Go Back Home' %>
+        </a>
+    </div>
+</body>
+
+</html>

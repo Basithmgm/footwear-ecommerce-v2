@@ -18,110 +18,108 @@
                 <div class="col-md-8">
                     <div class="card shadow-sm">
                         <div class="card-body p-4">
-                            <% if (error) { %>
-                                <div class="alert alert-danger">
-                                    <%= error %>
+
+
+                            <form id="addCategoryForm" action="/admin/categories/add" method="POST">
+                                <input type="hidden" name="returnPage"
+                                    value="<%= typeof returnPage !== 'undefined' ? returnPage : 1 %>">
+                                <!-- Category Name -->
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Category Name *</label>
+                                    <input type="text" class="form-control" id="name" name="name"
+                                        value="<%= oldInput.name || '' %>" required>
                                 </div>
-                                <% } %>
 
-                                    <form action="/admin/categories/add" method="POST">
-                                        <input type="hidden" name="returnPage"
-                                            value="<%= typeof returnPage !== 'undefined' ? returnPage : 1 %>">
-                                        <!-- Category Name -->
-                                        <div class="mb-3">
-                                            <label for="name" class="form-label">Category Name *</label>
-                                            <input type="text" class="form-control" id="name" name="name"
-                                                value="<%= oldInput.name || '' %>" required>
-                                        </div>
+                                <!-- Parent Category Selection -->
+                                <div class="mb-3">
+                                    <label for="parentCategory" class="form-label">Parent Category</label>
+                                    <% if (locals.lockedParent) { %>
+                                        <input type="hidden" name="parentCategory"
+                                            value="<%= locals.lockedParent._id %>">
+                                        <% } %>
+                                            <select class="form-select bg-light" id="parentCategory"
+                                                name="<%= locals.lockedParent ? '' : 'parentCategory' %>"
+                                                onchange="updateGenderField()" disabled>
+                                                <option value="">None (Create Main Category)</option>
+                                                <% parentCategories.forEach(parent=> { %>
+                                                    <option value="<%= parent._id %>" data-gender="<%= parent.gender %>"
+                                                        <%=(locals.lockedParent &&
+                                                        String(locals.lockedParent._id)===String(parent._id)) ||
+                                                        (oldInput.parentCategory &&
+                                                        String(oldInput.parentCategory)===String(parent._id))
+                                                        ? 'selected' : '' %>>
+                                                        <%= parent.gender %> - <%= parent.name %> (<%= parent.level===0
+                                                                    ? 'Main' : 'Sub' %>)
+                                                    </option>
+                                                    <% }) %>
+                                            </select>
+                                            <% if (!locals.lockedParent) { %>
+                                                <div class="form-text text-muted">To add a subcategory, go back
+                                                    to the list and click "Add Subcategory" next to a parent.
+                                                </div>
+                                                <% } else { %>
+                                                    <div class="form-text">This category will be a subcategory
+                                                        of the chosen parent.</div>
+                                                    <% } %>
+                                </div>
 
-                                        <!-- Parent Category Selection -->
-                                        <div class="mb-3">
-                                            <label for="parentCategory" class="form-label">Parent Category</label>
+                                <!-- Gender Selection -->
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Gender *</label>
+                                    <% if (locals.lockedParent) { %>
+                                        <input type="hidden" name="gender" value="<%= locals.lockedParent.gender %>">
+                                        <% } %>
+                                            <select class="form-select" id="gender"
+                                                name="<%= locals.lockedParent ? '' : 'gender' %>" required
+                                                <%=locals.lockedParent ? 'disabled' : '' %>>
+                                                <option value="">Select Gender</option>
+                                                <option value="Kids" <%=(locals.lockedParent &&
+                                                    locals.lockedParent.gender==='Kids' ) || oldInput.gender==='Kids'
+                                                    ? 'selected' : '' %>
+                                                    >Kids</option>
+                                                <option value="Men" <%=(locals.lockedParent &&
+                                                    locals.lockedParent.gender==='Men' ) || oldInput.gender==='Men'
+                                                    ? 'selected' : '' %>>Men
+                                                </option>
+                                                <option value="Unisex" <%=(locals.lockedParent &&
+                                                    locals.lockedParent.gender==='Unisex' ) ||
+                                                    oldInput.gender==='Unisex' ? 'selected' : '' %>>Unisex
+                                                </option>
+                                                <option value="Women" <%=(locals.lockedParent &&
+                                                    locals.lockedParent.gender==='Women' ) || oldInput.gender==='Women'
+                                                    ? 'selected' : '' %>
+                                                    >Women</option>
+                                            </select>
                                             <% if (locals.lockedParent) { %>
-                                                <input type="hidden" name="parentCategory"
-                                                    value="<%= locals.lockedParent._id %>">
-                                                <% } %>
-                                                    <select class="form-select" id="parentCategory"
-                                                        name="<%= locals.lockedParent ? '' : 'parentCategory' %>"
-                                                        onchange="updateGenderField()" disabled>
-                                                        <option value="">None (Create Main Category)</option>
-                                                        <% parentCategories.forEach(parent=> { %>
-                                                            <option value="<%= parent._id %>"
-                                                                data-gender="<%= parent.gender %>"
-                                                                <%=(locals.lockedParent &&
-                                                                locals.lockedParent._id.toString()===parent._id.toString())
-                                                                ? 'selected' : '' %>>
-                                                                <%= parent.gender %> - <%= parent.name %> (<%=
-                                                                            parent.level===0 ? 'Main' : 'Sub' %>)
-                                                            </option>
-                                                            <% }) %>
-                                                    </select>
-                                                    <% if (!locals.lockedParent) { %>
-                                                        <div class="form-text text-muted">To add a subcategory, go back
-                                                            to the list and click "Add Subcategory" next to a parent.
-                                                        </div>
-                                                        <% } else { %>
-                                                            <div class="form-text">This category will be a subcategory
-                                                                of the chosen parent.</div>
-                                                            <% } %>
-                                        </div>
+                                                <div class="form-text text-danger">Gender is locked to match the
+                                                    parent category.</div>
+                                                <% } else { %>
+                                                    <div class="form-text text-danger d-none" id="gender-locked-msg">
+                                                        Gender is
+                                                        locked to match the parent category.</div>
+                                                    <% } %>
+                                </div>
 
-                                        <!-- Gender Selection -->
-                                        <div class="mb-3">
-                                            <label for="gender" class="form-label">Gender *</label>
-                                            <% if (locals.lockedParent) { %>
-                                                <input type="hidden" name="gender"
-                                                    value="<%= locals.lockedParent.gender %>">
-                                                <% } %>
-                                                    <select class="form-select" id="gender"
-                                                        name="<%= locals.lockedParent ? '' : 'gender' %>" required
-                                                        <%=locals.lockedParent ? 'disabled' : '' %>>
-                                                        <option value="">Select Gender</option>
-                                                        <option value="Kids" <%=(locals.lockedParent &&
-                                                            locals.lockedParent.gender==='Kids' ) ||
-                                                            oldInput.gender==='Kids' ? 'selected' : '' %>
-                                                            >Kids</option>
-                                                        <option value="Men" <%=(locals.lockedParent &&
-                                                            locals.lockedParent.gender==='Men' ) ||
-                                                            oldInput.gender==='Men' ? 'selected' : '' %>>Men
-                                                        </option>
-                                                        <option value="Unisex" <%=(locals.lockedParent &&
-                                                            locals.lockedParent.gender==='Unisex' ) ||
-                                                            oldInput.gender==='Unisex' ? 'selected' : '' %>>Unisex
-                                                        </option>
-                                                        <option value="Women" <%=(locals.lockedParent &&
-                                                            locals.lockedParent.gender==='Women' ) ||
-                                                            oldInput.gender==='Women' ? 'selected' : '' %>
-                                                            >Women</option>
-                                                    </select>
-                                                    <% if (locals.lockedParent) { %>
-                                                        <div class="form-text text-danger">Gender is locked to match the
-                                                            parent category.</div>
-                                                        <% } else { %>
-                                                            <div class="form-text text-danger d-none"
-                                                                id="gender-locked-msg">Gender is
-                                                                locked to match the parent category.</div>
-                                                            <% } %>
-                                        </div>
+                                <!-- Description -->
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description"
+                                        rows="3"><%= oldInput.description || '' %></textarea>
+                                </div>
 
-                                        <!-- Description -->
-                                        <div class="mb-3">
-                                            <label for="description" class="form-label">Description</label>
-                                            <textarea class="form-control" id="description" name="description"
-                                                rows="3"><%= oldInput.description || '' %></textarea>
-                                        </div>
-
-                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                            <a href="/admin/categories" class="btn btn-light me-md-2">Cancel</a>
-                                            <button type="submit" class="btn btn-primary">Add Category</button>
-                                        </div>
-                                    </form>
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="/admin/categories" class="btn btn-light me-md-2">Cancel</a>
+                                    <button type="button" id="createCategoryBtn" class="btn btn-primary">Add
+                                        Category</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
 
+        <script src="/js/sweetalert2.all.min.js"></script>
         <script>
             function updateGenderField() {
                 const parentSelect = document.getElementById('parentCategory');
@@ -145,6 +143,41 @@
                     genderMsg.classList.add('d-none');
                 }
             }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const createBtn = document.getElementById('createCategoryBtn');
+                const form = document.getElementById('addCategoryForm');
+
+                // Check for Server-Side Error and Show SweetAlert
+                <% if (error) { %>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: '<%= error %>',
+                        confirmButtonColor: '#d33'
+                    });
+                <% } %>
+
+                if (createBtn && form) {
+                    createBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Create Category?',
+                            text: "Are you sure you want to create this category?",
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#28a745',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Yes, create it!',
+                            cancelButtonText: 'No'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    });
+                }
+            });
         </script>
 
         <%- include('../../partials/admin/footer') %>

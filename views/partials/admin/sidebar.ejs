@@ -1,13 +1,20 @@
 <aside class="admin-sidebar">
     <div class="brand">Footwear Admin</div>
     <ul>
-        <li><a href="#">Dashboard</a></li>
-        <li><a href="#">Orders</a></li>
-        <li><a href="/admin/products" class="<%= path === '/admin/products' ? 'active' : '' %>">Products</a></li>
-        <li><a href="/admin/categories" class="<%= path === '/admin/categories' ? 'active' : '' %>">Categories</a></li>
-        <li><a href="/admin/banners" class="<%= path === '/admin/banners' ? 'active' : '' %>">Banner Management</a></li>
-        <li><a href="/admin/users" class="<%= path === '/admin/users' ? 'active' : '' %>">Users</a></li>
-        <li><a href="#">Offers</a></li>
-        <li><a href="/admin/logout">Logout</a></li>
+        <li><a href="/admin/dashboard" class="<%= path === '/admin/dashboard' ? 'active' : '' %>"><i
+                    class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="/admin/orders" class="<%= path === '/admin/orders' ? 'active' : '' %>"><i
+                    class="fas fa-shopping-cart"></i> Orders</a></li>
+        <li><a href="/admin/products" class="<%= path === '/admin/products' ? 'active' : '' %>"><i
+                    class="fas fa-box"></i> Products</a></li>
+        <li><a href="/admin/categories" class="<%= path === '/admin/categories' ? 'active' : '' %>"><i
+                    class="fas fa-tags"></i> Categories</a></li>
+        <li><a href="/admin/banners" class="<%= path === '/admin/banners' ? 'active' : '' %>"><i
+                    class="fas fa-image"></i> Banner Management</a></li>
+        <li><a href="/admin/users" class="<%= path === '/admin/users' ? 'active' : '' %>"><i class="fas fa-users"></i>
+                Users</a></li>
+        <li><a href="/admin/offers" class="<%= path === '/admin/offers' ? 'active' : '' %>"><i
+                    class="fas fa-percentage"></i> Offers</a></li>
+        <li><a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
 </aside>

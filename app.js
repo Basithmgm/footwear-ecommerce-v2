@@ -16,6 +16,23 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ============================================
+// Security Headers (Helmet)
+// ============================================
+const helmet = require("helmet");
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+      connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"], // Allows AJAX to self and CDNs
+    },
+  })
+);
+
+// ============================================
 // Session middleware
 // ============================================
 const MongoStore = require("connect-mongo").default || require("connect-mongo");
@@ -167,8 +184,15 @@ app.use(bannerRoutes);
 const productRoutes = require("./routes/productRoutes");
 app.use(productRoutes);
 
+// Middleware imports
+const noCache = require("./middlewares/noCache");
+const fetchNavbarData = require("./middlewares/navMiddleware");
+
+// Apply navigation middleware globally (or per route if preferred, but global is easier for navbar)
+app.use(fetchNavbarData);
+
 // Home route (after signup + OTP or login, redirect here)
-app.get("/", (req, res) => {
+app.get("/", noCache, (req, res) => {
   res.render("user/home", {
     title: "Footwear Home",
     user: req.user || null,
@@ -176,10 +200,10 @@ app.get("/", (req, res) => {
   });
 });
 
-// 404
-app.use((req, res) => {
-  res.status(404).send("Page not found");
-});
+// 404 & Global Error Handling
+const { notFound, errorHandler } = require("./middlewares/errorHandler");
+app.use(notFound);
+app.use(errorHandler);
 
 // ============================================
 // Start server

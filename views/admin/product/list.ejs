@@ -26,13 +26,14 @@
                                         <table class="table table-hover align-middle mb-0">
                                             <thead class="bg-light">
                                                 <tr>
-                                                    <th class="ps-4">Image</th>
-                                                    <th>Product Name</th>
-                                                    <th>Category</th>
-                                                    <th>Price</th>
-                                                    <th>Stock</th>
-                                                    <th>Status</th>
-                                                    <th class="text-center">Actions</th>
+                                                    <th class="ps-4" style="width: 80px;">Image</th>
+                                                    <th style="width: 10%;">Gender</th>
+                                                    <th style="width: 20%;">Category</th>
+                                                    <th style="width: 25%;">Product Name</th>
+                                                    <th style="width: 8%;">Stock</th>
+                                                    <th style="width: 10%;">Status</th>
+                                                    <th class="text-center" style="width: 25%; min-width: 220px;">
+                                                        Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -40,36 +41,48 @@
                                                     <% products.forEach(product=> { %>
                                                         <tr>
                                                             <td class="ps-4">
-                                                                <img src="<%= product.productImages[0] || '/images/placeholder.png' %>"
-                                                                    alt="<%= product.productName %>" class="rounded"
-                                                                    style="width: 50px; height: 50px; object-fit: cover;">
+                                                                <a href="/admin/products/variants/<%= product._id %>">
+                                                                    <img src="<%= (product.variants && product.variants.length > 0 && product.variants[0].colorImage) ? product.variants[0].colorImage : (product.productImages && product.productImages.length > 0 ? product.productImages[0] : '/images/placeholder.png') %>"
+                                                                        alt="<%= product.productName %>" class="rounded"
+                                                                        style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;">
+                                                                </a>
                                                             </td>
                                                             <td>
-                                                                <strong>
-                                                                    <%= product.productName %>
-                                                                </strong>
+                                                                <%= product.category ? product.category.gender : 'N/A'
+                                                                    %>
                                                             </td>
                                                             <td>
-                                                                <%= product.category ? product.category.name
-                                                                    : 'Uncategorized' %>
+                                                                <% let parentName='N/A' ; let childName='N/A' ; if
+                                                                    (product.category) {
+                                                                    childName=product.category.name; if
+                                                                    (product.category.parentCategory) {
+                                                                    parentName=product.category.parentCategory.name; }
+                                                                    else { parentName='Root' ; } } %>
+                                                                    <%= parentName %> / <%= childName %>
                                                             </td>
                                                             <td>
-                                                                <% if (product.salePrice < product.regularPrice) { %>
-                                                                    <span class="text-danger fw-bold">₹<%=
-                                                                            product.salePrice %></span>
-                                                                    <small
-                                                                        class="text-muted text-decoration-line-through">₹
-                                                                        <%= product.regularPrice %></small>
-                                                                    <% } else { %>
-                                                                        <span>₹<%= product.regularPrice %></span>
-                                                                        <% } %>
+                                                                <span class="fw-bold">
+                                                                    <%= product.brand %>
+                                                                </span> / <%= product.model %>
                                                             </td>
+
                                                             <td>
-                                                                <%= product.stock %>
+                                                                <% let totalStock=product.totalStock || 0; let
+                                                                    hasLowStock=false; if (product.variants &&
+                                                                    product.variants.length> 0) {
+                                                                    product.variants.forEach(v => {
+                                                                    v.sizes.forEach(s => {
+                                                                    if (s.quantity < 6) hasLowStock=true; }); }); } %>
+                                                                        <span
+                                                                            class="<%= hasLowStock ? 'text-warning fw-bold' : '' %>">
+                                                                            <%= totalStock %>
+                                                                        </span>
                                                             </td>
                                                             <td>
                                                                 <% let badgeClass='bg-success' ; if
-                                                                    (product.status==='Out of Stock' )
+                                                                    (product.status==='Out of Stock' ||
+                                                                    product.status==='Inactive' ||
+                                                                    product.status==='Unavailable' )
                                                                     badgeClass='bg-danger' ; else if
                                                                     (product.status==='Discontinued' )
                                                                     badgeClass='bg-secondary' ; %>
@@ -79,30 +92,34 @@
                                                             </td>
                                                             <td class="text-center">
                                                                 <div
-                                                                    class="d-flex justify-content-center align-items-center gap-3">
-                                                                    <!-- Block Toggle -->
-                                                                    <!-- Note: Routes for toggle-block need to be implemented -->
-                                                                    <div class="d-flex align-items-center">
-                                                                        <span class="me-2 text-muted fw-bold"
-                                                                            style="font-size: 0.85rem;">Block</span>
+                                                                    class="d-flex justify-content-between align-items-center w-100 px-3">
+                                                                    <!-- Block Toggle (Left Side) -->
+                                                                    <div class="d-flex align-items-center"
+                                                                        style="min-width: 100px;">
                                                                         <form
                                                                             action="/admin/products/toggle-block/<%= product._id %>"
                                                                             method="POST" class="d-inline m-0">
-                                                                            <div
-                                                                                class="form-check form-switch m-0 d-flex align-items-center">
-                                                                                <input class="form-check-input"
+                                                                            <div class="form-check form-switch d-flex align-items-center gap-2 m-0 p-0"
+                                                                                style="padding-left: 0 !important; min-height: unset;">
+                                                                                <input class="form-check-input m-0"
                                                                                     type="checkbox" role="switch"
-                                                                                    onchange="this.form.submit()"
+                                                                                    data-name="<%= product.brand %> <%= product.model %>"
                                                                                     <%=!product.isBlocked ? 'checked'
                                                                                     : '' %>
-                                                                                title="<%= product.isBlocked ? 'Unblock'
-                                                                                    : 'Block' %>" style="cursor:
-                                                                                    pointer; width: 3em; height:
-                                                                                    1.5em;">
+                                                                                style="cursor: pointer; margin-left: 0
+                                                                                !important; width: 3em; height: 1.5em;
+                                                                                flex-shrink: 0; position: relative;">
+                                                                                <label
+                                                                                    class="form-check-label small text-muted text-nowrap mb-0"
+                                                                                    style="font-size: 0.85rem; line-height: 1.5em;">
+                                                                                    <%= product.isBlocked ? 'Blocked'
+                                                                                        : 'Active' %>
+                                                                                </label>
                                                                             </div>
                                                                         </form>
                                                                     </div>
 
+                                                                    <!-- Actions Buttons (Right Side) -->
                                                                     <div class="btn-group">
                                                                         <a href="/admin/products/edit/<%= product._id %>"
                                                                             class="btn btn-sm btn-outline-secondary">
@@ -111,7 +128,7 @@
                                                                         <form
                                                                             action="/admin/products/delete/<%= product._id %>"
                                                                             method="POST" class="d-inline"
-                                                                            onsubmit="return confirm('Are you sure? This will soft delete the product.');">
+                                                                            data-name="<%= product.brand %> <%= product.model %>">
                                                                             <button type="submit"
                                                                                 class="btn btn-sm btn-outline-danger ms-1">
                                                                                 <i class="fas fa-trash"></i>
@@ -171,4 +188,186 @@
                             </div>
         </main>
 
+        <!-- Product Details Modal -->
+        <div class="modal fade" id="productDetailsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="productDetailsModalLabel">Product Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="productDetailsModalBody">
+                        <!-- Dynamic Content -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script id="productsDataScript" type="application/json">
+            <%- JSON.stringify(products).replace(/</g, '\\u003c') %>
+        </script>
+        <script>
+            // Inject Products Data safely
+            let productsData = [];
+            try {
+                const rawContent = document.getElementById('productsDataScript').textContent;
+                productsData = JSON.parse(rawContent);
+            } catch (e) {
+                console.error('Error parsing products data:', e);
+            }
+            const productMap = {};
+            productsData.forEach(p => productMap[p._id] = p);
+
+            function showProductDetails(id) {
+                const product = productMap[id];
+                if (!product) return;
+
+                const modalTitle = document.getElementById('productDetailsModalLabel');
+                const modalBody = document.getElementById('productDetailsModalBody');
+
+                modalTitle.textContent = `Details: ${product.brand} ${product.model}`;
+
+                let content = '';
+
+                // Product Level Info
+                content += `
+        <div class="mb-4">
+            <span class="badge ${product.isBlocked ? 'bg-danger' : 'bg-success'} mb-2">${product.isBlocked ? 'Blocked' :
+                        'Active'}</span>
+            <span class="badge bg-secondary mb-2">${product.status}</span>
+            <p class="text-muted small">Last Updated: ${new Date(product.updatedAt).toLocaleString()}</p>
+        </div>
+        `;
+
+                if (product.variants && product.variants.length > 0) {
+                    product.variants.forEach(variant => {
+                        content += `
+        <div class="card mb-3">
+            <div class="card-header bg-light d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold">Color: ${variant.color}</h6>
+                ${variant.colorImage ? `<img src="${variant.colorImage}"
+                    style="height: 30px; width: 30px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;">`
+                                : ''}
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0 text-center">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Size</th>
+                                <th style="width: 20%;">SKU</th>
+                                <th style="width: 20%;">Stock</th>
+                                <th style="width: 20%;">Regular Price</th>
+                                <th style="width: 20%;">Sale Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            `;
+
+                        if (variant.sizes && variant.sizes.length > 0) {
+                            variant.sizes.sort((a, b) => a.size - b.size).forEach(size => {
+                                content += `
+                            <tr>
+                                <td>${size.size}</td>
+                                <td class="text-nowrap small">${size.sku || '-'}</td>
+                                <td class="${size.quantity < 6 ? 'text-danger fw-bold' : ''}">${size.quantity}</td>
+                                <td>₹${size.regularPrice}</td>
+                                <td>₹${size.salePrice}</td>
+                            </tr>
+                            `;
+                            });
+                        } else {
+                            content += `<tr>
+                                <td colspan="5" class="text-muted">No sizes available</td>
+                            </tr>`;
+                        }
+
+                        content += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        `;
+                    });
+                } else {
+                    content += `<p class="text-center text-muted">No variants found for this product.</p>`;
+                }
+
+                modalBody.innerHTML = content;
+
+                // Show Modal
+                new bootstrap.Modal(document.getElementById('productDetailsModal')).show();
+            }
+        </script>
+
         <%- include('../../partials/admin/footer') %>
+
+            <script src="/js/sweetalert2.all.min.js"></script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Event Delegation for Table Actions
+                    document.body.addEventListener('click', function (e) {
+                        // Handle Delete
+                        const deleteBtn = e.target.closest('button.btn-outline-danger');
+                        if (deleteBtn) {
+                            e.preventDefault();
+                            const form = deleteBtn.closest('form');
+                            const name = form.getAttribute('data-name') || 'this product';
+
+                            Swal.fire({
+                                title: 'Delete Product?',
+                                text: `Are you sure you want to delete ${name}?`,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#d33',
+                                cancelButtonColor: '#6c757d',
+                                confirmButtonText: 'Yes, delete it!'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    form.submit();
+                                }
+                            });
+                        }
+                    });
+
+                    document.body.addEventListener('change', function (e) {
+                        // Handle Toggle (Switch)
+                        if (e.target.classList.contains('form-check-input')) {
+                            e.preventDefault();
+                            const checkbox = e.target;
+                            const form = checkbox.closest('form');
+                            const name = checkbox.getAttribute('data-name') || 'this product';
+                            const isChecked = checkbox.checked; // State AFTER click
+
+                            // Action Logic: If checked now, it was unchecked (Blocked) -> Unblock
+                            // If unchecked now, it was checked (Active) -> Block
+
+                            const action = isChecked ? 'Unblock' : 'Block';
+                            const confirmText = isChecked ? `Make ${name} visible to customers?` : `Hide ${name} from customers?`;
+                            const confirmBtnColor = isChecked ? '#28a745' : '#d33';
+
+                            // Revert visual state until confirmed
+                            checkbox.checked = !isChecked;
+
+                            Swal.fire({
+                                title: `${action} Product?`,
+                                text: confirmText,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: confirmBtnColor,
+                                cancelButtonColor: '#6c757d',
+                                confirmButtonText: `Yes, ${action} it!`
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    checkbox.checked = isChecked; // Set back to desired state
+                                    form.submit();
+                                }
+                            });
+                        }
+                    });
+                });
+            </script>

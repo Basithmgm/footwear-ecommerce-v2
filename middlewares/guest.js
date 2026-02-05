@@ -6,7 +6,8 @@ module.exports = (req, res, next) => {
     }
 
     // If User is logged in, redirect to home
-    if (req.session && req.session.userId && !req.path.startsWith('/admin')) {
+    // Check if req.user exists (populated by global middleware) to avoid redirecting if session is stale/user deleted
+    if (req.session && req.session.userId && req.user && !req.path.startsWith('/admin')) {
         return res.redirect('/');
     }
 

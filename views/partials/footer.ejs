@@ -65,7 +65,8 @@
       <div class="col-sm-12 text-center">
         <p>
           Copyright &copy;
-          <script>document.write(new Date().getFullYear());</script>
+          <span id="copyright-year"></span>
+          <script>document.getElementById('copyright-year').textContent = new Date().getFullYear();</script>
           All rights reserved | This template is made with <i class="icon-heart" aria-hidden="true"></i> by
           <a href="https://colorlib.com" rel="noopener" target="_blank">Colorlib</a>
           </span>

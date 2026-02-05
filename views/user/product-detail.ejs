@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>
+        <%= product.productName %> - Footwear
+    </title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="/css/animate.css">
+    <link rel="stylesheet" href="/css/icomoon.css">
+    <link rel="stylesheet" href="/css/ionicons.min.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/magnific-popup.css">
+    <link rel="stylesheet" href="/css/flexslider.css">
+    <link rel="stylesheet" href="/css/owl.carousel.min.css">
+    <link rel="stylesheet" href="/css/owl.theme.default.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+
+    <style>
+        .product-img-main {
+            cursor: zoom-in;
+            transition: transform 0.3s ease;
+        }
+
+        .variant-thumb {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            margin-right: 5px;
+            border-radius: 4px;
+        }
+
+        .variant-thumb.active {
+            border-color: #88c8bc;
+        }
+
+        .size-box {
+            display: inline-block;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .size-box.active {
+            background-color: #88c8bc;
+            color: #fff;
+            border-color: #88c8bc;
+        }
+
+        .size-box.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f0f0f0;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #b0b0b0;
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="colorlib-loader"></div>
+
+    <div id="page">
+        <%- include('../partials/navbar-offer-search') %>
+
+            <div class="breadcrumbs">
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <p class="bread">
+                                <span><a href="/">Home</a></span> /
+                                <span><a href="/shop">Shop</a></span> /
+                                <% if(product.category) { %>
+                                    <span><a href="/shop?category=<%= product.category._id %>">
+                                            <%= product.category.name %>
+                                        </a></span> /
+                                    <% } %>
+                                        <span>
+                                            <%= product.productName %>
+                                        </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="colorlib-product">
+                <div class="container">
+                    <div class="row row-pb-lg product-detail-wrap">
+                        <div class="col-sm-8 offset-sm-2 text-center colorlib-heading">
+                            <h2>
+                                <%= product.productName %>
+                            </h2>
+                        </div>
+
+                        <!-- Image Gallery -->
+                        <div class="col-md-7">
+                            <div class="product-entry border d-flex flex-column align-items-center p-3">
+                                <!-- Main Image (Zoomable) -->
+                                <a href="#" class="image-popup-vertical-fit" id="main-image-link">
+                                    <img src="/images/item-1.jpg" id="main-product-image"
+                                        class="img-fluid product-img-main mb-3" alt="<%= product.productName %>"
+                                        style="max-height: 500px; width: auto;">
+                                </a>
+
+                                <!-- Thumbnails (Dynamic) -->
+                                <div class="d-flex justify-content-center flex-wrap" id="thumbnail-container">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Info -->
+                        <div class="col-md-5">
+                            <div class="product-desc">
+                                <h3 class="mb-1">
+                                    <%= product.productName %>
+                                </h3>
+                                <div class="mb-3">
+                                    <span class="badge bg-light text-dark border">
+                                        <%= product.brand %>
+                                    </span>
+                                    <span class="badge bg-light text-dark border">
+                                        <%= product.model %>
+                                    </span>
+                                </div>
+                                <p class="price mb-4" id="price-display">
+                                    <!-- Dynamic Price -->
+                                    <span class="original-price" id="reg-price"></span>
+                                    <span class="text-dark fw-bold" style="font-size: 1.5em;" id="sale-price">Select
+                                        Size</span>
+                                </p>
+
+                                <div class="mb-4">
+                                    <p class="text-muted">
+                                        <%= product.description %>
+                                    </p>
+                                </div>
+
+                                <!-- Color Selection -->
+                                <div class="mb-4">
+                                    <h5 class="mb-2">Color: <span id="selected-color-name" class="text-primary"></span>
+                                    </h5>
+                                    <div class="d-flex flex-wrap" id="color-options">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+
+                                <!-- Size Selection -->
+                                <div class="mb-4">
+                                    <h5 class="mb-2">Size (UK/India):</h5>
+                                    <div class="d-flex flex-wrap" id="size-options">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                    <small class="text-danger" id="stock-warning" style="display:none;"></small>
+                                </div>
+
+                                <!-- Add to Cart / Actions -->
+                                <div class="row mb-5">
+                                    <div class="col-sm-12">
+                                        <div class="input-group mb-4" style="max-width: 150px;">
+                                            <span class="input-group-btn">
+                                                <button type="button"
+                                                    class="btn btn-outline-secondary quantity-left-minus"
+                                                    data-type="minus" data-field="">
+                                                    <i class="icon-minus2"></i>
+                                                </button>
+                                            </span>
+                                            <input type="text" id="quantity" name="quantity"
+                                                class="form-control input-number text-center" value="1" min="1" max="5">
+                                            <span class="input-group-btn">
+                                                <button type="button"
+                                                    class="btn btn-outline-secondary quantity-right-plus"
+                                                    data-type="plus" data-field="">
+                                                    <i class="icon-plus2"></i>
+                                                </button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-12 gap-2 d-flex">
+                                        <button class="btn btn-primary btn-addtocart" id="btn-add-cart" disabled>Add to
+                                            Cart</button>
+                                        <button class="btn btn-warning btn-buy-now text-white" id="btn-buy-now"
+                                            disabled>Buy Now</button>
+                                    </div>
+                                    <div class="col-sm-12 mt-2">
+                                        <div id="add-messages"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reviews / Highlights -->
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-md-12 pills">
+                                    <div class="bd-example bd-example-tabs">
+                                        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                                            <li class="nav-item">
+                                                <a class="nav-link active" id="pills-description-tab" data-toggle="pill"
+                                                    href="#pills-description" role="tab"
+                                                    aria-controls="pills-description"
+                                                    aria-selected="true">Description</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="pills-review-tab" data-toggle="pill"
+                                                    href="#pills-review" role="tab" aria-controls="pills-review"
+                                                    aria-selected="false">Reviews</a>
+                                            </li>
+                                        </ul>
+
+                                        <div class="tab-content" id="pills-tabContent">
+                                            <div class="tab-pane fade show active" id="pills-description"
+                                                role="tabpanel" aria-labelledby="pills-description-tab">
+                                                <p>
+                                                    <%= product.description %>
+                                                </p>
+                                                <ul>
+                                                    <li>Brand: <%= product.brand %>
+                                                    </li>
+                                                    <li>Model: <%= product.model %>
+                                                    </li>
+                                                    <li>Category: <%= product.category ? product.category.name
+                                                            : 'Uncategorized' %>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            <div class="tab-pane fade" id="pills-review" role="tabpanel"
+                                                aria-labelledby="pills-review-tab">
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <h3 class="head">Reviews</h3>
+                                                        <div class="review">
+                                                            <div class="desc">
+                                                                <h4>
+                                                                    <span class="text-left">No reviews yet</span>
+                                                                </h4>
+                                                                <p class="star">
+                                                                    <span>
+                                                                        <i class="icon-star-empty"></i>
+                                                                        <i class="icon-star-empty"></i>
+                                                                        <i class="icon-star-empty"></i>
+                                                                        <i class="icon-star-empty"></i>
+                                                                        <i class="icon-star-empty"></i>
+                                                                    </span>
+                                                                    <span class="text-right"><a href="#"
+                                                                            class="reply"><i
+                                                                                class="icon-reply"></i></a></span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Related Products -->
+                    <% if(relatedProducts && relatedProducts.length> 0) { %>
+                        <div class="row">
+                            <div class="col-sm-12 mt-5">
+                                <h3 class="text-center">Related Products</h3>
+                            </div>
+                            <% relatedProducts.forEach(function(rProduct) { // Find first valid image to show let
+                                img='/images/placeholder.png' ; let validVariant=rProduct.variants.find(v=>
+                                v.variantImages && v.variantImages.length > 0);
+                                if(validVariant) img = validVariant.variantImages[0];
+                                %>
+                                <div class="col-md-3 text-center">
+                                    <div class="product-entry border">
+                                        <a href="/product/<%= rProduct._id %>" class="prod-img">
+                                            <img src="<%= img %>" class="img-fluid" alt="<%= rProduct.productName %>"
+                                                style="height: 200px; object-fit: cover;">
+                                        </a>
+                                        <div class="desc">
+                                            <h2><a href="/product/<%= rProduct._id %>">
+                                                    <%= rProduct.productName %>
+                                                </a></h2>
+                                            <span class="price">
+                                                <% if(rProduct.salePrice < rProduct.regularPrice) { %>
+                                                    <span class="text-muted" style="text-decoration: line-through;">₹<%=
+                                                            rProduct.regularPrice %></span>
+                                                    <span class="text-danger">₹<%= rProduct.salePrice %></span>
+                                                    <% } else { %>
+                                                        ₹<%= rProduct.salePrice %>
+                                                            <% } %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <% }); %>
+                        </div>
+                        <% } %>
+
+                </div>
+            </div>
+
+            <%- include('../partials/footer') %>
+    </div>
+
+    <div class="gototop js-top"><a href="#" class="js-gotop"><i class="ion-ios-arrow-up"></i></a></div>
+
+    <!-- Data for JS -->
+    <script type="application/json" id="product-json">
+        <%- productDataJson %>
+    </script>
+    <script>
+        var productData = {};
+        try {
+            var jsonContent = document.getElementById('product-json').textContent;
+            if (jsonContent) {
+                productData = JSON.parse(jsonContent);
+                window.productData = productData;
+            }
+        } catch (e) {
+            console.error("Error parsing product data", e);
+        }
+        console.log("Debug: productData loaded", productData);
+    </script>
+
+    <!-- Detailed Script Logic -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/bootstrap-datepicker.js"></script>
+    <script src="/js/jquery.easing.1.3.js"></script>
+    <script src="/js/jquery.stellar.min.js"></script>
+    <script src="/js/jquery.waypoints.min.js"></script>
+    <script src="/js/jquery.flexslider-min.js"></script>
+    <script src="/js/owl.carousel.min.js"></script>
+    <script src="/js/jquery.magnific-popup.min.js"></script>
+    <script src="/js/magnific-popup-options.js"></script>
+
+    <script>
+        $(document).ready(function () {
+
+            // --- 1. State Management ---
+            let selectedColor = null;
+            let selectedSize = null;
+            let currentVariant = null;
+
+            // --- 2. Initial Render: Color Options ---
+            const $colorContainer = $('#color-options');
+            const $sizeContainer = $('#size-options');
+            const $mainImage = $('#main-product-image');
+            const $mainLink = $('#main-image-link');
+            const $thumbContainer = $('#thumbnail-container');
+
+            if (productData.variants && productData.variants.length > 0) {
+                // Group duplicate colors if any (though backend should have unique variants generally, schema allows array)
+                // But usually variants array is distinct by color or combo. Assuming standard structure.
+
+                productData.variants.forEach((v, index) => {
+                    // Check if variant has any active sizes
+                    const hasActiveSize = v.sizes.some(s => !s.isBlocked && s.status === 'Active');
+                    if (!hasActiveSize) return; // Skip invalid variants
+
+                    const $thumb = $(`<img src="${v.colorImage}" class="variant-thumb" data-idx="${index}" title="${v.color}">`);
+                    $thumb.click(function () {
+                        selectVariant(index);
+                    });
+                    $colorContainer.append($thumb);
+                });
+
+                // Auto-select first valid variant
+                const firstValidIdx = productData.variants.findIndex(v => v.sizes.some(s => !s.isBlocked && s.status === 'Active'));
+                if (firstValidIdx !== -1) {
+                    selectVariant(firstValidIdx);
+                }
+            }
+
+            // --- 3. Variant Selection Logic ---
+            function selectVariant(idx) {
+                currentVariant = productData.variants[idx];
+                selectedColor = currentVariant.color;
+                selectedSize = null; // Reset size on color change
+
+                // Update UI - Active Thumb
+                $('.variant-thumb').removeClass('active');
+                $(`.variant-thumb[data-idx="${idx}"]`).addClass('active');
+                $('#selected-color-name').text(selectedColor);
+
+                // Update Images
+                updateGallery(currentVariant.variantImages);
+
+                // Render Sizes
+                renderSizes(currentVariant.sizes);
+
+                // Reset Price/Buttons
+                $('#reg-price').text('');
+                $('#sale-price').text('Select Size');
+                $('#btn-add-cart').prop('disabled', true);
+                $('#btn-buy-now').prop('disabled', true);
+                $('#stock-warning').hide();
+            }
+
+            function updateGallery(images) {
+                if (!images || images.length === 0) return;
+
+                // Set Main
+                $mainImage.attr('src', images[0]);
+                $mainLink.attr('href', images[0]); // For zoom
+
+                // Set Thumbs
+                $thumbContainer.empty();
+                images.forEach(imgUrl => {
+                    const $t = $(`<img src="${imgUrl}" class="variant-thumb" style="width:50px; height:50px; margin:2px;">`);
+                    $t.click(function () {
+                        $mainImage.attr('src', imgUrl);
+                        $mainLink.attr('href', imgUrl);
+                    });
+                    $thumbContainer.append($t);
+                });
+
+                // Re-init Magnific Popup for zoom
+                $('.image-popup-vertical-fit').magnificPopup({
+                    type: 'image',
+                    closeOnContentClick: true,
+                    mainClass: 'mfp-img-mobile',
+                    image: {
+                        verticalFit: true
+                    }
+                });
+            }
+
+            function renderSizes(sizes) {
+                $sizeContainer.empty();
+                sizes.forEach((s, sIdx) => {
+                    if (s.isBlocked || s.status !== 'Active') return; // Skip invalid
+
+                    const $box = $(`<div class="size-box">${s.size}</div>`);
+
+                    // Out of stock logic
+                    if (s.quantity <= 0) {
+                        $box.addClass('disabled').attr('title', 'Out of Stock');
+                    } else {
+                        $box.click(function () {
+                            if ($(this).hasClass('disabled')) return;
+
+                            $('.size-box').removeClass('active');
+                            $(this).addClass('active');
+                            selectSize(s);
+                        });
+                    }
+                    $sizeContainer.append($box);
+                });
+            }
+
+            function selectSize(sizeObj) {
+                selectedSize = sizeObj;
+
+                // Update Price
+                $('#sale-price').text('₹' + sizeObj.salePrice);
+                if (sizeObj.regularPrice > sizeObj.salePrice) {
+                    $('#reg-price').text('₹' + sizeObj.regularPrice);
+                } else {
+                    $('#reg-price').text('');
+                }
+
+                // Update Stock Warning
+                if (sizeObj.quantity < 5) {
+                    $('#stock-warning').text(`Only ${sizeObj.quantity} left in stock!`).show();
+                } else {
+                    $('#stock-warning').hide();
+                }
+
+                // Enable Buttons
+                $('#btn-add-cart').prop('disabled', false);
+                $('#btn-buy-now').prop('disabled', false);
+            }
+
+            // --- 4. Quantity Logic ---
+            $('.quantity-right-plus').click(function (e) {
+                e.preventDefault();
+                var quantity = parseInt($('#quantity').val());
+                if (quantity < 5) $('#quantity').val(quantity + 1); // Max limit per transaction usually
+            });
+
+            $('.quantity-left-minus').click(function (e) {
+                e.preventDefault();
+                var quantity = parseInt($('#quantity').val());
+                if (quantity > 1) $('#quantity').val(quantity - 1);
+            });
+
+            // --- 5. Add to Cart Logic (Ref.) ---
+            // For now, these buttons are UI only as requested, preventing form submit errors
+            $('#btn-add-cart').click(function () {
+                // Add AJAX call here later to add to cart
+                alert(`Added to cart: ${selectedColor} / Size ${selectedSize.size}`);
+            });
+
+        });
+    </script>
+    <script src="/js/main.js"></script>
+
+</body>
+
+</html>

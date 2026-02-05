@@ -1,9 +1,19 @@
 const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema({
-    productName: {
+    brand: {
         type: String,
         required: true,
+        trim: true,
+    },
+    model: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    productName: {
+        type: String,
+        required: false, // Auto-generated from Brand + Model
         trim: true,
     },
     description: {
@@ -18,11 +28,11 @@ const productSchema = new mongoose.Schema({
     },
     regularPrice: {
         type: Number,
-        required: true,
+        required: false, // Calculated from variants (min or range)
     },
     salePrice: {
         type: Number,
-        required: true,
+        required: false, // Calculated from variants
     },
     variants: [{
         color: {
@@ -30,20 +40,52 @@ const productSchema = new mongoose.Schema({
             required: true,
             trim: true
         },
+        colorImage: {
+            type: String, // Path to the small color representation image
+            required: true
+        },
         variantImages: {
-            type: [String], // Array of image URLs/paths specific to this color
+            type: [String], // Array of gallery images
             required: true,
             validate: [arrayLimit, '{PATH} must have at least 3 images']
         },
         sizes: [{
             size: {
-                type: Number, // Or String, depending on footwear standards (UK 6, 7 etc often numbers)
+                type: Number,
                 required: true
             },
             quantity: {
                 type: Number,
                 required: true,
                 min: 0
+            },
+            sku: {
+                type: String,
+                required: true,
+                trim: true
+            },
+            regularPrice: {
+                type: Number,
+                required: true,
+                min: 0
+            },
+            salePrice: {
+                type: Number,
+                required: true,
+                min: 0
+            },
+            isBlocked: {
+                type: Boolean,
+                default: false
+            },
+            status: {
+                type: String,
+                enum: ["Active", "Inactive", "Draft"],
+                default: "Active"
+            },
+            updatedAt: {
+                type: Date,
+                default: Date.now
             }
         }]
     }],
@@ -53,7 +95,7 @@ const productSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["Available", "Out of Stock", "Discontinued"],
+        enum: ["Available", "Out of Stock", "Discontinued", "Unavailable", "Inactive"],
         default: "Available",
     },
     isBlocked: {

@@ -39,6 +39,7 @@
       background-color: transparent !important;
       overflow-x: hidden !important;
       position: relative;
+      display: block !important;
     }
 
     .profile-container {
@@ -170,8 +171,8 @@
                   <br>
                   <label style="cursor: pointer; color: #007bff; font-size: 14px;">
                     Change Photo
-                    <input type="file" name="profileImage" accept="image/*" style="display: none;"
-                      onchange="document.getElementById('file-name').textContent = this.files[0].name">
+                    <input type="file" name="profileImage" id="profileImageInput" accept="image/*"
+                      style="display: none;">
                   </label>
                   <div id="file-name" style="font-size: 13px; color: #666;"></div>
                 </div>
@@ -244,6 +245,16 @@
           });
           return;
         }
+      }
+
+      // File Input Change Handler (CSP Fix)
+      const fileInput = document.getElementById('profileImageInput');
+      if (fileInput) {
+        fileInput.addEventListener('change', function () {
+          if (this.files && this.files[0]) {
+            document.getElementById('file-name').textContent = this.files[0].name;
+          }
+        });
       }
     });
   </script>

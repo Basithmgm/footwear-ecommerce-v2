@@ -143,6 +143,22 @@ exports.postAddCategory = async (req, res) => {
             }
         }
 
+        // Escape regex function
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Case-Insensitive Duplication Check
+        const existingCategory = await Category.findOne({
+            name: { $regex: new RegExp(`^${escapeRegExp(name)}$`, 'i') },
+            gender: gender,
+            parentCategory: finalParent
+        });
+
+        if (existingCategory) {
+            throw new Error(`A category with this name (${name}) already exists in this group.`);
+        }
+
         await Category.create({
             name,
             gender,
@@ -155,14 +171,27 @@ exports.postAddCategory = async (req, res) => {
         res.redirect(`/admin/categories?page=${returnPage || 1}`);
 
     } catch (err) {
-        // Re-render with error
+        // Handle Duplicate Key Error (Fallback)
+        if (err.code === 11000) {
+            err.message = "A category with this name already exists in this group.";
+        }
+
+        // Re-construct context for re-render
         const parentCategories = await Category.find({ isDeleted: false, level: { $lt: 2 } });
+        let lockedParent = null;
+        if (req.body.parentCategory) {
+            try {
+                lockedParent = await Category.findById(req.body.parentCategory);
+            } catch (e) { /* ignore */ }
+        }
+
         res.render('admin/category/add', {
             path: '/admin/categories',
             parentCategories,
+            lockedParent, // Pass it back so view knows we are in subcat mode
             error: err.message,
             oldInput: req.body,
-            returnPage: returnPage || 1
+            returnPage: req.body.returnPage || 1
         });
     }
 };
@@ -205,26 +234,41 @@ exports.postEditCategory = async (req, res) => {
         // Logic for changing parent is complex (updating levels of children).
         // For this MVP refactor, assume level/parent changes are allowed but handle carefully.
         // If Parent Changed:
-        let newLevel = 0;
-        let newParent = null;
 
-        if (parentCategory) {
-            const parent = await Category.findById(parentCategory);
-            if (!parent) throw new Error("Invalid Parent Category");
-            newParent = parent._id;
-            newLevel = parent.level + 1;
 
-            if (gender !== parent.gender) {
-                throw new Error(`Child category gender must match parent's gender`);
-            }
+        // Parent Category is locked in UI (disabled), so req.body.parentCategory will be missing.
+        // We must RETAIN the existing parent and level.
+        const currentParent = category.parentCategory;
+        const currentLevel = category.level;
+
+        // If for some reason the user hacked it and sent a new parent, we ignore it or validate it.
+        // Let's stick to the requirement: "lock parent category". So we ignore inputs.
+        const newParent = currentParent;
+        const newLevel = currentLevel;
+
+        // Escape regex function
+        const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        // Case-Insensitive Duplication Check (excluding current category)
+        const existingCategory = await Category.findOne({
+            name: { $regex: new RegExp(`^${escapeRegExp(name)}$`, 'i') },
+            gender: gender,
+            parentCategory: newParent,
+            _id: { $ne: req.params.id }
+        });
+
+        if (existingCategory) {
+            throw new Error(`A category with this name (${name}) already exists in this group.`);
         }
 
         category.name = name;
         category.gender = gender;
-        category.parentCategory = newParent;
-        category.level = newLevel;
+        // Parent and Level remain unchanged
         category.description = description;
-        category.isBlocked = isBlocked === 'on';
+        // Block status is handled separately in management page, but if field exists update it (backward compatibility)
+        if (typeof isBlocked !== 'undefined') {
+            category.isBlocked = isBlocked === 'on';
+        }
 
         await category.save();
 
@@ -235,13 +279,18 @@ exports.postEditCategory = async (req, res) => {
         req.session.successMessage = "Category updated successfully";
         res.redirect(`/admin/categories?page=${redirectPage || 1}`);
     } catch (err) {
+        // Handle Duplicate Key Error
+        if (err.code === 11000) {
+            err.message = "A category with this name already exists in this group.";
+        }
+
         const parentCategories = await Category.find({ isDeleted: false, level: { $lt: 2 }, _id: { $ne: req.params.id } });
         res.render('admin/category/edit', {
             path: '/admin/categories',
             category: { ...req.body, _id: req.params.id }, // Fake obj for re-render
             parentCategories,
             error: err.message,
-            redirectPage: redirectPage || 1
+            redirectPage: req.body.redirectPage || 1
         });
     }
 };

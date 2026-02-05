@@ -89,21 +89,26 @@
                                             </td>
                                             <td class="text-center">
                                                 <% if (user.status==='Blocked' ) { %>
-                                                    <button type="button" onclick="confirmUnblock('<%= user._id %>')"
-                                                        class="btn btn-sm btn-success">
-                                                        <i class="fas fa-unlock me-1"></i>Unblock
-                                                    </button>
-                                                    <form id="unblock-form-<%= user._id %>"
-                                                        action="/admin/users/unblock/<%= user._id %>" method="POST"
-                                                        style="display:none;"></form>
-                                                    <% } else { %>
-                                                        <button type="button" onclick="confirmBlock('<%= user._id %>')"
-                                                            class="btn btn-sm btn-danger">
-                                                            <i class="fas fa-ban me-1"></i>Block
+                                                    <form action="/admin/users/unblock/<%= user._id %>" method="POST"
+                                                        style="display:inline-block;" class="action-form">
+                                                        <input type="hidden" name="userName"
+                                                            value="<%= user.full_name %>">
+                                                        <button type="button" class="btn btn-sm btn-success action-btn"
+                                                            data-action="unblock">
+                                                            <i class="fas fa-unlock me-1"></i>Unblock
                                                         </button>
-                                                        <form id="block-form-<%= user._id %>"
-                                                            action="/admin/users/block/<%= user._id %>" method="POST"
-                                                            style="display:none;"></form>
+                                                    </form>
+                                                    <% } else { %>
+                                                        <form action="/admin/users/block/<%= user._id %>" method="POST"
+                                                            style="display:inline-block;" class="action-form">
+                                                            <input type="hidden" name="userName"
+                                                                value="<%= user.full_name %>">
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-danger action-btn"
+                                                                data-action="block">
+                                                                <i class="fas fa-ban me-1"></i>Block
+                                                            </button>
+                                                        </form>
                                                         <% } %>
                                             </td>
                                         </tr>
@@ -156,58 +161,66 @@
 
         <%- include('../../partials/admin/footer') %>
 
+
             <script>
-    // Check for server-side success message
-    <% if (locals.successMessage?.length > 0) { %>
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: '<%= successMessage %>',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-    <% } %>
+                document.addEventListener('DOMContentLoaded', function () {
+                    console.log("Admin Users Page Script Loaded");
 
-    // Check for server-side error message
-    <% if (locals.error?.length > 0) { %>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: '<%= error %>',
-                    });
-    <% } %>
+                    // Handle Block/Unblock clicks using Event Delegation
+                    const table = document.querySelector('.table');
+                    if (table) {
+                        table.addEventListener('click', function (e) {
+                            // Find the closest button if the icon was clicked
+                            const btn = e.target.closest('.action-btn');
+                            if (!btn) return;
 
-                    function confirmBlock(userId) {
-                        Swal.fire({
-                            title: 'Are you sure?',
-                            text: "You are about to block this user. They will not be able to login.",
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonColor: '#d33',
-                            cancelButtonColor: '#3085d6',
-                            confirmButtonText: 'Yes, Block!',
-                            cancelButtonText: 'Cancel'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                document.getElementById('block-form-' + userId).submit();
-                            }
-                        })
+                            e.preventDefault();
+                            console.log('Action button clicked');
+
+                            const action = btn.dataset.action; // 'block' or 'unblock'
+                            const form = btn.closest('form');
+                            const nameInput = form.querySelector('input[name="userName"]');
+                            const userName = nameInput ? nameInput.value : 'User';
+
+                            const isBlock = action === 'block';
+                            const confirmText = isBlock ? 'Yes, Block!' : 'Yes, Unblock!';
+                            const btnColor = isBlock ? '#d33' : '#28a745';
+
+                            Swal.fire({
+                                title: 'Are you sure?',
+                                text: `Do you really want to ${action} ${userName}?`,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: btnColor,
+                                cancelButtonColor: '#6c757d',
+                                confirmButtonText: 'Yes',
+                                cancelButtonText: 'No'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    console.log('Confirmed. Submitting form...');
+                                    form.submit();
+                                }
+                            });
+                        });
                     }
 
-                function confirmUnblock(userId) {
-                    Swal.fire({
-                        title: 'Are you sure?',
-                        text: "You are about to unblock this user.",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#28a745',
-                        cancelButtonColor: '#3085d6',
-                        confirmButtonText: 'Yes, Unblock!',
-                        cancelButtonText: 'Cancel'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            document.getElementById('unblock-form-' + userId).submit();
-                        }
-                    })
-                }
+                    // Show server-side messages
+                    <% if (typeof successMessage !== 'undefined' && successMessage && successMessage.length > 0) { %>
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: '<%= successMessage %>',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    <% } %>
+
+                    <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: '<%= error %>',
+                        });
+                    <% } %>
+                });
             </script>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Footwear</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom.css">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .error-container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .error-icon {
+            font-size: 60px;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+
+        .error-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .error-message {
+            color: #6c757d;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #dc3545;
+            text-align: left;
+        }
+
+        .btn-home {
+            display: inline-block;
+            background-color: #333;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .btn-home:hover {
+            background-color: #000;
+        }
+
+        .stack-trace {
+            text-align: left;
+            background: #333;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 20px;
+            max-height: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <div class="error-title">Something went wrong</div>
+
+        <div class="error-message">
+            <%= message %>
+        </div>
+
+        <% if (stack && statusCode !==500) { /* Optional: Hide stack for strictly production if needed, but logic is in
+            middleware */ %>
+            <div class="stack-trace">
+                <%= stack %>
+            </div>
+            <% } %>
+
+                <a href="<%= locals.homeLink || '/' %>" class="btn-home">
+                    <%= locals.homeText || 'Return to Home' %>
+                </a>
+    </div>
+</body>
+
+</html>

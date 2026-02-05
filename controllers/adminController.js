@@ -137,8 +137,10 @@ exports.getUsers = async (req, res) => {
 exports.blockUser = async (req, res) => {
     try {
         const userId = req.params.id;
+        console.log(`🔒 ADMIN ACTION: Blocking user ${userId}`); // DEBUG LOG
         // New schema: status enum ['Active', 'Blocked']
         await User.findByIdAndUpdate(userId, { status: 'Blocked' });
+        console.log(`✅ User ${userId} blocked successfully`); // DEBUG LOG
         req.session.successMessage = "User blocked successfully";
         res.redirect('/admin/users');
     } catch (err) {
@@ -151,7 +153,9 @@ exports.blockUser = async (req, res) => {
 exports.unblockUser = async (req, res) => {
     try {
         const userId = req.params.id;
+        console.log(`🔓 ADMIN ACTION: Unblocking user ${userId}`); // DEBUG LOG
         await User.findByIdAndUpdate(userId, { status: 'Active' });
+        console.log(`✅ User ${userId} unblocked successfully`); // DEBUG LOG
         req.session.successMessage = "User unblocked successfully";
         res.redirect('/admin/users');
     } catch (err) {

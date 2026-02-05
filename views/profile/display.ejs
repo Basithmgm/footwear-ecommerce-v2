@@ -200,7 +200,7 @@
                   <% if (locals.user) { %>
                     <div class="profile-header">
                       <img src="<%= user.image || '/images/default-avatar.jpg' %>" alt="Profile" class="profile-img"
-                        onerror="this.src='/images/default-avatar.jpg'">
+                        id="userProfileImage">
                       <div class="profile-info">
                         <h2>
                           <%= user.full_name %>
@@ -255,7 +255,7 @@
                                 <form id="delete-address-form-<%= addr._id %>"
                                   action="/profile/address/delete/<%= addr._id %>" method="POST"
                                   style="display:inline; margin:0;">
-                                  <button type="button" onclick="confirmDeleteAddress('<%= addr._id %>')"
+                                  <button type="button" class="delete-address-btn" data-id="<%= addr._id %>"
                                     style="background:none; border:none; color:#dc3545; font-size:13px; cursor:pointer; padding:0;">Delete</button>
                                 </form>
                               </div>
@@ -290,21 +290,35 @@
       <%- include('../partials/footer') %>
   </div>
   <script>
-    function confirmDeleteAddress(addressId) {
-      Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          document.getElementById('delete-address-form-' + addressId).submit();
-        }
-      })
-    }
+    document.addEventListener('DOMContentLoaded', function () {
+      // 1. Image Error Fallback
+      const profileImg = document.getElementById('userProfileImage');
+      if (profileImg) {
+        profileImg.addEventListener('error', function () {
+          this.src = '/images/default-avatar.jpg';
+        });
+      }
+
+      // 2. Delete Address Confirmation
+      document.querySelectorAll('.delete-address-btn').forEach(button => {
+        button.addEventListener('click', function () {
+          const addressId = this.getAttribute('data-id');
+          Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              document.getElementById('delete-address-form-' + addressId).submit();
+            }
+          });
+        });
+      });
+    });
   </script>
   <!-- Standard JS Includes -->
   <script src="/js/jquery.min.js"></script>

@@ -133,7 +133,7 @@
                             <%= error %>
                         </div>
                         <% } %>
-                            <form action="/admin/banners/add" method="POST">
+                            <form id="addBannerForm" action="/admin/banners/add" method="POST">
                                 <div class="form-group">
                                     <label>Banner Text</label>
                                     <input type="text" name="title" class="form-control"
@@ -159,7 +159,8 @@
                                 </div>
                                 <div style="margin-top: 30px;">
                                     <a href="/admin/banners" class="btn btn-secondary">Cancel</a>
-                                    <button type="submit" class="btn btn-primary">Create Banner</button>
+                                    <button type="button" id="createBannerBtn" class="btn btn-primary">Create
+                                        Banner</button>
                                 </div>
                             </form>
                 </div>
@@ -167,6 +168,31 @@
     </div>
     <script src="/js/sweetalert2.all.min.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const createBtn = document.getElementById('createBannerBtn');
+            const form = document.getElementById('addBannerForm');
+
+            if (createBtn && form) {
+                createBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Create Banner?',
+                        text: "Are you sure you want to create this banner?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, create it!',
+                        cancelButtonText: 'No'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            }
+        });
+
         <% if (locals.success) { %> Swal.fire({ icon: 'success', title: 'Success', text: '<%= success %>', timer: 2000, showConfirmButton: false }); <% } %>
         <% if (locals.error) { %> Swal.fire({ icon: 'error', title: 'Error', text: '<%= error %>' }); <% } %>
     </script>
