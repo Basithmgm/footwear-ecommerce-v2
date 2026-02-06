@@ -106,16 +106,22 @@
                                                                                 action="/admin/products/variants/toggle-block/<%= product._id %>/<%= variant._id %>/<%= size._id %>"
                                                                                 method="POST"
                                                                                 class="d-inline variant-block-form">
-                                                                                <div class="form-check form-switch">
+                                                                                <div class="d-flex align-items-center form-check form-switch p-0"
+                                                                                    style="gap: 10px; min-height: auto;">
                                                                                     <input
-                                                                                        class="form-check-input variant-block-toggle"
+                                                                                        class="form-check-input variant-block-toggle m-0"
                                                                                         type="checkbox" role="switch"
                                                                                         data-name="Size <%= size.size %>"
                                                                                         <%=!size.isBlocked ? 'checked'
                                                                                         : '' %>
-                                                                                    style="cursor: pointer;">
+                                                                                    style="cursor: pointer; width: 40px;
+                                                                                    height: 20px; float: none
+                                                                                    !important; margin-left: 0
+                                                                                    !important; position: static
+                                                                                    !important;">
                                                                                     <label
-                                                                                        class="form-check-label small text-muted">
+                                                                                        class="form-check-label small text-muted mb-0"
+                                                                                        style="cursor: pointer; min-width: 50px; text-align: left; white-space: nowrap; font-weight: 500;">
                                                                                         <%= size.isBlocked ? 'Blocked'
                                                                                             : 'Active' %>
                                                                                     </label>

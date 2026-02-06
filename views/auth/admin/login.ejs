@@ -245,6 +245,12 @@
             this.classList.toggle('fa-eye-slash');
             this.classList.toggle('fa-eye');
         });
+
+        // Prevent Back Navigation
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+        };
     </script>
 </body>
 
