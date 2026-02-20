@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>
+        <%= pageTitle %> - Footwear
+    </title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="/css/animate.css">
+    <link rel="stylesheet" href="/css/icomoon.css">
+    <link rel="stylesheet" href="/css/ionicons.min.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .address-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .address-card:hover {
+            border-color: #88c8bc;
+            background-color: #f9f9f9;
+        }
+
+        .address-card.selected {
+            border-color: #88c8bc;
+            background-color: #eafef8;
+            border-width: 2px;
+        }
+
+        .checkout-summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        /* Hide radio button visually but keep it functional */
+        .address-radio {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="colorlib-loader"></div>
+
+    <div id="page">
+        <%- include('../partials/navbar-offer-search') %>
+
+            <div class="breadcrumbs">
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <p class="bread"><span><a href="/">Home</a></span> / <span><a href="/cart">Cart</a></span> /
+                                <span>Checkout</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="colorlib-product">
+                <div class="container">
+                    <div class="row">
+                        <!-- Right Column (Desktop): Order Summary -->
+                        <!-- Reordering for mobile: summary usually bottom, but let's stick to standard layout -->
+
+                        <div class="col-lg-8">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="cart-detail">
+                                        <h2>Shipping Address</h2>
+
+                                        <div class="row" id="address-list">
+                                            <% if (addresses.length> 0) { %>
+                                                <% addresses.forEach((addr, index)=> { %>
+                                                    <div class="col-md-6">
+                                                        <label
+                                                            class="address-card w-100 <%= index === 0 ? 'selected' : '' %>"
+                                                            id="card-<%= addr._id %>">
+                                                            <input type="radio" name="addressId" class="address-radio"
+                                                                value="<%= addr._id %>" <%=index===0 ? 'checked' : ''
+                                                                %>>
+                                                            <strong>
+                                                                <%= addr.full_address %>
+                                                            </strong><br>
+                                                            <%= addr.city %>, <%= addr.state %><br>
+                                                                    <%= addr.country %> - <%= addr.zip_code %><br>
+                                                                            Phone: <%= addr.phone_number %>
+                                                        </label>
+                                                    </div>
+                                                    <% }); %>
+                                                        <% } else { %>
+                                                            <div class="col-12">
+                                                                <p>No addresses found. Please add one.</p>
+                                                            </div>
+                                                            <% } %>
+
+                                                                <div
+                                                                    class="col-md-6 d-flex align-items-center justify-content-center">
+                                                                    <button class="btn btn-outline-primary w-100 h-100"
+                                                                        style="min-height: 120px; border-style: dashed;"
+                                                                        data-toggle="modal"
+                                                                        data-target="#addAddressModal">
+                                                                        <i class="icon-plus"></i> Add New Address
+                                                                    </button>
+                                                                </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mt-4">
+                                    <div class="cart-detail">
+                                        <h2>Payment Method</h2>
+                                        <div class="form-group">
+                                            <div class="col-md-12">
+                                                <div class="radio">
+                                                    <label><input type="radio" name="payment" value="COD" checked> Cash
+                                                        on Delivery</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-md-12">
+                                                <div class="radio">
+                                                    <label><input type="radio" name="payment" value="Online" disabled>
+                                                        Online Payment (Coming Soon)</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="checkout-summary">
+                                <h3>Order Summary</h3>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal</span>
+                                    <span>₹<%= originalTotal || subtotal %></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Discount</span>
+                                    <span class="text-success">- ₹<%= totalDiscount || 0 %></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Shipping</span>
+                                    <span>
+                                        <%= shippingFee===0 ? 'Free' : '₹' + shippingFee %>
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Tax</span>
+                                    <span>₹<%= tax %></span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between mb-4">
+                                    <span class="font-weight-bold">Total</span>
+                                    <span class="font-weight-bold h5">₹<%= total %></span>
+                                </div>
+
+                                <h5>Items</h5>
+                                <ul class="list-group mb-4" style="max-height: 300px; overflow-y: auto;">
+                                    <% cartItems.forEach(item=> { %>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center">
+                                                <img src="<%= item.image %>" alt="Product"
+                                                    style="width: 40px; height: 40px; margin-right: 10px; object-fit: cover;">
+                                                <div>
+                                                    <div class="small font-weight-bold">
+                                                        <%= item.productName %>
+                                                    </div>
+                                                    <div class="small text-muted">Size: <%= item.size %> | Qty: <%=
+                                                                item.quantity %>
+                                                    </div>
+                                                    <% if(item.stockStatus !=='Available' ) { %>
+                                                        <div class="text-danger small font-weight-bold">
+                                                            <%= item.stockStatus %>
+                                                        </div>
+                                                        <% } %>
+                                                </div>
+                                            </div>
+                                            <span class="small">₹<%= item.subtotal %></span>
+                                        </li>
+                                        <% }); %>
+                                </ul>
+
+                                <% if(hasUnavailable) { %>
+                                    <div class="alert alert-warning small">Some items are unavailable. Please remove
+                                        them from cart to proceed.</div>
+                                    <a href="/cart" class="btn btn-secondary btn-block">Go to Cart</a>
+                                    <% } else { %>
+                                        <button id="btn-place-order" class="btn btn-primary btn-block py-3">Place
+                                            Order</button>
+                                        <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Address Modal -->
+            <div class="modal fade" id="addAddressModal" tabindex="-1" role="dialog"
+                aria-labelledby="addAddressModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addAddressModalLabel">Add New Address</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="addAddressForm">
+                                <div class="form-group">
+                                    <label>Full Address</label>
+                                    <input type="text" class="form-control" name="full_address" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>City</label>
+                                    <input type="text" class="form-control" name="city" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>State</label>
+                                    <input type="text" class="form-control" name="state" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Country</label>
+                                    <input type="text" class="form-control" name="country" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Zip Code</label>
+                                    <input type="text" class="form-control" name="zip_code" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Phone Number</label>
+                                    <input type="text" class="form-control" name="phone_number" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Save Address</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <%- include('../partials/footer') %>
+    </div>
+
+    <div class="gototop js-top"><a href="#" class="js-gotop"><i class="ion-ios-arrow-up"></i></a></div>
+
+    <!-- Scripts -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery.easing.1.3.js"></script>
+    <script src="/js/jquery.waypoints.min.js"></script>
+    <script src="/js/jquery.flexslider-min.js"></script>
+    <script src="/js/owl.carousel.min.js"></script>
+    <script src="/js/jquery.magnific-popup.min.js"></script>
+    <script src="/js/magnific-popup-options.js"></script>
+    <script src="/js/main.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Address Selection Highlight
+            $('.address-radio').change(function () {
+                $('.address-card').removeClass('selected');
+                $(this).closest('.address-card').addClass('selected');
+            });
+            // Also enable click on card to select radio
+            $('.address-card').click(function () {
+                $(this).find('input[type="radio"]').prop('checked', true).trigger('change');
+            });
+
+            // Add Address Form Submit
+            $('#addAddressForm').submit(async function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData.entries()); // Simple serialization
+
+                // Manual JSON construction since FormData entries to JSON might need polyfill or handling
+                const payload = {};
+                formData.forEach((value, key) => payload[key] = value);
+
+                try {
+                    const response = await fetch('/checkout/add-address', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const resData = await response.json();
+
+                    if (resData.success) {
+                        $('#addAddressModal').modal('hide');
+                        Swal.fire({ icon: 'success', title: 'Address Added', showConfirmButton: false, timer: 1500 });
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        Swal.fire('Error', resData.message, 'error');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire('Error', 'Failed to add address', 'error');
+                }
+            });
+
+            // Place Order
+            $('#btn-place-order').click(async function () {
+                const addressId = $('input[name="addressId"]:checked').val();
+                const paymentMethod = $('input[name="payment"]:checked').val();
+
+                if (!addressId) {
+                    Swal.fire('Warning', 'Please select a shipping address', 'warning');
+                    return;
+                }
+
+                $(this).prop('disabled', true).text('Processing...');
+
+                try {
+                    const response = await fetch('/checkout/place-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ addressId, paymentMethod })
+                    });
+                    const resData = await response.json();
+
+                    if (resData.success) {
+                        window.location.href = `/checkout/success/${resData.orderId}`;
+                    } else {
+                        Swal.fire('Error', resData.message, 'error');
+                        $(this).prop('disabled', false).text('Place Order');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire('Error', 'Failed to place order', 'error');
+                    $(this).prop('disabled', false).text('Place Order');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

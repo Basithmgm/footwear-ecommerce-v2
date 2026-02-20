@@ -289,7 +289,27 @@
 
 
 
+	var updateCartCount = function () {
+		// Fetch cart count via API to avoid stale data from browser Back/Forward cache
+		fetch('/cart/count')
+			.then(response => response.json())
+			.then(data => {
+				if (data.success && typeof data.cartCount !== 'undefined') {
+					$('#navbar-cart-count').text(data.cartCount);
+				}
+			})
+			.catch(err => console.error('Error fetching cart count:', err));
+	};
+
+	$(window).on('pageshow', function (event) {
+		// event.originalEvent.persisted is true if the page was loaded from bfcache
+		if (event.originalEvent && event.originalEvent.persisted) {
+			updateCartCount();
+		}
+	});
+
 	$(function () {
+		updateCartCount(); // Also fetch on initial load to ensure it's always accurate
 		mobileMenuOutsideClick();
 		offcanvasMenu();
 		burgerMenu();

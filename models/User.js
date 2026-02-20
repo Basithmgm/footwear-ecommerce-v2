@@ -40,7 +40,11 @@ const userSchema = new mongoose.Schema({
   },
   last_login_at: {
     type: Date
-  }
+  },
+  wishlist: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product'
+  }]
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
   collection: 'users'

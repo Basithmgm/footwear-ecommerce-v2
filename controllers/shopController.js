@@ -173,7 +173,8 @@ const getProductDetails = async (req, res) => {
         const product = await Product.findOne({
             _id: productId,
             isDeleted: false,
-            isBlocked: false
+            isBlocked: false,
+            status: { $in: ["Available", "Out of Stock"] } // Allow Out of Stock for badge, but block others
         }).populate({
             path: "category",
             populate: { path: "parentCategory" }
@@ -195,13 +196,25 @@ const getProductDetails = async (req, res) => {
 
         const productDataJson = JSON.stringify(product || {}).replace(/</g, '\\u003c');
 
+        const isGlobalSoldOut = product.status === 'Out of Stock' || product.totalStock <= 0;
+
+        // DEBUG: Check user wishlist state
+        if (req.user) {
+            console.log(`DEBUG: ProductDetail - UserID: ${req.user._id}, Wishlist Count: ${req.user.wishlist ? req.user.wishlist.length : 'undefined'}`);
+            if (req.user.wishlist) {
+                const inWishlist = req.user.wishlist.some(id => id.toString() === productId);
+                console.log(`DEBUG: Product ${productId} in wishlist? ${inWishlist}`);
+            }
+        }
+
         res.render("user/product-detail", {
             pageTitle: product.productName,
             product,
             productDataJson,
             relatedProducts,
             activeMenu: 'shop',
-            user: req.user
+            user: req.user,
+            isGlobalSoldOut
         });
 
     } catch (error) {

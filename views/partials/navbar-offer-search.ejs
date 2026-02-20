@@ -39,37 +39,13 @@
               <li class="has-dropdown <%= (locals.activeMenu === 'men') ? 'active' : '' %>">
                 <a href="/men">Men</a>
                 <ul class="dropdown">
-                  <% if (locals.navCategories && locals.navCategories.men && locals.navCategories.men.length> 0) { %>
-                    <% locals.navCategories.men.forEach(cat=> { %>
-                      <!-- Show only parent categories level 0 or main ones if you wish, currently showing all active men categories -->
-                      <% if (!cat.parentCategory) { %>
-                        <li><a href="/men?category=<%= cat._id %>">
-                            <%= cat.name %>
-                          </a></li>
-                        <% } %>
-                          <% }); %>
-                            <li><a href="/men">View All Men</a></li>
-                            <% } else { %>
-                              <li><a href="/men">Shop Men</a></li>
-                              <% } %>
+                  <li><a href="/men">Shop All Men Products</a></li>
                 </ul>
               </li>
               <li class="has-dropdown <%= (locals.activeMenu === 'women') ? 'active' : '' %>">
                 <a href="/women">Women</a>
                 <ul class="dropdown">
-                  <% if (locals.navCategories && locals.navCategories.women && locals.navCategories.women.length> 0) {
-                    %>
-                    <% locals.navCategories.women.forEach(cat=> { %>
-                      <% if (!cat.parentCategory) { %>
-                        <li><a href="/women?category=<%= cat._id %>">
-                            <%= cat.name %>
-                          </a></li>
-                        <% } %>
-                          <% }); %>
-                            <li><a href="/women">View All Women</a></li>
-                            <% } else { %>
-                              <li><a href="/women">Shop Women</a></li>
-                              <% } %>
+                  <li><a href="/women">Shop All Women Products</a></li>
                 </ul>
               </li>
               <li><a href="/about">About</a></li>
@@ -98,7 +74,9 @@
 
         <div class="col-sm-4 col-md-4">
           <div class="cart cart-right">
-            <a href="/cart"> <i class="icon-shopping-cart"></i> Cart [0] </a>
+            <a href="/cart"> <i class="icon-shopping-cart"></i> Cart [<span id="navbar-cart-count">
+                <%= typeof locals.cartCount !=='undefined' ? locals.cartCount : 0 %>
+              </span>] </a>
           </div>
         </div>
       </div>

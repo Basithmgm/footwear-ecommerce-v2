@@ -1,0 +1,153 @@
+<%- include('../../partials/admin/header') %>
+    <%- include('../../partials/admin/sidebar', { path: '/admin/orders' }) %>
+
+        <main class="admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+                <h2 class="h3 mb-0">Order Management</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Orders</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <!-- Filter & Search -->
+                    <form action="/admin/orders" method="GET" class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <select class="form-select" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="Ordered" <%=statusFilter==='Ordered' ? 'selected' : '' %>>Ordered
+                                </option>
+                                <option value="Shipped" <%=statusFilter==='Shipped' ? 'selected' : '' %>>Shipped
+                                </option>
+                                <option value="Out for Delivery" <%=statusFilter==='Out for Delivery' ? 'selected' : ''
+                                    %>>Out for Delivery</option>
+                                <option value="Delivered" <%=statusFilter==='Delivered' ? 'selected' : '' %>>Delivered
+                                </option>
+                                <option value="Cancelled" <%=statusFilter==='Cancelled' ? 'selected' : '' %>>Cancelled
+                                </option>
+                                <option value="Returned" <%=statusFilter==='Returned' ? 'selected' : '' %>>Returned
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="search"
+                                    placeholder="Search by Order ID or Customer Name" value="<%= search %>">
+                                <button class="btn btn-primary" type="submit">Search</button>
+                                <% if(search || statusFilter) { %>
+                                    <a href="/admin/orders" class="btn btn-secondary">Clear</a>
+                                    <% } %>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Payment</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (orders.length> 0) { %>
+                                    <% orders.forEach(order=> { %>
+                                        <tr>
+                                            <td><small class="text-muted">#<%=
+                                                        order._id.toString().slice(-6).toUpperCase() %></small></td>
+                                            <td>
+                                                <%= new Date(order.orderedDate).toLocaleDateString() %>
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold">
+                                                    <%= order.shippingAddress.full_name %>
+                                                </div>
+                                                <small class="text-muted">
+                                                    <%= order.shippingAddress.city %>
+                                                </small>
+                                            </td>
+                                            <td>₹<%= order.totalAmount.toFixed(2) %>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    <%= order.paymentMethod %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <% let badgeClass='bg-secondary text-white' ; %>
+                                                    <% if (order.orderStatus==='Ordered' )
+                                                        badgeClass='bg-primary text-white' ; %>
+                                                        <% if (order.orderStatus==='Shipped' )
+                                                            badgeClass='bg-info text-white' ; %>
+                                                            <% if (order.orderStatus==='Out for Delivery' )
+                                                                badgeClass='bg-warning text-white' ; %>
+                                                                <% if (order.orderStatus==='Delivered' )
+                                                                    badgeClass='bg-success text-white' ; %>
+                                                                    <% if (order.orderStatus==='Cancelled' )
+                                                                        badgeClass='bg-danger text-white' ; %>
+                                                                        <% if (order.orderStatus==='Returned' )
+                                                                            badgeClass='bg-dark text-white' ; %>
+
+                                                                            <span class="badge <%= badgeClass %>">
+                                                                                <%= order.orderStatus %>
+                                                                            </span>
+                                            </td>
+                                            <td>
+                                                <a href="/admin/orders/<%= order._id %>"
+                                                    class="btn btn-sm btn-outline-primary">View/Edit</a>
+                                            </td>
+                                        </tr>
+                                        <% }) %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="7" class="text-center py-5 text-muted">No orders found.
+                                                    </td>
+                                                </tr>
+                                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <% if (totalPages> 1) { %>
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                <% if (currentPage> 1) { %>
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                            href="/admin/orders?page=<%= currentPage - 1 %>&search=<%= search %>&status=<%= statusFilter %>">Previous</a>
+                                    </li>
+                                    <% } %>
+
+                                        <% for(let i=1; i <=totalPages; i++) { %>
+                                            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                                                <a class="page-link"
+                                                    href="/admin/orders?page=<%= i %>&search=<%= search %>&status=<%= statusFilter %>">
+                                                    <%= i %>
+                                                </a>
+                                            </li>
+                                            <% } %>
+
+                                                <% if (currentPage < totalPages) { %>
+                                                    <li class="page-item">
+                                                        <a class="page-link"
+                                                            href="/admin/orders?page=<%= currentPage + 1 %>&search=<%= search %>&status=<%= statusFilter %>">Next</a>
+                                                    </li>
+                                                    <% } %>
+                            </ul>
+                        </nav>
+                        <% } %>
+                </div>
+            </div>
+        </main>
+
+        <%- include('../../partials/admin/footer') %>

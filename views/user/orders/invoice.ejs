@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice - <%= order._id %>
+    </title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #555;
+        }
+
+        .invoice-box {
+            max-width: 800px;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #eee;
+            box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+            font-size: 16px;
+            line-height: 24px;
+            color: #555;
+        }
+
+        .invoice-box table {
+            width: 100%;
+            line-height: inherit;
+            text-align: left;
+        }
+
+        .invoice-box table td {
+            padding: 5px;
+            vertical-align: top;
+        }
+
+        .invoice-box table tr td:nth-child(2) {
+            text-align: right;
+        }
+
+        .invoice-box table tr.top table td {
+            padding-bottom: 20px;
+        }
+
+        .invoice-box table tr.top table td.title {
+            font-size: 45px;
+            line-height: 45px;
+            color: #333;
+        }
+
+        .invoice-box table tr.information table td {
+            padding-bottom: 40px;
+        }
+
+        .invoice-box table tr.heading td {
+            background: #eee;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+        }
+
+        .invoice-box table tr.details td {
+            padding-bottom: 20px;
+        }
+
+        .invoice-box table tr.item td {
+            border-bottom: 1px solid #eee;
+        }
+
+        .invoice-box table tr.item.last td {
+            border-bottom: none;
+        }
+
+        .invoice-box table tr.total td:nth-child(2) {
+            border-top: 2px solid #eee;
+            font-weight: bold;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .invoice-box table tr.top table td {
+                width: 100%;
+                display: block;
+                text-align: center;
+            }
+
+            .invoice-box table tr.information table td {
+                width: 100%;
+                display: block;
+                text-align: center;
+            }
+        }
+
+        .btn-print {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn-print button {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        @media print {
+            .btn-print {
+                display: none;
+            }
+
+            .invoice-box {
+                border: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="btn-print">
+        <button id="printBtn" style="margin-right: 10px;">Print Invoice</button>
+        <button id="downloadBtn">Download PDF</button>
+    </div>
+
+    <!-- html2pdf CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Print Button
+            const printBtn = document.getElementById('printBtn');
+            if (printBtn) {
+                printBtn.addEventListener('click', function () {
+                    window.print();
+                });
+            }
+
+            // Download Button
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function () {
+                    if (typeof html2pdf === 'undefined') {
+                        alert('Error: PDF library not loaded. Please check your internet connection.');
+                        return;
+                    }
+
+                    const element = document.querySelector('.invoice-box');
+                    const opt = {
+                        margin: 10,
+                        filename: 'Invoice_<%= order._id %>.pdf',
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2 },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+
+                    html2pdf().set(opt).from(element).save().catch(err => {
+                        console.error('PDF Generation Error:', err);
+                        alert('Failed to generate PDF. Please try again.');
+                    });
+                });
+            }
+        });
+    </script>
+
+
+
+    <div class="invoice-box">
+        <table cellpadding="0" cellspacing="0">
+            <tr class="top">
+                <td colspan="2">
+                    <table>
+                        <tr>
+                            <td class="title">
+                                Footwear
+                            </td>
+
+                            <td>
+                                Invoice #: <%= order._id.toString().slice(-6).toUpperCase() %><br>
+                                    Created: <%= new Date(order.orderedDate).toLocaleDateString() %><br>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+            <tr class="information">
+                <td colspan="2">
+                    <table>
+                        <tr>
+                            <td>
+                                <%= order.shippingAddress.full_name %><br>
+                                    <%= order.shippingAddress.full_address %><br>
+                                        <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %>
+                                                <%= order.shippingAddress.zip_code %>
+                            </td>
+
+                            <td>
+                                Footwear Inc.<br>
+                                support@footwear.com
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+            <tr class="heading">
+                <td>Payment Method</td>
+                <td>Check #</td>
+            </tr>
+
+            <tr class="details">
+                <td>
+                    <%= order.paymentMethod %>
+                </td>
+                <td>
+                    <%= order.paymentStatus %>
+                </td>
+            </tr>
+
+            <tr class="heading">
+                <td>Item</td>
+                <td>Price</td>
+            </tr>
+
+            <% order.items.forEach(item=> { %>
+                <tr class="item">
+                    <td>
+                        <%= item.productName %> (x<%= item.quantity %>)
+                    </td>
+                    <td>₹<%= item.itemTotal.toFixed(2) %>
+                    </td>
+                </tr>
+                <% }) %>
+
+                    <tr class="item">
+                        <td>Shipping</td>
+                        <td>₹<%= order.shippingFee.toFixed(2) %>
+                        </td>
+                    </tr>
+
+                    <tr class="item">
+                        <td>Tax</td>
+                        <td>₹<%= order.tax.toFixed(2) %>
+                        </td>
+                    </tr>
+
+                    <tr class="total">
+                        <td></td>
+                        <td>Total: ₹<%= order.totalAmount.toFixed(2) %>
+                        </td>
+                    </tr>
+        </table>
+    </div>
+</body>
+
+</html>

@@ -24,6 +24,7 @@ app.use(
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
@@ -101,7 +102,10 @@ app.use(async (req, res, next) => {
     try {
       const User = require("./models/User");
       req.user = await User.findById(req.session.userId).populate('role_id').select("-password");
-      console.log("App Middleware: User fetched:", req.user ? req.user.email : "Not found"); // DEBUG LOG
+      console.log("App Middleware: User fetched:", req.user ? req.user.email : "Not found");
+      if (req.user && req.user.wishlist) {
+        console.log("App Middleware: Wishlist items:", req.user.wishlist.length);
+      }
       res.locals.user = req.user; // Make available in all views
     } catch (err) {
       console.error("Error fetching user:", err);
@@ -162,6 +166,13 @@ app.use(async (req, res, next) => {
 // ROUTES
 // ============================================
 
+// Middleware imports
+const noCache = require("./middlewares/noCache");
+const fetchNavbarData = require("./middlewares/navMiddleware");
+
+// Apply navigation middleware globally
+app.use(fetchNavbarData);
+
 // JSON API routes (for any AJAX if needed)
 const apiAuthRoutes = require("./routes/auth");
 app.use("/auth", apiAuthRoutes);
@@ -184,12 +195,22 @@ app.use(bannerRoutes);
 const productRoutes = require("./routes/productRoutes");
 app.use(productRoutes);
 
-// Middleware imports
-const noCache = require("./middlewares/noCache");
-const fetchNavbarData = require("./middlewares/navMiddleware");
+const wishlistRoutes = require("./routes/wishlistRoutes");
+app.use(wishlistRoutes);
 
-// Apply navigation middleware globally (or per route if preferred, but global is easier for navbar)
-app.use(fetchNavbarData);
+const cartRoutes = require("./routes/cartRoutes");
+app.use('/cart', cartRoutes);
+
+const checkoutRoutes = require("./routes/checkoutRoutes");
+app.use('/checkout', checkoutRoutes);
+
+const adminOrderRoutes = require("./routes/adminOrderRoutes");
+app.use(adminOrderRoutes);
+
+const userOrderRoutes = require("./routes/userOrderRoutes");
+app.use(userOrderRoutes);
+
+// Middleware imports
 
 // Home route (after signup + OTP or login, redirect here)
 app.get("/", noCache, (req, res) => {

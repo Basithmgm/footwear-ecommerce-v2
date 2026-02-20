@@ -226,9 +226,14 @@
                       <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <div class="section-title" style="margin: 0;">Address Book</div>
-                        <a href="/profile/address/add" class="btn btn-outline"
-                          style="text-decoration:none; cursor:pointer; font-size: 13px; padding: 5px 15px;">+ Add
-                          New</a>
+                        <div>
+                          <a href="/orders" class="btn btn-primary"
+                            style="text-decoration:none; cursor:pointer; font-size: 13px; padding: 5px 15px; margin-right: 10px;">My
+                            Orders</a>
+                          <a href="/profile/address/add" class="btn btn-outline"
+                            style="text-decoration:none; cursor:pointer; font-size: 13px; padding: 5px 15px;">+ Add
+                            New</a>
+                        </div>
                       </div>
 
                       <% if (user.addresses?.length> 0) { %>

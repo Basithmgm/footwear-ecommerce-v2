@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>
+        <%= pageTitle %> - Footwear
+    </title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/css/animate.css">
+    <link rel="stylesheet" href="/css/icomoon.css">
+    <link rel="stylesheet" href="/css/ionicons.min.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+<body>
+    <div class="colorlib-loader"></div>
+    <div id="page">
+        <%- include('../../partials/navbar-offer-search') %>
+
+            <div class="breadcrumbs">
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <p class="bread"><span><a href="/">Home</a></span> / <span><a
+                                        href="/profile">Profile</a></span> / <span>My Orders</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="colorlib-product">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h2>My Orders</h2>
+                                <a href="/profile" class="btn btn-sm btn-outline-secondary">Back to Profile</a>
+                            </div>
+
+                            <!-- Search and Filter -->
+                            <form action="/orders" method="GET" class="mb-4">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <input type="text" name="search" class="form-control"
+                                            placeholder="Search by Order ID or Product Name"
+                                            value="<%= typeof search !== 'undefined' ? search : '' %>">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="submit" class="btn btn-primary btn-block">Search</button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <% if (orders.length> 0) { %>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Order ID</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Total</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% orders.forEach(order=> { %>
+                                                <tr>
+                                                    <td>#<%= order._id.toString().slice(-6).toUpperCase() %>
+                                                    </td>
+                                                    <td>
+                                                        <%= new Date(order.orderedDate).toLocaleDateString() %>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge 
+                                                        <%= order.orderStatus === 'Delivered' ? 'badge-success' : 
+                                                           order.orderStatus === 'Cancelled' ? 'badge-danger' : 
+                                                           order.orderStatus === 'Returned' ? 'badge-dark' :
+                                                           'badge-info' %>">
+                                                            <%= order.orderStatus %>
+                                                        </span>
+                                                    </td>
+                                                    <td>₹<%= order.totalAmount.toFixed(2) %>
+                                                    </td>
+                                                    <td>
+                                                        <a href="/orders/<%= order._id %>"
+                                                            class="btn btn-primary btn-sm mb-1">View Details</a>
+                                                        <% if (order.orderStatus !=='Cancelled' ) { %>
+                                                            <a href="/orders/invoice/<%= order._id %>"
+                                                                class="btn btn-outline-secondary btn-sm mb-1"
+                                                                target="_blank">Download Invoice</a>
+                                                            <% } %>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Pagination -->
+                                <div class="row mt-5">
+                                    <div class="col-md-12 text-center">
+                                        <div class="block-27">
+                                            <ul>
+                                                <% if (currentPage> 1) { %>
+                                                    <li><a href="/orders?page=<%= currentPage - 1 %>">&lt;</a></li>
+                                                    <% } %>
+
+                                                        <% for(let i=1; i <=totalPages; i++) { %>
+                                                            <li class="<%= currentPage === i ? 'active' : '' %>">
+                                                                <a href="/orders?page=<%= i %>">
+                                                                    <%= i %>
+                                                                </a>
+                                                            </li>
+                                                            <% } %>
+
+                                                                <% if (currentPage < totalPages) { %>
+                                                                    <li><a
+                                                                            href="/orders?page=<%= currentPage + 1 %>">&gt;</a>
+                                                                    </li>
+                                                                    <% } %>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <% } else { %>
+                                    <div class="text-center py-5">
+                                        <i class="icon-shopping-cart display-4 text-muted mb-3"></i>
+                                        <h3>No orders found</h3>
+                                        <p>You haven't placed any orders yet.</p>
+                                        <a href="/shop" class="btn btn-primary">Start Shopping</a>
+                                    </div>
+                                    <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <%- include('../../partials/footer') %>
+    </div>
+
+    <div class="gototop js-top"><a href="#" class="js-gotop"><i class="ion-ios-arrow-up"></i></a></div>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery.easing.1.3.js"></script>
+    <script src="/js/jquery.waypoints.min.js"></script>
+    <script src="/js/jquery.flexslider-min.js"></script>
+    <script src="/js/owl.carousel.min.js"></script>
+    <script src="/js/jquery.magnific-popup.min.js"></script>
+    <script src="/js/magnific-popup-options.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+
+</html>

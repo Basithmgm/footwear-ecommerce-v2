@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>
+        <%= pageTitle %> - Footwear
+    </title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="/css/animate.css">
+    <link rel="stylesheet" href="/css/icomoon.css">
+    <link rel="stylesheet" href="/css/ionicons.min.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/magnific-popup.css">
+    <link rel="stylesheet" href="/css/flexslider.css">
+    <link rel="stylesheet" href="/css/owl.carousel.min.css">
+    <link rel="stylesheet" href="/css/owl.theme.default.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-datepicker.css">
+    <link rel="stylesheet" href="/fonts/flaticon/font/flaticon.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+
+    <div class="colorlib-loader"></div>
+
+    <div id="page">
+        <%- include('../partials/navbar-offer-search') %>
+
+            <div class="breadcrumbs">
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <p class="bread"><span><a href="/">Home</a></span> / <span>Shopping Cart</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="colorlib-product cart-container">
+                <div class="container">
+                    <div class="row row-pb-lg">
+                        <div class="col-md-12">
+                            <div class="product-name d-flex">
+                                <div class="one-forth text-left px-4">
+                                    <span>Product Details</span>
+                                </div>
+                                <div class="one-eight text-center">
+                                    <span>Price</span>
+                                </div>
+                                <div class="one-eight text-center">
+                                    <span>Quantity</span>
+                                </div>
+                                <div class="one-eight text-center">
+                                    <span>Total</span>
+                                </div>
+                                <div class="one-eight text-center px-4">
+                                    <span>Remove</span>
+                                </div>
+                            </div>
+
+                            <% if(cartItems && cartItems.length> 0) { %>
+                                <% cartItems.forEach(item=> { %>
+                                    <div class="product-cart d-flex align-items-center" id="row-<%= item._id %>">
+                                        <div class="one-forth">
+                                            <div class="product-img"
+                                                style="background-image: url('<%= item.image %>');">
+                                            </div>
+                                            <div class="display-tc">
+                                                <h3>
+                                                    <%= item.productName %>
+                                                </h3>
+                                                <span class="text-muted d-block small">Color: <%= item.variantId %> |
+                                                        Size: <%= item.size %></span>
+                                                <% if(item.stockStatus !=='Available' ) { %>
+                                                    <span class="text-danger small font-weight-bold">
+                                                        <%= item.stockStatus %>
+                                                    </span>
+                                                    <% } %>
+                                            </div>
+                                        </div>
+                                        <div class="one-eight text-center">
+                                            <div class="display-tc">
+                                                <span class="price">₹<%= item.price %></span>
+                                            </div>
+                                        </div>
+                                        <div class="one-eight text-center">
+                                            <div class="display-tc">
+                                                <div class="qty-group">
+                                                    <button class="btn btn-qty btn-outline-secondary quantity-btn"
+                                                        data-id="<%= item._id %>" data-action="minus"
+                                                        <%=item.stockStatus !=='Available' ? 'disabled' : ''
+                                                        %>>-</button>
+                                                    <input type="text" id="qty-<%= item._id %>" name="quantity"
+                                                        class="form-control input-number" value="<%= item.quantity %>"
+                                                        min="1" max="5" readonly
+                                                        style="width: 50px; text-align: center; display: inline-block;">
+                                                    <button class="btn btn-qty btn-outline-secondary quantity-btn"
+                                                        data-id="<%= item._id %>" data-action="plus" <%=item.stockStatus
+                                                        !=='Available' ? 'disabled' : '' %>>+</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="one-eight text-center">
+                                            <div class="display-tc">
+                                                <span class="price" id="total-<%= item._id %>">₹<%= item.subtotal %>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="one-eight text-center">
+                                            <div class="display-tc">
+                                                <div class="closed btn-remove-item" style="cursor: pointer;"
+                                                    data-id="<%= item._id %>"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <% }); %>
+                                        <% } else { %>
+                                            <div class="text-center py-5">
+                                                <h3>Your cart is empty</h3>
+                                                <a href="/shop" class="btn btn-primary">Continue Shopping</a>
+                                            </div>
+                                            <% } %>
+                        </div>
+                    </div>
+
+                    <% if(cartItems && cartItems.length> 0) { %>
+                        <div class="row row-pb-lg">
+                            <div class="col-md-12">
+                                <div class="total-wrap">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <form action="#">
+                                                <div class="row form-group">
+                                                    <div class="col-sm-9">
+                                                        <input type="text" name="quantity"
+                                                            class="form-control input-number"
+                                                            placeholder="Your Coupon Number...">
+                                                    </div>
+                                                    <div class="col-sm-3">
+                                                        <input type="submit" value="Apply Coupon"
+                                                            class="btn btn-primary">
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="col-sm-4 text-center">
+                                            <div class="total">
+                                                <div class="sub">
+                                                    <p><span>Subtotal:</span> <span id="cart-subtotal">₹<%=
+                                                                originalTotal || subtotal %>
+                                                        </span></p>
+                                                    <p><span>Delivery:</span> <span>₹0.00</span></p>
+                                                    <p><span>Discount:</span> <span id="cart-discount"
+                                                            class="text-success">- ₹<%= totalDiscount || 0 %></span></p>
+                                                </div>
+                                                <div class="grand-total">
+                                                    <p><span><strong>Total:</strong></span> <span id="cart-total">₹<%=
+                                                                subtotal %></span></p>
+                                                </div>
+                                            </div>
+                                            <div class="checkout-btn-wrap">
+                                                <% const hasUnavailable=cartItems.some(i=> i.stockStatus !==
+                                                    'Available');
+                                                    %>
+                                                    <% if(hasUnavailable) { %>
+                                                        <button class="btn btn-secondary btn-block" disabled>Checkout
+                                                            Disabled (Item Unavailable)</button>
+                                                        <% } else { %>
+                                                            <a href="/checkout"
+                                                                class="btn btn-primary btn-block">Proceed to
+                                                                Checkout</a>
+                                                            <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <% } %>
+                </div>
+            </div>
+
+            <%- include('../partials/footer') %>
+    </div>
+
+    <div class="gototop js-top"><a href="#" class="js-gotop"><i class="ion-ios-arrow-up"></i></a></div>
+
+    <!-- Script -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery.easing.1.3.js"></script>
+    <script src="/js/jquery.waypoints.min.js"></script>
+    <script src="/js/jquery.flexslider-min.js"></script>
+    <script src="/js/owl.carousel.min.js"></script>
+    <script src="/js/jquery.magnific-popup.min.js"></script>
+    <script src="/js/magnific-popup-options.js"></script>
+    <script src="/js/bootstrap-datepicker.js"></script>
+    <script src="/js/jquery.stellar.min.js"></script>
+    <script src="/js/main.js"></script>
+
+    <% const hasUnavailable=cartItems.some(i=> i.stockStatus !== 'Available'); %>
+        <% if(hasUnavailable) { %>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Cart Update',
+                        text: 'Some items in your cart are currently unavailable or out of stock. Please remove them to proceed with checkout.'
+                    });
+                });
+            </script>
+            <% } %>
+
+                <script>
+                    // Update Quantity with jQuery Delegation
+                    $(document).on('click', '.quantity-btn', async function (e) {
+                        e.preventDefault();
+
+                        const btn = $(this);
+                        const itemId = btn.data('id');
+                        const action = btn.data('action');
+
+
+
+                        // Disable button temporarily to prevent double submission
+                        btn.prop('disabled', true);
+
+                        try {
+                            const response = await fetch('/cart/update-quantity', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ itemId, check: action })
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                if (data.newQuantity) {
+                                    $('#qty-' + itemId).val(data.newQuantity);
+                                    $('#total-' + itemId).text('₹' + data.newItemTotal);
+                                    $('#cart-subtotal').text('₹' + data.originalTotal);
+                                    $('#cart-discount').text('- ₹' + data.totalDiscount);
+                                    $('#cart-total').text('₹' + data.cartTotal);
+
+                                    // Update Navbar Cart Count
+                                    if (typeof data.cartCount !== 'undefined') {
+                                        $('#navbar-cart-count').text(data.cartCount);
+                                    }
+                                }
+                            } else {
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Limit Reached',
+                                        text: data.message,
+                                        showConfirmButton: false,
+                                        timer: 2000
+                                    });
+                                } else {
+                                    alert(data.message);
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error updating quantity:', error);
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'Failed to update quantity. Please try again.',
+                                    showConfirmButton: false,
+                                    timer: 3000
+                                });
+                            } else {
+                                alert('Failed to update quantity. Please try again.');
+                            }
+                        } finally {
+                            // Re-enable button
+                            btn.prop('disabled', false);
+                        }
+                    });
+
+                    $(document).ready(function () {
+                        // REMOVE ITEM - Event Delegation
+                        $(document).on('click', '.btn-remove-item', function (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const itemId = $(this).data('id');
+                            console.log('Remove clicked for:', itemId);
+
+                            const performRemove = async () => {
+                                try {
+                                    const response = await fetch('/cart/remove', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ itemId })
+                                    });
+
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        $('#row-' + itemId).fadeOut(300, function () { $(this).remove(); });
+                                        $('#cart-subtotal').text('₹' + data.originalTotal);
+                                        $('#cart-discount').text('- ₹' + data.totalDiscount);
+                                        $('#cart-total').text('₹' + data.cartTotal);
+
+                                        // Update Navbar Cart Count
+                                        if (typeof data.cartCount !== 'undefined') {
+                                            $('#navbar-cart-count').text(data.cartCount);
+                                        }
+
+                                        const showSuccess = () => {
+                                            if (data.cartCount === 0) location.reload();
+                                        };
+
+                                        if (typeof Swal !== 'undefined') {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: 'Removed!',
+                                                text: 'Item has been removed.',
+                                                timer: 1500,
+                                                showConfirmButton: false
+                                            }).then(showSuccess);
+                                        } else {
+                                            showSuccess();
+                                        }
+                                    } else {
+                                        if (typeof Swal !== 'undefined') {
+                                            Swal.fire('Error', data.message || 'Failed to remove', 'error');
+                                        } else {
+                                            alert(data.message || 'Failed to remove');
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error('Error:', error);
+                                    alert('Error processing request');
+                                }
+                            };
+
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    title: 'Remove Item?',
+                                    text: "Are you sure you want to remove this?",
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#3085d6',
+                                    cancelButtonColor: '#d33',
+                                    confirmButtonText: 'Yes, remove it!'
+                                }).then((result) => {
+                                    if (result.isConfirmed) performRemove();
+                                });
+                            } else {
+                                if (confirm('Remove this item?')) performRemove();
+                            }
+                        });
+                    });
+                </script>
+</body>
+
+</html>

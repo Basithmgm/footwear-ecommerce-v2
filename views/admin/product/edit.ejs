@@ -768,6 +768,15 @@
                         // Image Inputs
                         document.getElementById('vColorImageInput').addEventListener('change', function (e) {
                             if (e.target.files && e.target.files[0]) {
+                                if (!e.target.files[0].type.startsWith('image/')) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Invalid File',
+                                        text: 'Please select image file only'
+                                    });
+                                    this.value = '';
+                                    return;
+                                }
                                 openCropper(e.target.files[0], (blob) => {
                                     tempVariant.colorImageBlob = blob;
                                     const url = URL.createObjectURL(blob);
@@ -780,7 +789,20 @@
 
                         document.getElementById('vGalleryInput').addEventListener('change', function (e) {
                             if (e.target.files) {
-                                Array.from(e.target.files).forEach(file => {
+                                const files = Array.from(e.target.files);
+                                const hasInvalidFile = files.some(file => !file.type.startsWith('image/'));
+
+                                if (hasInvalidFile) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Invalid File',
+                                        text: 'Please select image file only'
+                                    });
+                                    this.value = '';
+                                    return;
+                                }
+
+                                files.forEach(file => {
                                     openCropper(file, (blob) => {
                                         tempVariant.galleryBlobs.push(blob);
                                         renderGalleryPreviews();
