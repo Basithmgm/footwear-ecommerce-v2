@@ -45,19 +45,8 @@
                                             Invoice</a>
                                         <% } %>
 
-                                            <% if (order.orderStatus==='Ordered' ) { %>
-                                                <button onclick="cancelOrder('<%= order._id %>')"
-                                                    class="btn btn-outline-danger btn-sm">Cancel Order</button>
-                                                <% } %>
-
-                                                    <% if (order.orderStatus==='Delivered' ) { %>
-                                                        <button onclick="returnOrder('<%= order._id %>')"
-                                                            class="btn btn-outline-warning btn-sm">Return Order</button>
-                                                        <% } %>
-
-                                                            <a href="/orders"
-                                                                class="btn btn-outline-secondary btn-sm">Back to
-                                                                Orders</a>
+                                            <a href="/orders" class="btn btn-outline-secondary btn-sm">Back to
+                                                Orders</a>
                                 </div>
                             </div>
                             <p class="text-muted">Placed on <%= new Date(order.orderedDate).toLocaleDateString() %>
@@ -69,32 +58,82 @@
                                 <div class="card-header bg-white font-weight-bold">Items</div>
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
-                                        <table class="table mb-0">
-                                            <tbody>
-                                                <% order.items.forEach(item=> { %>
-                                                    <tr>
-                                                        <td style="width: 100px;">
-                                                            <img src="<%= item.image || '/images/product-placeholder.jpg' %>"
-                                                                alt="<%= item.productName %>" class="img-fluid rounded">
-                                                        </td>
-                                                        <td>
-                                                            <h6 class="mb-1"><a
-                                                                    href="/product/<%= item.productId._id %>">
-                                                                    <%= item.productName %>
-                                                                </a></h6>
-                                                            <small class="text-muted">
-                                                                Size: <%= item.size %> | Color: <%= item.variantId %>
+                                        <% order.items.forEach(item=> { %>
+                                            <tr>
+                                                <td style="width: 70px;">
+                                                    <img src="<%= item.image || '/images/product-placeholder.jpg' %>"
+                                                        alt="<%= item.productName %>" class="img-fluid rounded"
+                                                        style="width: 60px; height: auto;">
+                                                </td>
+                                                <td>
+                                                    <h6 class="mb-1"><a href="/product/<%= item.productId._id %>">
+                                                            <%= item.productName %>
+                                                        </a></h6>
+                                                    <small class="text-muted d-block mb-1">
+                                                        Size: <%= item.size %> | Color: <%= item.variantId %>
+                                                    </small>
+
+                                                    <!-- Display Item Level Status if applicable -->
+                                                    <% if (item.itemStatus && item.itemStatus !=='Ordered' ) { %>
+                                                        <span
+                                                            class="badge p-1 px-2 mt-1
+                                                                    <%= item.itemStatus === 'Cancelled' || item.itemStatus === 'Return Rejected' ? 'badge-danger' : 
+                                                                        item.itemStatus === 'Returned' ? 'badge-warning' : 
+                                                                        item.itemStatus === 'Return Requested' ? 'badge-info' : 'badge-secondary' %>">
+                                                            <%= item.itemStatus %>
+                                                        </span>
+                                                        <% if (item.adminReturnComment) { %>
+                                                            <small class="d-block mt-1 text-muted"><strong>Admin
+                                                                    Note:</strong>
+                                                                <%= item.adminReturnComment %>
                                                             </small>
-                                                        </td>
-                                                        <td>x<%= item.quantity %>
-                                                        </td>
-                                                        <td class="text-right font-weight-bold">₹<%=
-                                                                item.price.toFixed(2) %>
-                                                        </td>
-                                                    </tr>
-                                                    <% }) %>
-                                            </tbody>
-                                        </table>
+                                                            <% } %>
+                                                                <% } else if (item.itemStatus==='Ordered' &&
+                                                                    order.orderStatus==='Delivered' ) { %>
+                                                                    <span
+                                                                        class="badge badge-success p-1 px-2 mt-1">Delivered</span>
+                                                                    <% } %>
+                                                </td>
+                                                <td class="align-middle text-center">x<%= item.quantity %>
+                                                </td>
+                                                <td class="align-middle text-right font-weight-bold">₹<%=
+                                                        item.itemTotal.toFixed(2) %>
+
+                                                        <!-- Item Level Action Buttons -->
+                                                        <div class="mt-2">
+                                                            <% if (order.orderStatus !=='Cancelled' && order.orderStatus
+                                                                !=='Delivered' && order.orderStatus !=='Returned' &&
+                                                                order.orderStatus !=='Return Requested' &&
+                                                                order.orderStatus !=='Return Rejected' ) { %>
+                                                                <% if (!item.itemStatus || ['Ordered', 'Shipped'
+                                                                    , 'Out for Delivery' ].includes(item.itemStatus)) {
+                                                                    %>
+                                                                    <button
+                                                                        onclick="cancelOrderItem('<%= order._id %>', '<%= item._id %>')"
+                                                                        class="btn btn-outline-danger btn-sm py-1 px-2"
+                                                                        style="font-size: 0.75rem;">Cancel Item</button>
+                                                                    <% } %>
+                                                                        <% } %>
+
+                                                                            <% if (order.orderStatus==='Delivered' ) {
+                                                                                %>
+                                                                                <% if (!item.itemStatus ||
+                                                                                    ['Ordered', 'Shipped'
+                                                                                    , 'Out for Delivery' , 'Delivered'
+                                                                                    ].includes(item.itemStatus)) { %>
+                                                                                    <button
+                                                                                        onclick="returnOrderItem('<%= order._id %>', '<%= item._id %>')"
+                                                                                        class="btn btn-outline-warning btn-sm py-1 px-2"
+                                                                                        style="font-size: 0.75rem;">Return
+                                                                                        Item</button>
+                                                                                    <% } %>
+                                                                                        <% } %>
+                                                        </div>
+                                                </td>
+                                            </tr>
+                                            <% }) %>
+                                                </tbody>
+                                                </table>
                                     </div>
                                 </div>
                             </div>
@@ -180,10 +219,10 @@
     <link rel="stylesheet" href="/css/sweetalert2.min.css">
 
     <script>
-        function cancelOrder(orderId) {
+        function cancelOrderItem(orderId, itemId) {
             Swal.fire({
-                title: 'Cancel Order?',
-                text: "Please provide a reason for cancellation:",
+                title: 'Cancel Item?',
+                text: "Please provide a reason for cancelling this specific item:",
                 input: 'text',
                 inputAttributes: {
                     autocapitalize: 'off'
@@ -192,7 +231,7 @@
                 confirmButtonText: 'Yes, cancel it!',
                 showLoaderOnConfirm: true,
                 preConfirm: (reason) => {
-                    return fetch(`/orders/cancel/${orderId}`, {
+                    return fetch(`/orders/cancel-item/${orderId}/${itemId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ reason })
@@ -229,10 +268,10 @@
             })
         }
 
-        function returnOrder(orderId) {
+        function returnOrderItem(orderId, itemId) {
             Swal.fire({
-                title: 'Return Order?',
-                text: "Please provide a reason for return (Mandatory):",
+                title: 'Return Item?',
+                text: "Please provide a reason for returning this specific item (Mandatory):",
                 input: 'text',
                 inputValidator: (value) => {
                     if (!value) {
@@ -243,7 +282,7 @@
                 confirmButtonText: 'Yes, return it!',
                 showLoaderOnConfirm: true,
                 preConfirm: (reason) => {
-                    return fetch(`/orders/return/${orderId}`, {
+                    return fetch(`/orders/return-item/${orderId}/${itemId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ reason })

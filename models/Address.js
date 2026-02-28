@@ -29,6 +29,10 @@ const addressSchema = new mongoose.Schema({
     phone_number: {
         type: String,
         required: true
+    },
+    is_default: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: false, // Not explicitly requested, but usually good practice. User didn't ask for it in address description though.

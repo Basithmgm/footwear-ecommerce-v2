@@ -247,6 +247,10 @@ exports.postAddAddress = async (req, res) => {
       });
     }
 
+    // Check if it's the first address, make it default automatically
+    const addressCount = await Address.countDocuments({ user_id: userId });
+    const is_default = addressCount === 0;
+
     // Create new Address document
     await Address.create({
       user_id: userId,
@@ -255,7 +259,8 @@ exports.postAddAddress = async (req, res) => {
       state,
       zip_code: zip,
       country,
-      phone_number: phone
+      phone_number: phone,
+      is_default
     });
 
     res.redirect('/profile?success=Address added successfully');
@@ -297,7 +302,8 @@ exports.getEditAddress = async (req, res) => {
       state: address.state,
       zip: address.zip_code,
       country: address.country,
-      phone: address.phone_number
+      phone: address.phone_number,
+      is_default: address.is_default
     };
 
     res.render('profile/address-edit', {
@@ -364,15 +370,39 @@ exports.deleteAddress = async (req, res) => {
 };
 
 // Set Default Address
-// Note: User collection no longer has addresses array to manage default.
-// If we want default address logic, we might need a flag on Address model or reference on User.
-// The prompted schema for Address did NOT have 'isDefault'.
-// We will deprecate this feature or pick the first one as default implicitly for now.
 exports.setDefaultAddress = async (req, res) => {
-  // Feature removed in new schema unless requested to add back.
-  // Or we can add isDefault to Address model?
-  // User prompt: "shipping_address collection stores... id, full_address, user_id, city, country, state, zip_code, phone_number"
-  // No 'isDefault' mentioned.
-  // I will act as if this feature is not supported or implicitly first one.
-  res.redirect('/profile');
+  try {
+    const addressId = req.params.id;
+    const userId = req.user.id;
+
+    // Verify address exists and belongs to user
+    const address = await Address.findById(addressId);
+    if (!address || address.user_id.toString() !== userId) {
+      return res.status(404).json({ success: false, message: 'Address not found or unauthorized' });
+    }
+
+    // Set all other addresses of this user to not default
+    await Address.updateMany(
+      { user_id: userId, _id: { $ne: addressId } },
+      { $set: { is_default: false } }
+    );
+
+    // Set the selected address to default
+    address.is_default = true;
+    await address.save();
+
+    // If request accepts JSON, send JSON response
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.json({ success: true, message: 'Default address updated successfully' });
+    }
+
+    // Otherwise redirect back to profile
+    res.redirect('/profile?success=Default address updated successfully');
+  } catch (err) {
+    console.error("Set default address error:", err);
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(500).json({ success: false, message: 'Failed to update default address' });
+    }
+    res.redirect('/profile?error=Failed to update default address');
+  }
 };

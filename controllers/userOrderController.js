@@ -20,17 +20,9 @@ exports.getMyOrders = async (req, res) => {
 
         if (search) {
             query.$or = [
-                { _id: { $regex: search, $options: 'i' } }, // Can search by partial ID? ObjectId regex is tricky, but works for strings if cast or using mongoose plugin, but strict ObjectId fails. 
-                // Better to filter results or specific ID match if valid ObjectId.
-                // For simplicity, let's assume strict ID match or no ID search if not valid, OR just skip ID search if not robust.
-                // Actually, let's just search items.productName
-                { "items.productName": { $regex: search, $options: 'i' } }
+                { "items.productName": { $regex: search, $options: 'i' } },
+                { $expr: { $regexMatch: { input: { $toString: "$_id" }, regex: search, options: "i" } } }
             ];
-            // If search is valid ObjectId, add it to query
-            const mongoose = require('mongoose');
-            if (mongoose.Types.ObjectId.isValid(search)) {
-                query.$or.push({ _id: search });
-            }
         }
 
         if (status) {
@@ -104,9 +96,23 @@ exports.cancelOrder = async (req, res) => {
 
         // Increment Stock
         for (const item of order.items) {
-            await Product.findByIdAndUpdate(item.productId, {
-                $inc: { stock: item.quantity }
-            });
+            const product = await Product.findById(item.productId);
+            if (product) {
+                const variant = product.variants.find(v => v.color === item.variantId);
+                if (variant) {
+                    const sizeObj = variant.sizes.find(s => s.size == item.size);
+                    if (sizeObj) {
+                        sizeObj.quantity += item.quantity;
+                    }
+                }
+
+                // Recalculate totalStock
+                product.totalStock = product.variants.reduce((acc, v) => {
+                    return acc + v.sizes.reduce((sum, s) => sum + s.quantity, 0);
+                }, 0);
+
+                await product.save();
+            }
         }
 
         order.orderStatus = 'Cancelled';
@@ -142,8 +148,8 @@ exports.returnOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Order is not eligible for return' });
         }
 
-        // We mark as Returned immediately as per request (or could be "Return Requested")
-        order.orderStatus = 'Returned';
+        // We mark as Return Requested so admin can approve/reject
+        order.orderStatus = 'Return Requested';
         order.returnReason = reason;
         await order.save();
 
@@ -157,6 +163,121 @@ exports.returnOrder = async (req, res) => {
     } catch (error) {
         console.error('Return Order Error:', error);
         res.status(500).json({ success: false, message: 'Failed to return order' });
+    }
+};
+
+// Cancel Specific Order Item
+exports.cancelOrderItem = async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const { orderId, itemId } = req.params;
+        const userId = req.user._id;
+
+        const order = await Order.findOne({ _id: orderId, userId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        const item = order.items.id(itemId);
+        if (!item) {
+            return res.status(404).json({ success: false, message: 'Item not found in order' });
+        }
+
+        // Global order check
+        if (order.orderStatus === 'Delivered' || order.orderStatus === 'Cancelled' || order.orderStatus === 'Returned') {
+            return res.status(400).json({ success: false, message: `Cannot cancel item: Order is already ${order.orderStatus}` });
+        }
+
+        // Item level check
+        if (item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') {
+            return res.status(400).json({ success: false, message: `Item is already ${item.itemStatus}` });
+        }
+
+        // Increment Stock
+        const product = await Product.findById(item.productId);
+        if (product) {
+            const variant = product.variants.find(v => v.color === item.variantId);
+            if (variant) {
+                const sizeObj = variant.sizes.find(s => s.size == item.size);
+                if (sizeObj) {
+                    sizeObj.quantity += item.quantity;
+                }
+            }
+
+            // Recalculate totalStock
+            product.totalStock = product.variants.reduce((acc, v) => {
+                return acc + v.sizes.reduce((sum, s) => sum + s.quantity, 0);
+            }, 0);
+
+            await product.save();
+        }
+
+        // Update Item Status
+        item.itemStatus = 'Cancelled';
+        item.cancelReason = reason || 'No reason provided';
+
+        // Optional: Check if ALL items are cancelled, then cancel entire order
+        const allItemsCancelled = order.items.every(i => i.itemStatus === 'Cancelled');
+        if (allItemsCancelled) {
+            order.orderStatus = 'Cancelled';
+            order.cancellationReason = 'All items cancelled individually';
+        }
+
+        await order.save();
+        res.json({ success: true, message: 'Item cancelled successfully' });
+
+    } catch (error) {
+        console.error('Cancel Order Item Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to cancel item' });
+    }
+};
+
+// Return Specific Order Item
+exports.returnOrderItem = async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const { orderId, itemId } = req.params;
+        const userId = req.user._id;
+
+        if (!reason) {
+            return res.status(400).json({ success: false, message: 'Return reason is required' });
+        }
+
+        const order = await Order.findOne({ _id: orderId, userId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        // Returns typically only apply if the whole order is delivered
+        if (order.orderStatus !== 'Delivered') {
+            return res.status(400).json({ success: false, message: 'Item is not eligible for return until order is Delivered' });
+        }
+
+        const item = order.items.id(itemId);
+        if (!item) {
+            return res.status(404).json({ success: false, message: 'Item not found in order' });
+        }
+
+        if (item.itemStatus === 'Returned' || item.itemStatus === 'Cancelled' || item.itemStatus === 'Return Requested') {
+            return res.status(400).json({ success: false, message: `Item is already ${item.itemStatus}` });
+        }
+
+        item.itemStatus = 'Return Requested';
+        item.returnReason = reason;
+
+        // Check if ALL items are returned or requested return, then order is return requested
+        const allItemsReturnedOrRequested = order.items.every(i => i.itemStatus === 'Returned' || i.itemStatus === 'Return Requested');
+        if (allItemsReturnedOrRequested) {
+            order.orderStatus = 'Return Requested';
+            order.returnReason = 'All items return requested individually';
+        }
+
+        await order.save();
+        res.json({ success: true, message: 'Item returned successfully' });
+
+    } catch (error) {
+        console.error('Return Order Item Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to return item' });
     }
 };
 

@@ -301,12 +301,11 @@ const postEditProduct = async (req, res) => {
         });
 
         req.session.successMessage = "Product updated successfully!";
-        res.redirect('/admin/products');
+        return res.status(200).json({ success: true, redirectUrl: "/admin/products" });
 
     } catch (error) {
         console.error("Error updating product:", error);
-        req.session.error = error.message;
-        res.redirect(`/admin/products/edit/${req.params.id}`);
+        return res.status(400).json({ success: false, message: error.message || "Error updating product." });
     }
 };
 
@@ -432,20 +431,17 @@ const editVariantSize = async (req, res) => {
 
         const product = await Product.findById(productId);
         if (!product) {
-            req.session.errorMessage = "Product not found.";
-            return res.redirect('/admin/products');
+            return res.status(404).json({ success: false, message: "Product not found." });
         }
 
         const variant = product.variants.id(variantId);
         if (!variant) {
-            req.session.errorMessage = "Variant not found.";
-            return res.redirect(`/admin/products/variants/${productId}`);
+            return res.status(404).json({ success: false, message: "Variant not found." });
         }
 
         const size = variant.sizes.id(sizeId);
         if (!size) {
-            req.session.errorMessage = "Size not found.";
-            return res.redirect(`/admin/products/variants/${productId}`);
+            return res.status(404).json({ success: false, message: "Size not found." });
         }
 
         // Update fields
@@ -472,13 +468,40 @@ const editVariantSize = async (req, res) => {
         product.salePrice = minSale === Infinity ? 0 : minSale;
 
         await product.save();
-        req.session.successMessage = "Variant size updated successfully.";
-        res.redirect(`/admin/products/variants/${productId}`);
+        return res.status(200).json({ success: true, message: "Variant updated successfully!" });
 
     } catch (error) {
         console.error("Error editing variant size:", error);
-        req.session.errorMessage = "Error updating variant size.";
-        res.redirect(`/admin/products/variants/${req.params.productId}`);
+        return res.status(500).json({ success: false, message: "Error updating variant size." });
+    }
+};
+
+const setVariantOrderLimit = async (req, res) => {
+    try {
+        const { productId, variantId } = req.params;
+        const { orderLimit } = req.body;
+
+        if (!orderLimit || isNaN(orderLimit) || Number(orderLimit) < 1) {
+            return res.status(400).json({ success: false, message: "Invalid order limit. Must be at least 1." });
+        }
+
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ success: false, message: "Product not found." });
+        }
+
+        const variant = product.variants.id(variantId);
+        if (!variant) {
+            return res.status(404).json({ success: false, message: "Variant not found." });
+        }
+
+        variant.orderLimit = Number(orderLimit);
+        await product.save();
+
+        return res.status(200).json({ success: true, message: "Order limit updated successfully!" });
+    } catch (error) {
+        console.error("Error setting variant order limit:", error);
+        return res.status(500).json({ success: false, message: "Error updating order limit." });
     }
 };
 
@@ -493,5 +516,6 @@ module.exports = {
     getProductVariants,
     toggleVariantBlock,
     deleteVariantSize,
-    editVariantSize
+    editVariantSize,
+    setVariantOrderLimit
 };

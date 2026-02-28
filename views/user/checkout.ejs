@@ -92,10 +92,16 @@
                                                                 %>>
                                                             <strong>
                                                                 <%= addr.full_address %>
-                                                            </strong><br>
-                                                            <%= addr.city %>, <%= addr.state %><br>
-                                                                    <%= addr.country %> - <%= addr.zip_code %><br>
-                                                                            Phone: <%= addr.phone_number %>
+                                                            </strong>
+                                                            <% if (addr.is_default) { %>
+                                                                <span
+                                                                    style="background-color: #28a745; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 5px; font-weight: bold;">Default</span>
+                                                                <% } %>
+                                                                    <br>
+                                                                    <%= addr.city %>, <%= addr.state %><br>
+                                                                            <%= addr.country %> - <%= addr.zip_code %>
+                                                                                    <br>
+                                                                                    Phone: <%= addr.phone_number %>
                                                         </label>
                                                     </div>
                                                     <% }); %>

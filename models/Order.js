@@ -18,7 +18,15 @@ const orderSchema = new mongoose.Schema({
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
         itemTotal: { type: Number, required: true },
-        image: { type: String }
+        image: { type: String },
+        itemStatus: {
+            type: String,
+            enum: ['Ordered', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Return Requested', 'Returned', 'Return Rejected'],
+            default: 'Ordered'
+        },
+        cancelReason: { type: String },
+        returnReason: { type: String },
+        adminReturnComment: { type: String }
     }],
     totalAmount: {
         type: Number,
@@ -46,7 +54,7 @@ const orderSchema = new mongoose.Schema({
     },
     orderStatus: {
         type: String,
-        enum: ['Ordered', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Returned'],
+        enum: ['Ordered', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Return Requested', 'Returned', 'Return Rejected'],
         default: 'Ordered'
     },
     orderedDate: {

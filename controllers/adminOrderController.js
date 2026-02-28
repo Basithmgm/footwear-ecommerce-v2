@@ -16,15 +16,11 @@ exports.getOrders = async (req, res) => {
         }
 
         if (search) {
-            // Search by Order ID or Customer Name (in shippingAddress)
-            // Note: Searching by ObjectId requires exact match, so checking if search is valid ObjectId
-            const isObjectId = search.match(/^[0-9a-fA-F]{24}$/);
-
-            if (isObjectId) {
-                query._id = search;
-            } else {
-                query['shippingAddress.full_name'] = { $regex: search, $options: 'i' };
-            }
+            // Search by partial Order ID (converted to string) or Customer Name
+            query.$or = [
+                { 'shippingAddress.full_name': { $regex: search, $options: 'i' } },
+                { $expr: { $regexMatch: { input: { $toString: "$_id" }, regex: search, options: "i" } } }
+            ];
         }
 
         const totalOrders = await Order.countDocuments(query);
@@ -84,7 +80,16 @@ exports.updateOrderStatus = async (req, res) => {
 
         const oldStatus = order.orderStatus;
 
-        // Allowed transitions check can be added here if needed
+        // Allowed transitions check
+        if (oldStatus === 'Delivered') {
+            return res.status(400).json({ success: false, message: "Order has already been Delivered and cannot be changed." });
+        }
+
+        // Prevent reverting from 'Out for Delivery' to 'Shipped'
+        const hasOutForDeliveryItem = order.items.some(item => item.itemStatus === 'Out for Delivery');
+        if ((oldStatus === 'Out for Delivery' || hasOutForDeliveryItem) && (status === 'Shipped' || status === 'Ordered')) {
+            return res.status(400).json({ success: false, message: "Cannot change status back to Shipped or Ordered once a product is Out for Delivery." });
+        }
 
         // Stock Restoration Logic
         // If status changes to Cancelled or Returned, restore stock
@@ -99,6 +104,12 @@ exports.updateOrderStatus = async (req, res) => {
                             sizeObj.quantity += item.quantity;
                         }
                     }
+
+                    // Recalculate totalStock
+                    product.totalStock = product.variants.reduce((acc, v) => {
+                        return acc + v.sizes.reduce((sum, s) => sum + s.quantity, 0);
+                    }, 0);
+
                     await product.save();
                 }
             }
@@ -124,6 +135,104 @@ exports.updateOrderStatus = async (req, res) => {
 
     } catch (err) {
         console.error("Update Order Status Error:", err);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+// Approve Return Item
+exports.approveReturnItem = async (req, res) => {
+    try {
+        const { orderId, itemId } = req.params;
+        const { comment } = req.body;
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        const item = order.items.id(itemId);
+        if (!item) {
+            return res.status(404).json({ success: false, message: "Item not found in order" });
+        }
+
+        if (item.itemStatus !== 'Return Requested') {
+            return res.status(400).json({ success: false, message: `Item is not pending a return, current status is ${item.itemStatus}` });
+        }
+
+        // Increment Stock because it's approved
+        const product = await Product.findById(item.productId);
+        if (product) {
+            const variant = product.variants.find(v => v.color === item.variantId);
+            if (variant) {
+                const sizeObj = variant.sizes.find(s => s.size == item.size);
+                if (sizeObj) {
+                    sizeObj.quantity += item.quantity;
+                }
+            }
+
+            // Recalculate totalStock
+            product.totalStock = product.variants.reduce((acc, v) => {
+                return acc + v.sizes.reduce((sum, s) => sum + s.quantity, 0);
+            }, 0);
+
+            await product.save();
+        }
+
+        item.itemStatus = 'Returned';
+        item.adminReturnComment = comment || 'Return Approved';
+
+        // Update overall order status if applicable
+        const allItemsReturned = order.items.every(i => i.itemStatus === 'Returned');
+        if (allItemsReturned) {
+            order.orderStatus = 'Returned';
+        }
+
+        await order.save();
+        res.json({ success: true, message: "Return requested approved, stock restored." });
+
+    } catch (err) {
+        console.error("Approve Return Item Error:", err);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+// Reject Return Item
+exports.rejectReturnItem = async (req, res) => {
+    try {
+        const { orderId, itemId } = req.params;
+        const { comment } = req.body;
+
+        if (!comment) {
+            return res.status(400).json({ success: false, message: "A reason is required to reject a return." });
+        }
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        const item = order.items.id(itemId);
+        if (!item) {
+            return res.status(404).json({ success: false, message: "Item not found in order" });
+        }
+
+        if (item.itemStatus !== 'Return Requested') {
+            return res.status(400).json({ success: false, message: `Item is not pending a return, current status is ${item.itemStatus}` });
+        }
+
+        // Do NOT increment stock, just reject it
+        item.itemStatus = 'Return Rejected';
+        item.adminReturnComment = comment;
+
+        // If overall order was 'Return Requested' but all returns are now rejected or returned, 
+        // we might leave as is, or recalculate. If everything is either rejected or returned, we might just say Delivered or Returned.
+        // It's safest to leave orderStatus as 'Return Requested' or whatever it was if not all are approved.
+
+        await order.save();
+        res.json({ success: true, message: "Return request rejected." });
+
+    } catch (err) {
+        console.error("Reject Return Item Error:", err);
         res.status(500).json({ success: false, message: "Server Error" });
     }
 };

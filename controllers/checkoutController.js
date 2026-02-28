@@ -19,8 +19,13 @@ const getCheckout = async (req, res) => {
             return res.redirect('/cart');
         }
 
-        // Fetch Addresses
-        const addresses = await Address.find({ user_id: userId });
+        // Fetch Addresses and sort default first
+        let addresses = await Address.find({ user_id: userId });
+        addresses.sort((a, b) => {
+            if (a.is_default && !b.is_default) return -1;
+            if (!a.is_default && b.is_default) return 1;
+            return 0;
+        });
 
         // Calculate Totals
         let subtotal = 0;
@@ -41,16 +46,22 @@ const getCheckout = async (req, res) => {
             } else {
                 // Check specific variant stock
                 const variant = product.variants.find(v => v.color === item.variantId);
-                if (variant) {
+                if (variant && !variant.isBlocked) {
                     const sizeObj = variant.sizes.find(s => s.size == item.size);
-                    if (sizeObj) {
+                    if (sizeObj && sizeObj.status !== 'Inactive') {
                         regularPrice = sizeObj.regularPrice || item.price;
                         salePrice = sizeObj.salePrice || item.price;
                         if (sizeObj.quantity < item.quantity) {
                             stockStatus = 'Out of Stock';
                             hasUnavailable = true;
                         }
+                    } else {
+                        stockStatus = 'Unavailable';
+                        hasUnavailable = true;
                     }
+                } else {
+                    stockStatus = 'Unavailable';
+                    hasUnavailable = true;
                 }
             }
 
@@ -134,15 +145,15 @@ const placeOrder = async (req, res) => {
             }
 
             const variant = product.variants.find(v => v.color === item.variantId);
-            if (!variant) {
-                console.log(`Variant not found: ${item.variantId} in product ${product._id}`);
+            if (!variant || variant.isBlocked) {
+                console.log(`Variant not found or blocked: ${item.variantId} in product ${product._id}`);
                 return res.status(400).json({ success: false, message: `Variant unavailable for ${item.productName}` });
             }
 
             const sizeObj = variant.sizes.find(s => s.size == item.size);
-            if (!sizeObj || sizeObj.quantity < item.quantity) {
-                console.log(`Insufficient stock: Size ${item.size}, Req: ${item.quantity}, Avail: ${sizeObj ? sizeObj.quantity : 'None'}`);
-                return res.status(400).json({ success: false, message: `Insufficient stock for ${item.productName} (${item.size})` });
+            if (!sizeObj || sizeObj.status === 'Inactive' || sizeObj.quantity < item.quantity) {
+                console.log(`Insufficient stock or inactive: Size ${item.size}, Req: ${item.quantity}, Avail: ${sizeObj ? sizeObj.quantity : 'None'}`);
+                return res.status(400).json({ success: false, message: `Insufficient stock or unavailable for ${item.productName} (${item.size})` });
             }
 
             // Deduct Stock

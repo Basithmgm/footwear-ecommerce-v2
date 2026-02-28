@@ -41,5 +41,6 @@ router.get("/admin/products/variants/:id", productController.getProductVariants)
 router.post("/admin/products/variants/toggle-block/:productId/:variantId/:sizeId", productController.toggleVariantBlock);
 router.post("/admin/products/variants/delete/:productId/:variantId/:sizeId", productController.deleteVariantSize);
 router.post("/admin/products/variants/edit-size/:productId/:variantId/:sizeId", productController.editVariantSize);
+router.post("/admin/products/variants/order-limit/:productId/:variantId", productController.setVariantOrderLimit);
 
 module.exports = router;

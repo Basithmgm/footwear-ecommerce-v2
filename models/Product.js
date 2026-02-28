@@ -49,6 +49,11 @@ const productSchema = new mongoose.Schema({
             required: true,
             validate: [arrayLimit, '{PATH} must have at least 3 images']
         },
+        orderLimit: {
+            type: Number,
+            default: 5,
+            min: [1, 'Order limit must be at least 1']
+        },
         sizes: [{
             size: {
                 type: Number,

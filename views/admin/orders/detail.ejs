@@ -33,8 +33,16 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <% order.items.forEach(item=> { %>
-                                            <tr>
+                                        <% let subtotal=0; let cancelledTotal=0; order.items.forEach(item=> {
+                                            if (item.itemStatus === 'Cancelled') {
+                                            cancelledTotal += item.itemTotal;
+                                            } else {
+                                            subtotal += item.itemTotal;
+                                            }
+                                            %>
+                                            <tr class="<%= item.itemStatus === 'Cancelled' ? 'text-muted' : '' %>"
+                                                <%=item.itemStatus==='Cancelled'
+                                                ? 'style="text-decoration: line-through; opacity: 0.6;"' : '' %>>
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <% if(item.image) { %>
@@ -51,13 +59,66 @@
                                                                         <h6 class="mb-0">
                                                                             <%= item.productName %>
                                                                         </h6>
-                                                                        <small class="text-muted">
+                                                                        <small class="text-muted d-block mb-1">
                                                                             Color: <span class="fw-bold"
                                                                                 style="color: <%= item.variantId %>">
                                                                                 <%= item.variantId %>
                                                                             </span> |
                                                                             Size: <%= item.size %>
                                                                         </small>
+
+                                                                        <!-- Display Item Level Status if applicable -->
+                                                                        <% if (item.itemStatus && item.itemStatus
+                                                                            !=='Ordered' ) { %>
+                                                                            <span
+                                                                                class="badge p-1 px-2 mt-1
+                                                                                <%= item.itemStatus === 'Cancelled' || item.itemStatus === 'Return Rejected' ? 'bg-danger' : 
+                                                                                    item.itemStatus === 'Returned' ? 'bg-dark' : 
+                                                                                    item.itemStatus === 'Return Requested' ? 'bg-info text-dark' : 'bg-secondary' %>">
+                                                                                <%= item.itemStatus %>
+                                                                                    <% if (item.cancelReason) { %>
+                                                                                        <br><small
+                                                                                            class="fw-normal">Reason:
+                                                                                            <%= item.cancelReason %>
+                                                                                        </small>
+                                                                                        <% } else if (item.returnReason)
+                                                                                            { %>
+                                                                                            <br><small
+                                                                                                class="fw-normal">Reason:
+                                                                                                <%= item.returnReason %>
+                                                                                            </small>
+                                                                                            <% } %>
+                                                                            </span>
+                                                                            <% if(item.adminReturnComment) { %>
+                                                                                <small
+                                                                                    class="d-block mt-1 text-muted"><strong>Admin
+                                                                                        Note:</strong>
+                                                                                    <%= item.adminReturnComment %>
+                                                                                </small>
+                                                                                <% } %>
+                                                                                    <% if(item.itemStatus==='Return Requested'
+                                                                                        ) { %>
+                                                                                        <div class="mt-2">
+                                                                                            <button
+                                                                                                class="btn btn-sm btn-success me-1 py-0 px-2"
+                                                                                                onclick="approveReturn('<%= order._id %>', '<%= item._id %>')"><i
+                                                                                                    class="fas fa-check"></i>
+                                                                                                Approve</button>
+                                                                                            <button
+                                                                                                class="btn btn-sm btn-danger py-0 px-2"
+                                                                                                onclick="rejectReturn('<%= order._id %>', '<%= item._id %>')"><i
+                                                                                                    class="fas fa-times"></i>
+                                                                                                Reject</button>
+                                                                                        </div>
+                                                                                        <% } %>
+                                                                                            <% } else if
+                                                                                                (item.itemStatus==='Ordered'
+                                                                                                &&
+                                                                                                order.orderStatus==='Delivered'
+                                                                                                ) { %>
+                                                                                                <span
+                                                                                                    class="badge bg-success p-1 px-2 mt-1">Delivered</span>
+                                                                                                <% } %>
                                                                     </div>
                                                     </div>
                                                 </td>
@@ -66,7 +127,12 @@
                                                 <td>
                                                     <%= item.quantity %>
                                                 </td>
-                                                <td class="text-end">₹<%= item.itemTotal.toFixed(2) %>
+                                                <td class="text-end">
+                                                    <% if (item.itemStatus==='Cancelled' ) { %>
+                                                        -₹<%= item.itemTotal.toFixed(2) %>
+                                                            <% } else { %>
+                                                                ₹<%= item.itemTotal.toFixed(2) %>
+                                                                    <% } %>
                                                 </td>
                                             </tr>
                                             <% }) %>
@@ -74,8 +140,7 @@
                                     <tfoot class="table-light">
                                         <tr>
                                             <td colspan="3" class="text-end fw-bold">Subtotal</td>
-                                            <td class="text-end">₹<%= (order.totalAmount - order.tax -
-                                                    order.shippingFee).toFixed(2) %>
+                                            <td class="text-end">₹<%= subtotal.toFixed(2) %>
                                             </td>
                                         </tr>
                                         <tr>
@@ -90,7 +155,8 @@
                                         </tr>
                                         <tr>
                                             <td colspan="3" class="text-end fw-bold fs-5">Total</td>
-                                            <td class="text-end fw-bold fs-5">₹<%= order.totalAmount.toFixed(2) %>
+                                            <td class="text-end fw-bold fs-5">₹<%= (subtotal + order.tax +
+                                                    order.shippingFee).toFixed(2) %>
                                             </td>
                                         </tr>
                                     </tfoot>
@@ -122,7 +188,8 @@
                                         </span></div>
                             </div>
 
-                            <% if (order.orderStatus !=='Cancelled' && order.orderStatus !=='Returned' ) { %>
+                            <% if (order.orderStatus !=='Cancelled' && order.orderStatus !=='Returned' &&
+                                order.orderStatus !=='Delivered' ) { %>
                                 <form id="updateStatusForm">
                                     <div class="mb-3">
                                         <label for="statusSelect" class="form-label">Change Status</label>
@@ -143,17 +210,21 @@
                                     </div>
                                     <button type="submit" class="btn btn-primary w-100">Update Status</button>
                                 </form>
-                                <% if (order.orderStatus==='Delivered' && order.deliveryDate) { %>
-                                    <div class="alert alert-info mt-3 mb-0">
-                                        <small>Delivered on <%= new Date(order.deliveryDate).toLocaleDateString() %>
-                                        </small>
-                                    </div>
-                                    <% } %>
+                                <% } else { %>
+                                    <% if (order.orderStatus==='Delivered' ) { %>
+                                        <div class="alert alert-success mb-0">
+                                            <strong>Status Locked:</strong> Order is Delivered.
+                                            <% if (order.deliveryDate) { %>
+                                                <br><small>Delivered on <%= new
+                                                        Date(order.deliveryDate).toLocaleDateString() %></small>
+                                                <% } %>
+                                        </div>
                                         <% } else { %>
                                             <div class="alert alert-secondary mb-0">
                                                 Status updates are disabled for this order.
                                             </div>
                                             <% } %>
+                                                <% } %>
                         </div>
                     </div>
 
@@ -260,6 +331,70 @@
                     }
                 });
             });
+
+            function approveReturn(orderId, itemId) {
+                Swal.fire({
+                    title: 'Approve Return?',
+                    text: 'Optional comment/note:',
+                    input: 'text',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, approve it',
+                    showLoaderOnConfirm: true,
+                    preConfirm: (comment) => {
+                        return fetch(`/admin/orders/return-approve/${orderId}/${itemId}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ comment })
+                        })
+                            .then(response => response.json())
+                            .catch(error => Swal.showValidationMessage(`Request failed: ${error}`));
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (result.value.success) {
+                            Swal.fire('Approved!', result.value.message, 'success').then(() => location.reload());
+                        } else {
+                            Swal.fire('Error!', result.value.message || 'Operation failed', 'error');
+                        }
+                    }
+                });
+            }
+
+            function rejectReturn(orderId, itemId) {
+                Swal.fire({
+                    title: 'Reject Return?',
+                    text: 'Please provide a reason for rejecting this return:',
+                    input: 'text',
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'You need to write a reason to reject the return!';
+                        }
+                    },
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, reject it',
+                    confirmButtonColor: '#d33',
+                    showLoaderOnConfirm: true,
+                    preConfirm: (comment) => {
+                        return fetch(`/admin/orders/return-reject/${orderId}/${itemId}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ comment })
+                        })
+                            .then(response => response.json())
+                            .catch(error => Swal.showValidationMessage(`Request failed: ${error}`));
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (result.value.success) {
+                            Swal.fire('Rejected!', result.value.message, 'success').then(() => location.reload());
+                        } else {
+                            Swal.fire('Error!', result.value.message || 'Operation failed', 'error');
+                        }
+                    }
+                });
+            }
         </script>
 
         <%- include('../../partials/admin/footer') %>

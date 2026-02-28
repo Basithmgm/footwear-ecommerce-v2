@@ -680,6 +680,19 @@
                             }
 
                             renderVariantsList();
+
+                            // Show Success Modal
+                            Swal.fire({
+                                icon: 'success',
+                                title: isEdit ? 'Variant Updated' : 'Variant Added',
+                                text: 'Changes saved locally. Remember to click "Update Product" to save to database.',
+                                toast: false, // Force standard modal
+                                position: 'center',
+                                showConfirmButton: true,
+                                confirmButtonText: 'OK',
+                                timer: 3000
+                            });
+
                             if (variantModal) variantModal.hide();
                         });
 
@@ -1005,22 +1018,48 @@
                             fetch(this.action, {
                                 method: 'POST',
                                 body: formData
+                                // By default, fetch follows redirects. 
+                                // We don't need to manually check res.redirected necessarily if the server
+                                // responds with a 200 OK after following the redirect, 
+                                // but we do want to reload the page or navigate to the final URL.
                             })
                                 .then(res => {
                                     if (res.redirected) {
                                         window.location.href = res.url;
+                                    } else if (!res.ok) {
+                                        return res.text().then(text => { throw new Error(text || "Server Error " + res.status); });
                                     } else {
-                                        if (!res.ok) {
-                                            return res.text().then(text => { throw new Error(text || "Server Error " + res.status); });
-                                        }
+                                        // If no redirect and OK, we either get JSON or HTML
                                         return res.text().then(text => {
-                                            document.open(); document.write(text); document.close();
+                                            try {
+                                                const data = JSON.parse(text);
+                                                if (data.success && data.redirectUrl) {
+                                                    Swal.fire({
+                                                        icon: 'success',
+                                                        title: 'Success!',
+                                                        text: 'Product updated successfully!',
+                                                        timer: 1500,
+                                                        showConfirmButton: false
+                                                    }).then(() => {
+                                                        window.location.href = data.redirectUrl;
+                                                    });
+                                                } else if (!data.success) {
+                                                    throw new Error(data.message || "Update Failed");
+                                                }
+                                            } catch (e) {
+                                                // Fallback if it's returning HTML directly (e.g. error page)
+                                                document.open(); document.write(text); document.close();
+                                            }
                                         });
                                     }
                                 })
                                 .catch(err => {
                                     console.error("Update Failed:", err);
-                                    alert("Update Failed: " + err.message); // Show specifics
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Update Failed',
+                                        text: err.message || 'An error occurred while updating the product.'
+                                    });
                                     submitBtn.disabled = false;
                                     submitBtn.innerText = "Update Product";
                                 });
