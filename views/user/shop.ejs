@@ -98,7 +98,15 @@
                     <div class="container">
                         <div class="row">
                             <div class="col">
-                                <p class="bread"><span><a href="/">Home</a></span> / <span>Shop All Products</span></p>
+                                <p class="bread"><span><a href="/">Home</a></span> / <span>
+                                        <% if(pageTitle==='Men' ){ %>
+                                            Men's Products
+                                            <% } else if (pageTitle==='Women' ){ %>
+                                                Women's Products
+                                                <% }else { %>
+                                                    Shop All Products
+                                                    <% } %>
+                                    </span></p>
                             </div>
                         </div>
                     </div>
@@ -108,7 +116,15 @@
                         <div class="row">
                             <div class="col">
                                 <div class="breadcrumbs-img" style="background-image: url(/images/cover-img-1.jpg);">
-                                    <h2>Shop All Products</h2>
+                                    <h2 style="color:whitesmoke;">
+                                        <% if(pageTitle==='Men' ){ %>
+                                            Men's Products
+                                            <% } else if (pageTitle==='Women' ){ %>
+                                                Women's Products
+                                                <% }else { %>
+                                                    Shop All Products
+                                                    <% } %>
+                                    </h2>
                                 </div>
                             </div>
                         </div>

@@ -13,4 +13,4 @@ const bannerSettingSchema = new mongoose.Schema({
     description: String
 }, { timestamps: true });
 
-module.exports = mongoose.model('BannerSetting', bannerSettingSchema, 'bannersettings');
+module.exports = mongoose.model('BannerSetting', bannerSettingSchema, 'marqueesettings');

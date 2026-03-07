@@ -213,12 +213,40 @@ app.use(userOrderRoutes);
 // Middleware imports
 
 // Home route (after signup + OTP or login, redirect here)
-app.get("/", noCache, (req, res) => {
-  res.render("user/home", {
-    title: "Footwear Home",
-    user: req.user || null,
-    activeMenu: 'home'
-  });
+app.get("/", noCache, async (req, res) => {
+  try {
+    const Product = require('./models/Product');
+    const Category = require('./models/Category');
+
+    // Fetch active categories to ensure we only show products from active categories
+    const activeCategories = await Category.findActiveCategories();
+    const activeCategoryIds = activeCategories.map(cat => cat._id);
+
+    // Fetch up to 16 newly added active products for the homepage
+    const products = await Product.find({
+      status: 'Available',
+      isFeatured: true,
+      category: { $in: activeCategoryIds }
+    })
+      .populate('category')
+      .sort({ createdAt: -1 })
+      .limit(16);
+
+    res.render("user/home", {
+      title: "Footwear Home",
+      user: req.user || null,
+      activeMenu: 'home',
+      products: products
+    });
+  } catch (err) {
+    console.error("Home route error:", err);
+    res.render("user/home", {
+      title: "Footwear Home",
+      user: req.user || null,
+      activeMenu: 'home',
+      products: []
+    });
+  }
 });
 
 // 404 & Global Error Handling

@@ -35,38 +35,37 @@ async function toggleWishlist(productId, btnElement, options = {}) {
             }
 
             // Notification
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    toast: true,
-                    position: options.position || 'top-end',
-                    icon: 'success',
-                    title: data.message,
-                    showConfirmButton: false,
-                    timer: 1500
-                });
-            } else {
-                alert(data.message);
-            }
+            Swal.fire({
+                toast: true,
+                position: options.position || 'top-end',
+                icon: 'success',
+                title: data.message,
+                showConfirmButton: false,
+                timer: 1500
+            });
 
         } else {
             console.error('Failed to toggle wishlist:', data.message);
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    toast: true,
-                    position: options.position || 'top-end',
-                    icon: 'error',
-                    title: data.message || 'Failed to update wishlist',
-                    showConfirmButton: false,
-                    timer: 1500
-                });
-            } else {
-                alert(data.message || 'Failed to update wishlist');
-            }
+            Swal.fire({
+                toast: true,
+                position: options.position || 'top-end',
+                icon: 'error',
+                title: data.message || 'Failed to update wishlist',
+                showConfirmButton: false,
+                timer: 1500
+            });
         }
 
     } catch (error) {
         console.error('Error in toggleWishlist:', error);
-        alert('An error occurred while updating wishlist');
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'An error occurred while updating wishlist',
+            showConfirmButton: false,
+            timer: 2000
+        });
     }
 }
 
@@ -83,20 +82,16 @@ async function removeFromWishlist(productId) {
         const data = await response.json();
 
         if (data.success) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'success',
-                    title: data.message,
-                    showConfirmButton: false,
-                    timer: 1500
-                }).then(() => {
-                    location.reload(); // Reload to update list
-                });
-            } else {
-                location.reload();
-            }
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: data.message,
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                location.reload(); // Reload to update list
+            });
         }
 
     } catch (error) {

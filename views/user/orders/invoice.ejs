@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice - <%= order._id %>
     </title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -140,7 +141,12 @@
             if (downloadBtn) {
                 downloadBtn.addEventListener('click', function () {
                     if (typeof html2pdf === 'undefined') {
-                        alert('Error: PDF library not loaded. Please check your internet connection.');
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Library Not Loaded',
+                            text: 'Error: PDF library not loaded. Please check your internet connection.',
+                            confirmButtonColor: '#3085d6'
+                        });
                         return;
                     }
 
@@ -155,7 +161,12 @@
 
                     html2pdf().set(opt).from(element).save().catch(err => {
                         console.error('PDF Generation Error:', err);
-                        alert('Failed to generate PDF. Please try again.');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Download Failed',
+                            text: 'Failed to generate PDF. Please try again.',
+                            confirmButtonColor: '#d33'
+                        });
                     });
                 });
             }

@@ -4,6 +4,7 @@
         <!-- Cropper.js Local -->
         <link rel="stylesheet" href="/css/cropper.min.css" />
         <script src="/js/cropper.min.js"></script>
+        <script src="/js/sweetalert2.all.min.js"></script>
 
         <style>
             .image-container {
@@ -159,7 +160,7 @@
                                                 <div class="mb-3 pt-4">
                                                     <div class="form-check">
                                                         <input type="checkbox" class="form-check-input" id="isFeatured"
-                                                            name="isFeatured">
+                                                            value="true" name="isFeatured">
                                                         <label class="form-check-label" for="isFeatured">Show on
                                                             Homepage
                                                             (Featured)</label>
@@ -503,6 +504,15 @@
                     // Handle Color Image Input
                     document.getElementById('vColorImageInput').addEventListener('change', function (e) {
                         if (e.target.files && e.target.files[0]) {
+                            if (!e.target.files[0].type.startsWith('image/')) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Invalid File',
+                                    text: 'Please select image file only'
+                                });
+                                this.value = '';
+                                return;
+                            }
                             openCropper(e.target.files[0], (blob) => {
                                 tempVariant.colorImageBlob = blob;
                                 const url = URL.createObjectURL(blob);
@@ -516,7 +526,20 @@
                     // Handle Gallery Input
                     document.getElementById('vGalleryInput').addEventListener('change', function (e) {
                         if (e.target.files) {
-                            Array.from(e.target.files).forEach(file => {
+                            const files = Array.from(e.target.files);
+                            const hasInvalidFile = files.some(file => !file.type.startsWith('image/'));
+
+                            if (hasInvalidFile) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Invalid File',
+                                    text: 'Please select image file only'
+                                });
+                                this.value = '';
+                                return;
+                            }
+
+                            files.forEach(file => {
                                 openCropper(file, (blob) => {
                                     tempVariant.galleryBlobs.push(blob);
                                     renderGalleryPreviews();
@@ -535,8 +558,8 @@
                             div.className = 'position-relative m-1';
                             div.innerHTML = `
                                 <img src="${url}" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
-                                <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0" 
-                                    style="width: 20px; height: 20px; line-height: 1; border-radius: 50%; transform: translate(30%, -30%);"
+                                <button type="button" class="btn btn-danger btn-sm p-0 position-absolute" 
+                                    style="width: 24px; height: 24px; line-height: 1; border-radius: 50%; top: 5px; right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
                                     onclick="removeGalleryItem(${idx})">&times;</button>
                             `;
                             container.appendChild(div);
@@ -570,26 +593,6 @@
                     }
 
                     function updateSizeRows() {
-                        // 1. Capture existing data before rebuilding
-                        const currentValues = {};
-                        document.querySelectorAll('.size-row').forEach(row => {
-                            const size = row.dataset.size;
-                            // Only capture if inputs exist (safeguard)
-                            const qtyInput = row.querySelector('.v-qty');
-                            if (qtyInput) {
-                                currentValues[size] = {
-                                    qty: qtyInput.value,
-                                    reg: row.querySelector('.v-reg').value,
-                                    sale: row.querySelector('.v-sale').value
-                                    // SKU is usually auto-generated or readonly, checking if we need to preserve it
-                                    // In this specific implementation, SKU is fully auto-generated in updateSkus() based on base SKU, 
-                                    // so we don't strictly need to capture it if it's purely derivative.
-                                    // However, capturing it is safe.
-                                };
-                            }
-                        });
-
-
                         const checkedSizes = Array.from(document.querySelectorAll('.size-checkbox:checked')).map(cb => cb.value);
 
                         if (checkedSizes.length > 0) {
@@ -601,13 +604,31 @@
                             return;
                         }
 
+                        // 1. Capture existing data before rebuilding
+                        const currentValues = {};
+                        document.querySelectorAll('.size-row').forEach(row => {
+                            const size = row.dataset.size;
+                            // Only capture if inputs exist (safeguard)
+                            const qtyInput = row.querySelector('.v-qty');
+                            const regInput = row.querySelector('.v-reg');
+                            const saleInput = row.querySelector('.v-sale');
+
+                            if (qtyInput || regInput || saleInput) {
+                                currentValues[size] = {
+                                    qty: qtyInput ? qtyInput.value : '',
+                                    reg: regInput ? regInput.value : '',
+                                    sale: saleInput ? saleInput.value : ''
+                                };
+                            }
+                        });
+
                         // NEW: Table-based Layout
                         // Create Table Header 
                         sizeInputsContainer.innerHTML = `
                             <table class="table table-borderless variant-table mb-0">
                                 <thead>
                                     <tr>
-                                        <th style="width: 10%">Size</th>
+                                        <th class="text-center" style="width: 10%">Size</th>
                                         <th style="width: 30%">SKU</th>
                                         <th style="width: 20%">Stock</th>
                                         <th style="width: 20%">Reg. Price</th>
@@ -632,7 +653,7 @@
                             // SKU is auto-filled by updateSkus, so we can leave it empty or placeholder
 
                             tr.innerHTML = `
-                                <td><span class="fw-bold fs-5 text-dark">${size}</span></td>
+                                <td class="align-middle text-center"><span class="fw-bold fs-5 text-dark">${size}</span></td>
                                 <td>
                                     <input type="text" class="form-control form-control-sm v-sku" data-size="${size}" readonly placeholder="Auto">
                                 </td>
@@ -671,13 +692,15 @@
                     document.getElementById('saveVariantBtn').addEventListener('click', () => {
                         const colorName = document.getElementById('vColorName').value.trim();
                         const baseSku = document.getElementById('vBaseSku').value.trim();
-                        if (!colorName) return alert("Color Name is required");
-                        if (!baseSku) return alert("Base SKU is required");
-                        if (!tempVariant.colorImageBlob) return alert("Color Image is required");
-                        if (tempVariant.galleryBlobs.length < 3) return alert("At least 3 Gallery Images required");
+                        const showError = (msg) => Swal.fire({ icon: 'warning', title: 'Missing Info', text: msg });
+
+                        if (!colorName) return showError("Color Name is required");
+                        if (!baseSku) return showError("Base SKU is required");
+                        if (!tempVariant.colorImageBlob) return showError("Color Image is required");
+                        if (tempVariant.galleryBlobs.length < 3) return showError("At least 3 Gallery Images required");
 
                         const sizeRows = document.querySelectorAll('.size-row');
-                        if (sizeRows.length === 0) return alert("Select at least one size");
+                        if (sizeRows.length === 0) return showError("Select at least one size");
 
                         let sizesData = [];
                         let valid = true;
@@ -703,7 +726,7 @@
                             }
                         });
 
-                        if (!valid) return alert("Please fill all size fields");
+                        if (!valid) return Swal.fire({ icon: 'warning', title: 'Missing Info', text: 'Please fill all size fields' });
 
                         const variant = {
                             id: Date.now(),
@@ -716,6 +739,15 @@
                         variants.push(variant);
                         renderVariantsList();
                         bootstrap.Modal.getInstance(document.getElementById('variantModal')).hide();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Variant Added',
+                            text: 'Variant added locally. Submit form to save to database.',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
                     });
 
                     // Render Main List
@@ -763,11 +795,11 @@
                         e.preventDefault();
 
                         if (variants.length === 0) {
-                            return alert("Please add at least one product variant.");
+                            return Swal.fire({ icon: 'warning', title: 'Submission Error', text: 'Please add at least one product variant.' });
                         }
 
                         const category = document.getElementById('finalCategory').value;
-                        if (!category) return alert("Please select a category.");
+                        if (!category) return Swal.fire({ icon: 'warning', title: 'Submission Error', text: 'Please select a category.' });
 
                         const formData = new FormData(this);
 
@@ -799,7 +831,7 @@
                         });
 
                         if (blobError) {
-                            return alert("Error preparing images.");
+                            return Swal.fire({ icon: 'error', title: 'Image Error', text: 'Error preparing images.' });
                         }
 
                         const submitBtn = document.getElementById('finalSubmitBtn');
@@ -835,7 +867,15 @@
                                     const data = await res.json();
                                     if (data.success && data.redirectUrl) {
                                         console.log("DEBUG: JSON Success. Redirecting to:", data.redirectUrl);
-                                        window.location.href = data.redirectUrl;
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Product Created',
+                                            text: 'Product successfully added! Redirecting...',
+                                            timer: 1500,
+                                            showConfirmButton: false
+                                        }).then(() => {
+                                            window.location.href = data.redirectUrl;
+                                        });
                                     } else {
                                         throw new Error("Unknown JSON response");
                                     }
@@ -861,7 +901,7 @@
                             })
                             .catch(err => {
                                 console.error("DEBUG: Fetch error details:", err);
-                                alert("Error creating product: " + (err.message || "Unknown error"));
+                                Swal.fire({ icon: 'error', title: 'Creation Failed', text: err.message || "Unknown error occurred" });
                                 submitBtn.disabled = false;
                                 submitBtn.innerText = "Create Product";
                             });

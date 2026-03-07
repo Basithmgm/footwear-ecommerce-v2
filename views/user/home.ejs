@@ -106,7 +106,7 @@
           <div class="row">
             <div class="col-sm-6 text-center">
               <div class="featured">
-                <a href="#" class="featured-img" style="background-image: url(images/men.jpg);"></a>
+                <a href="/men" class="featured-img" style="background-image: url(images/men.jpg);"></a>
                 <div class="desc">
                   <h2><a href="/men">Shop Men's Collection</a></h2>
                 </div>
@@ -114,7 +114,7 @@
             </div>
             <div class="col-sm-6 text-center">
               <div class="featured">
-                <a href="#" class="featured-img" style="background-image: url(images/women.jpg);"></a>
+                <a href="/women" class="featured-img" style="background-image: url(images/women.jpg);"></a>
                 <div class="desc">
                   <h2><a href="/women">Shop Women's Collection</a></h2>
                 </div>
@@ -134,202 +134,60 @@
           </div>
           <div class="row row-pb-md">
             <!-- 16 product cards (keep all 16 as in your original HTML) -->
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-1.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
+            <!-- Dynamic products loop -->
+            <% if (typeof products !=='undefined' && products.length> 0) { %>
+              <% products.forEach(product=> { %>
+                <div class="col-lg-3 mb-4 text-center">
+                  <div class="product-entry border">
+                    <a href="/product/<%= product._id %>" class="prod-img">
+                      <% if (product.variants && product.variants.length> 0 && product.variants[0].variantImages &&
+                        product.variants[0].variantImages.length > 0) { %>
+                        <img
+                          src="<%= product.variants[0].variantImages[0].startsWith('http') ? product.variants[0].variantImages[0] : '/' + product.variants[0].variantImages[0].replace(/\\/g, '/').replace(/^public\//, '') %>"
+                          class="img-fluid" alt="<%= product.productName %>"
+                          style="max-height: 250px; object-fit: contain;">
+                        <% } else if (product.variants && product.variants.length> 0 && product.variants[0].colorImage)
+                          { %>
+                          <img
+                            src="<%= product.variants[0].colorImage.startsWith('http') ? product.variants[0].colorImage : '/' + product.variants[0].colorImage.replace(/\\/g, '/').replace(/^public\//, '') %>"
+                            class="img-fluid" alt="<%= product.productName %>"
+                            style="max-height: 250px; object-fit: contain;">
+                          <% } else { %>
+                            <img src="/images/item-1.jpg" class="img-fluid" alt="Placeholder">
+                            <% } %>
+                    </a>
+                    <div class="desc">
+                      <h2><a href="/product/<%= product._id %>">
+                          <%= product.productName %>
+                        </a></h2>
+                      <span class="price">
+                        <% if (product.variants && product.variants.length> 0 && product.variants[0].sizes.length > 0) {
+                          %>
+                          <% const firstSize=product.variants[0].sizes[0]; %>
+                            <% if (firstSize.salePrice < firstSize.regularPrice) { %>
+                              <span class="text-danger fw-bold" style="margin-right: 5px;">₹<%= firstSize.salePrice %>
+                                  </span>
+                              <span class="text-muted text-decoration-line-through" style="font-size: 0.9em;">₹<%=
+                                  firstSize.regularPrice %></span>
+                              <% } else { %>
+                                <span class="text-dark fw-bold" style="margin-right: 5px;">₹<%= firstSize.regularPrice
+                                    %></span>
+                                <span class="text-muted text-decoration-line-through" style="font-size: 0.9em;">₹<%=
+                                    firstSize.regularPrice %></span>
+                                <% } %>
+                                  <% } else { %>
+                                    Price Unavailable
+                                    <% } %>
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-2.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Minam Meaghan</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-3.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Men's Taja Commissioner</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-4.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Russ Men's Sneakers</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="w-100"></div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-5.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-6.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-7.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-8.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="w-100"></div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-9.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-10.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-11.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-12.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="w-100"></div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-13.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-14.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-15.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-3 mb-4 text-center">
-              <div class="product-entry border">
-                <a href="#" class="prod-img">
-                  <img src="images/item-16.jpg" class="img-fluid" alt="Free html5 bootstrap 4 template">
-                </a>
-                <div class="desc">
-                  <h2><a href="#">Women's Boots Shoes Maca</a></h2>
-                  <span class="price">₹139.00</span>
-                </div>
-              </div>
-            </div>
+                <% }) %>
+                  <% } else { %>
+                    <div class="col-12 text-center">
+                      <p>No products available yet. Check back later!</p>
+                    </div>
+                    <% } %>
 
           </div>
           <div class="row">

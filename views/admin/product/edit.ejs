@@ -204,7 +204,8 @@
                                                 <div class="mb-3">
                                                     <div class="form-check">
                                                         <input type="checkbox" class="form-check-input" id="isFeatured"
-                                                            name="isFeatured" <%=product.isFeatured ? 'checked' : '' %>>
+                                                            name="isFeatured" value="true" <%=product.isFeatured
+                                                            ? 'checked' : '' %>>
                                                         <label class="form-check-label" for="isFeatured">Show on
                                                             Homepage (Featured)</label>
                                                     </div>
@@ -624,20 +625,20 @@
                             const colorName = document.getElementById('vColorName').value.trim();
                             const baseSku = document.getElementById('vBaseSku').value.trim();
 
-                            if (!colorName) return alert("Color Name is required");
-                            if (!baseSku) return alert("Base SKU is required");
+                            if (!colorName) return Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Color Name is required' });
+                            if (!baseSku) return Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Base SKU is required' });
 
                             // Validation: Image
                             const hasExistingColor = tempVariant.colorImage && tempVariant.isExisting;
-                            if (!tempVariant.colorImageBlob && !hasExistingColor) return alert("Color Image is required");
+                            if (!tempVariant.colorImageBlob && !hasExistingColor) return Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Color Image is required' });
 
                             // Gallery
                             const totalGallery = (tempVariant.existingGallery ? tempVariant.existingGallery.length : 0) + tempVariant.galleryBlobs.length;
-                            if (totalGallery < 3) return alert("At least 3 Gallery Images required");
+                            if (totalGallery < 3) return Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'At least 3 Gallery Images required' });
 
                             // Sizes
                             const sizeRows = document.querySelectorAll('.size-row');
-                            if (sizeRows.length === 0) return alert("Select at least one size");
+                            if (sizeRows.length === 0) return Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Select at least one size' });
 
                             let sizesData = [];
                             let valid = true;
@@ -663,7 +664,7 @@
                                 }
                             });
 
-                            if (!valid) return alert("Please fill all size fields");
+                            if (!valid) return Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Please fill all size fields' });
 
                             const variant = {
                                 ...tempVariant,
@@ -903,23 +904,6 @@
                                 return;
                             }
 
-                            // Table Header Structure
-                            sizeInputsContainer.innerHTML = `
-                                <table class="table table-borderless variant-table mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 10%">Size</th>
-                                            <th style="width: 30%">SKU</th>
-                                            <th style="width: 20%">Stock</th>
-                                            <th style="width: 20%">Reg. Price</th>
-                                            <th style="width: 20%">Sale Price</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="variantTableBody"></tbody>
-                                </table>
-                            `;
-                            const tbody = sizeInputsContainer.querySelector('tbody');
-
                             // Preserve existing input values if any (from DOM)
                             let currentValues = {};
                             document.querySelectorAll('.size-row').forEach(row => {
@@ -930,13 +914,32 @@
                                 const saleInput = row.querySelector('.v-sale');
                                 const skuInput = row.querySelector('.v-sku');
 
-                                if (qtyInput) currentValues[size] = {
-                                    qty: qtyInput.value,
-                                    reg: regInput.value,
-                                    sale: saleInput.value,
-                                    sku: skuInput.value
-                                };
+                                if (qtyInput || regInput || saleInput || skuInput) {
+                                    currentValues[size] = {
+                                        qty: qtyInput ? qtyInput.value : '',
+                                        reg: regInput ? regInput.value : '',
+                                        sale: saleInput ? saleInput.value : '',
+                                        sku: skuInput ? skuInput.value : ''
+                                    };
+                                }
                             });
+
+                            // Table Header Structure
+                            sizeInputsContainer.innerHTML = `
+                                <table class="table table-borderless variant-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width: 10%">Size</th>
+                                            <th style="width: 30%">SKU</th>
+                                            <th style="width: 20%">Stock</th>
+                                            <th style="width: 20%">Reg. Price</th>
+                                            <th style="width: 20%">Sale Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="variantTableBody"></tbody>
+                                </table>
+                            `;
+                            const tbody = sizeInputsContainer.querySelector('tbody');
 
                             checkedSizes.sort((a, b) => a - b).forEach(size => {
                                 const existing = currentValues[size] || {};
@@ -952,7 +955,7 @@
                                 tr.className = 'size-row';
                                 tr.dataset.size = size;
                                 tr.innerHTML = `
-                                    <td><span class="fw-bold fs-5 text-dark">${size}</span></td>
+                                    <td class="align-middle text-center"><span class="fw-bold fs-5 text-dark">${size}</span></td>
                                     <td>
                                         <input type="text" class="form-control form-control-sm v-sku" data-size="${size}" readonly value="${valSku}" placeholder="Auto">
                                     </td>
@@ -984,8 +987,8 @@
                         document.getElementById('editProductForm').addEventListener('submit', function (e) {
                             e.preventDefault();
 
-                            if (variants.length === 0) return alert("Please add at least one product variant.");
-                            if (!document.getElementById('finalCategory').value) return alert("Please select a category.");
+                            if (variants.length === 0) return Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Please add at least one product variant.' });
+                            if (!document.getElementById('finalCategory').value) return Swal.fire({ icon: 'warning', title: 'Validation Error', text: 'Please select a category.' });
 
                             const formData = new FormData(this);
                             const variantsMetadata = variants.map((v, idx) => {
