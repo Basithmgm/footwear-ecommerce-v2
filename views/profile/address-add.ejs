@@ -113,40 +113,46 @@
                     <%= error %>
                 </div>
                 <% } %>
-                    <form action="/profile/address/add" method="POST">
+                    <form id="addAddressForm" action="/profile/address/add" method="POST">
                         <div class="form-group">
                             <label>Street Address</label>
-                            <input type="text" name="street" value="<%= locals.oldInput ? oldInput.street : '' %>"
+                            <input type="text" id="street" name="street" value="<%= locals.oldInput ? oldInput.street : '' %>"
                                 required>
+                                <div class="error-message" id="streetError" style="color: red; font-size: 12px;display: none;">Street address is required (min 3 chars).</div>
                         </div>
                         <div class="row">
                             <div class="form-group">
                                 <label>City</label>
-                                <input type="text" name="city" value="<%= locals.oldInput ? oldInput.city : '' %>"
+                                <input type="text" id="city" name="city" value="<%= locals.oldInput ? oldInput.city : '' %>"
                                     required>
+                                    <div class="error-message" id="cityError" style="color: red; font-size: 12px;display: none;">City is required (min 2 chars).</div>                                                                                                                                                                                                                                                      
                             </div>
                             <div class="form-group">
                                 <label>State</label>
-                                <input type="text" name="state" value="<%= locals.oldInput ? oldInput.state : '' %>"
+                                <input type="text" id="state" name="state" value="<%= locals.oldInput ? oldInput.state : '' %>"
                                     required>
+                                    <div class="error-message" id="stateError" style="color: red; font-size: 12px;display: none;">State is required (min 2 chars).</div>                                                                                                                                                                                                                            
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Phone Number</label>
-                            <input type="text" name="phone" value="<%= locals.oldInput ? oldInput.phone : '' %>"
+                            <input type="text" id="phone" name="phone" value="<%= locals.oldInput ? oldInput.phone : '' %>"
                                 placeholder="Contact number for this address" class="numeric-input" inputmode="numeric"
                                 pattern="\d*" required>
+                                <div class="error-message" id="phoneError" style="color: red; font-size: 12px;display: none;">Phone number is required (10 digits).</div>
                         </div>
                         <div class="row">
                             <div class="form-group">
                                 <label>PIN Code</label>
-                                <input type="text" name="zip" value="<%= locals.oldInput ? oldInput.zip : '' %>"
+                                <input type="text" id="zip" name="zip" value="<%= locals.oldInput ? oldInput.zip : '' %>"
                                     class="numeric-input" inputmode="numeric" pattern="\d*" required>
+                                    <div class="error-message" id="zipError" style="color: red; font-size: 12px;display: none;">PIN code is required (6 digits).</div>
                             </div>
                             <div class="form-group">
                                 <label>Country</label>
-                                <input type="text" name="country" value="<%= locals.oldInput ? oldInput.country : '' %>"
+                                <input type="text" id="country" name="country" value="<%= locals.oldInput ? oldInput.country : '' %>"
                                     required>
+                                    <div class="error-message" id="countryError" style="color: red; font-size: 12px;display: none;">Country is required (min 2 chars).</div>
                             </div>
                         </div>
                         <div class="btn-container">
@@ -158,13 +164,82 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const numericInputs = document.querySelectorAll('.numeric-input');
-            numericInputs.forEach(input => {
-                input.addEventListener('input', function () {
-                    this.value = this.value.replace(/[^0-9]/g, '');
-                });
-            });
+    // Keep existing numeric input constraint
+    const numericInputs = document.querySelectorAll('.numeric-input');
+    numericInputs.forEach(input => {
+        input.addEventListener('input', function () {
+            this.value = this.value.replace(/[^0-9]/g, '');
         });
+    });
+
+    // Form Validation Logic
+    const form = document.getElementById('addAddressForm');
+    
+    // Listen for the submit event
+    form.addEventListener('submit', function (e) {
+        // 1. STOP the form from submitting immediately
+        e.preventDefault(); 
+
+        let isValid = true;
+        
+        // 2. Hide all error messages before we check again
+        document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+
+        // 3. Get all the values the user typed
+        const street = document.getElementById('street').value.trim();
+        const city = document.getElementById('city').value.trim();
+        const state = document.getElementById('state').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const zip = document.getElementById('zip').value.trim();
+        const country = document.getElementById('country').value.trim();
+
+        const lettersOnly = /^[a-zA-Z\s]+$/; // Regex to allow only letters and spaces
+
+        // 4. Validate Street
+        if (street.length < 3) {
+            document.getElementById('streetError').style.display = 'block';
+            isValid = false;
+        }
+
+        // 5. Validate City
+        if (!city || !lettersOnly.test(city)) {
+            document.getElementById('cityError').style.display = 'block';
+            isValid = false;
+        }
+
+        // 6. Validate State
+        if (!state || !lettersOnly.test(state)) {
+            document.getElementById('stateError').style.display = 'block';
+            isValid = false;
+        }
+
+        // 7. Validate Phone (10 numbers)
+        const phonePattern = /^\d{10}$/;
+        if (!phonePattern.test(phone)) { 
+            document.getElementById('phoneError').style.display = 'block';
+            isValid = false;
+        }
+
+        // 8. Validate PIN/ZIP (6 numbers)
+        const zipPattern = /^\d{6}$/;
+        if (!zipPattern.test(zip)) { 
+            document.getElementById('zipError').style.display = 'block';
+            isValid = false;
+        }
+
+        // 9. Validate Country
+        if (!country || !lettersOnly.test(country)) {
+            document.getElementById('countryError').style.display = 'block';
+            isValid = false;
+        }
+
+        // 10. Finally, if everything is perfect, submit the form!
+        if (isValid) {
+            form.submit();
+        }
+    });
+});
+
     </script>
 </body>
 

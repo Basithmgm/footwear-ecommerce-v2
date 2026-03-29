@@ -6,8 +6,8 @@ const cloudinary = require("./cloudinary");
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "Footwear/profiles",
-    allowed_formats: ["jpg", "png", "jpeg", "webp"],
+    folder: "Footwear/profiles", // Keeping original folder structure, but using params
+    allowed_formats: ["jpg", "png", "jpeg", "webp"], // Renamed and moved to params
     transformation: [{ width: 500, height: 500, crop: "limit" }],
   },
 });

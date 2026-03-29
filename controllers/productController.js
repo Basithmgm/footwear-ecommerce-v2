@@ -6,7 +6,27 @@ const getProductList = async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    const products = await Product.find({ isDeleted: false })
+    const search = req.query.search || "";
+    let query = { isDeleted: false };
+
+    if (search) {
+      const matchedCategories = await Category.find({
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { gender: { $regex: search, $options: "i" } },
+        ],
+      }).select("_id");
+      const categoryIds = matchedCategories.map((c) => c._id);
+
+      query.$or = [
+        { productName: { $regex: search, $options: "i" } },
+        { brand: { $regex: search, $options: "i" } },
+        { model: { $regex: search, $options: "i" } },
+        { category: { $in: categoryIds } },
+      ];
+    }
+
+    const products = await Product.find(query)
       .populate({
         path: "category",
         populate: { path: "parentCategory" },
@@ -15,7 +35,7 @@ const getProductList = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    const totalProducts = await Product.countDocuments({ isDeleted: false });
+    const totalProducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / limit);
 
     res.render("admin/product/list", {
@@ -23,6 +43,7 @@ const getProductList = async (req, res) => {
       currentPage: page,
       totalPages,
       totalProducts,
+      search,
       success: req.session.successMessage,
       error: req.session.errorMessage,
     });
@@ -83,21 +104,24 @@ const postAddProduct = async (req, res) => {
     }
 
     const files = req.files || [];
-    console.log(`DEBUG: Files received. Count: ${files.length}`);
-
     // Process Variants and Map Files
     const finalVariants = parsedVariants.map((variant, index) => {
       // Find Color Image (Expect 1)
       const colorImgFile = files.find(
         (f) => f.fieldname === `variantColorImage_${index}`,
       );
-      const colorImagePath = colorImgFile ? colorImgFile.path : null;
+      // v2.2.1 uses .url or .secure_url, v4.x uses .path
+      const colorImagePath = colorImgFile
+        ? colorImgFile.path || colorImgFile.url || colorImgFile.secure_url
+        : null;
 
       // Find Gallery Images (Expect Multiple)
       const galleryFiles = files.filter(
         (f) => f.fieldname === `variantGalleryImages_${index}`,
       );
-      const galleryPaths = galleryFiles.map((f) => f.path);
+      const galleryPaths = galleryFiles.map(
+        (f) => f.path || f.url || f.secure_url,
+      );
 
       if (!colorImagePath) {
         console.warn(`DEBUG: No color image for variant ${index}`);
@@ -160,7 +184,11 @@ const postAddProduct = async (req, res) => {
       totalStock,
       variants: finalVariants,
       status,
-      isFeatured: isFeatured === "on" || isFeatured === "true" || isFeatured === true || isFeatured === "1",
+      isFeatured:
+        isFeatured === "on" ||
+        isFeatured === "true" ||
+        isFeatured === true ||
+        isFeatured === "1",
     });
 
     console.log("DEBUG: Saving Product to DB...");
@@ -265,13 +293,16 @@ const postEditProduct = async (req, res) => {
       const galleryFiles = files.filter(
         (f) => f.fieldname === `variantGalleryImages_${index}`,
       );
-      const newGalleryPaths = galleryFiles.map((f) => f.path);
+      const newGalleryPaths = galleryFiles.map(
+        (f) => f.path || f.url || f.secure_url,
+      );
 
       // Determine final Color Image
       // If new file, use it. Else use existing (passed in metadata).
       let finalColorImage = variant.colorImage; // from metadata
       if (colorImgFile) {
-        finalColorImage = colorImgFile.path;
+        finalColorImage =
+          colorImgFile.path || colorImgFile.url || colorImgFile.secure_url;
       }
 
       // Determine final Gallery Images
@@ -341,7 +372,11 @@ const postEditProduct = async (req, res) => {
       totalStock,
       variants: finalVariants,
       status,
-      isFeatured: isFeatured === "on" || isFeatured === "true" || isFeatured === true || isFeatured === "1",
+      isFeatured:
+        isFeatured === "on" ||
+        isFeatured === "true" ||
+        isFeatured === true ||
+        isFeatured === "1",
     });
 
     req.session.successMessage = "Product updated successfully!";

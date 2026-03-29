@@ -1,0 +1,134 @@
+<!-- Sidebar Filters Partial -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="side border mb-1">
+            <h3>Search</h3>
+            <form method="GET" 
+                  action="<%= typeof genderFilter !== 'undefined' ? (genderFilter === 'Men' ? '/men' : (genderFilter === 'Women' ? '/women' : '/shop')) : '/shop' %>" 
+                  class="colorlib-form-2">
+                <!-- Include hidden inputs to preserve other filters -->
+                <% for(let k in currentQuery) { if(k !=='search' && k !=='page' ) { 
+                    let vals=Array.isArray(currentQuery[k]) ? currentQuery[k] : [currentQuery[k]]; 
+                    vals.forEach(v=> { %>
+                    <input type="hidden" name="<%= k %>" value="<%= v %>">
+                <% }); } } %>
+                <div class="form-group">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search"
+                            placeholder="Search..." value="<%= search %>">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" type="submit"><i
+                                    class="icon-search3"></i></button>
+                        </span>
+                    </div>
+                    <% if (search) { %>
+                        <div class="mt-2 text-center">
+                            <a href="<%= getUrl({ search: null }) %>"
+                                class="text-danger small">Clear Search</a>
+                        </div>
+                        <% } %>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-sm-12">
+        <div class="side border mb-1">
+            <h3>Filters</h3>
+
+            <!-- Clear All -->
+            <div class="mb-3">
+                <a href="<%= typeof genderFilter !== 'undefined' ? (genderFilter === 'Men' ? '/men' : (genderFilter === 'Women' ? '/women' : '/shop')) : '/shop' %>" 
+                   class="btn btn-outline-secondary btn-sm btn-block">Clear All Filters</a>
+            </div>
+
+            <!-- Categories -->
+            <div class="block-26 mb-2">
+                <h4>Categories</h4>
+                <div class="category-list d-flex flex-wrap gap-2">
+                    <a href="<%= getUrl({ category: null }) %>"
+                        class="btn btn-sm btn-outline-secondary <%= !selectedCategory ? 'active' : '' %>"
+                        style="border-radius: 20px;">
+                        All
+                    </a>
+                    <% categories.forEach(function(cat) { %>
+                        <a href="<%= getUrl({ category: cat._id }) %>"
+                            class="btn btn-sm btn-outline-secondary <%= selectedCategory == cat._id.toString() ? 'active' : '' %>"
+                            style="border-radius: 20px;">
+                            <%= cat.name %>
+                        </a>
+                        <% }); %>
+                </div>
+            </div>
+
+            <!-- Brands -->
+            <div class="block-26 mb-2">
+                <h4>Brand</h4>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <% brands.forEach(function(brandItem) { %>
+                        <div class="form-check">
+                            <% let isChecked = selectedBrand.includes(brandItem); 
+                               let linkUrl = getToggleUrl('brand', brandItem); %>
+                                <a href="<%= linkUrl %>"
+                                    class="d-flex align-items-center mb-1 text-dark"
+                                    style="text-decoration: none;">
+                                    <input type="checkbox" class="form-check-input mr-2"
+                                        <%=isChecked ? 'checked' : '' %>>
+                                        <span>
+                                            <%= brandItem %>
+                                        </span>
+                                </a>
+                        </div>
+                        <% }); %>
+                </div>
+            </div>
+
+            <!-- Colors -->
+            <div class="block-26 mb-2">
+                <h4>Color</h4>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <% colors.forEach(function(col) { %>
+                        <div class="form-check">
+                            <% let isChecked = selectedColor.includes(col); 
+                               let linkUrl = getToggleUrl('color', col); %>
+                                <a href="<%= linkUrl %>"
+                                    class="d-flex align-items-center mb-1 text-dark"
+                                    style="text-decoration: none;">
+                                    <input type="checkbox" class="form-check-input mr-2"
+                                        <%=isChecked ? 'checked' : '' %>>
+                                        <span>
+                                            <%= col %>
+                                        </span>
+                                </a>
+                        </div>
+                        <% }); %>
+                </div>
+            </div>
+
+            <!-- Price -->
+            <div class="block-26 mb-4">
+                <h4>Price Range</h4>
+                <form method="GET" action="<%= typeof genderFilter !== 'undefined' ? (genderFilter === 'Men' ? '/men' : (genderFilter === 'Women' ? '/women' : '/shop')) : '/shop' %>">
+                    <!-- Include hidden inputs to preserve other filters -->
+                    <% for(let k in currentQuery) { if(k !=='minPrice' && k !=='maxPrice' ) { 
+                        let vals=Array.isArray(currentQuery[k]) ? currentQuery[k] : [currentQuery[k]]; 
+                        vals.forEach(v=> { %>
+                        <input type="hidden" name="<%= k %>" value="<%= v %>">
+                    <% }); } } %>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="number" name="minPrice"
+                            class="form-control form-control-sm"
+                            placeholder="Min" value="<%= minPrice %>" min="0">
+                        <span>-</span>
+                        <input type="number" name="maxPrice"
+                            class="form-control form-control-sm"
+                            placeholder="Max" value="<%= maxPrice %>" min="0">
+                    </div>
+                    <button type="submit"
+                        class="btn btn-primary btn-sm btn-block mt-2">Filter Price</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

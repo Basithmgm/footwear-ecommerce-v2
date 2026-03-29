@@ -1,0 +1,54 @@
+<% 
+/** 
+ * Helper: Robust URL Builder using URLSearchParams 
+ * This function takes an object of changes (key: value) and merges it with currentQuery. 
+ * Pass null as value to remove a key. 
+ */ 
+getUrl = function(changes) { 
+    let params = new URLSearchParams(); 
+    if (typeof currentQuery !== 'undefined' && currentQuery) { 
+        for (let key in currentQuery) { 
+            let val = currentQuery[key]; 
+            if (Array.isArray(val)) { 
+                val.forEach(v => params.append(key, v)); 
+            } else { 
+                params.append(key, val); 
+            } 
+        } 
+    } 
+
+    // Apply changes
+    for (let key in changes) { 
+        params.delete(key); 
+        let val = changes[key]; 
+        if (val !== null && val !== undefined) { 
+            if (Array.isArray(val)) { 
+                val.forEach(v => params.append(key, v)); 
+            } else { 
+                params.append(key, val); 
+            } 
+        } 
+    } 
+
+    return '?' + params.toString(); 
+} 
+
+/** 
+ * Helper for checkboxes (Brand/Color) to toggle values in the array 
+ */ 
+getToggleUrl = function(key, value) { 
+    let currentVals = []; 
+    if (typeof currentQuery !== 'undefined' && currentQuery && currentQuery[key]) { 
+        currentVals = Array.isArray(currentQuery[key]) ? currentQuery[key] : [currentQuery[key]]; 
+    } 
+    
+    let newVals; 
+    if (currentVals.includes(value)) { 
+        newVals = currentVals.filter(v => v !== value); 
+    } else { 
+        newVals = [...currentVals, value]; 
+    } 
+    
+    return getUrl({ [key]: newVals.length > 0 ? newVals : null }); 
+} 
+%>

@@ -285,6 +285,27 @@
                         <% } else { %>
                           <p class="empty-state">No addresses added yet.</p>
                           <% } %>
+
+                      <% if (typeof referralOffer !== 'undefined' && referralOffer && referralOffer.isActive) { %>
+                      <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div class="section-title" style="margin: 0;">Refer & Earn</div>
+                      </div>
+                      <div class="address-card">
+                        <p style="font-weight: 600; font-size: 16px; margin: 0; margin-bottom: 10px;">Share this code with your friends to earn rewards!</p>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                          <input type="text" readonly value="<%= user.referralCode || 'Not Available' %>" id="myReferralCode" class="form-control" style="max-width: 200px;">
+                          <button class="btn btn-outline" type="button" onclick="copyReferralCode()" style="padding: 8px 15px;">Copy Code</button>
+                        </div>
+                        <div style="margin-top: 15px;">
+                          <p style="color: #666; font-size: 14px; margin-bottom: 5px;">Or share this link:</p>
+                          <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" readonly value="http://localhost:3000/signup?ref=<%= user.referralCode || '' %>" id="myReferralLink" class="form-control" style="font-size: 13px;">
+                            <button class="btn btn-outline" type="button" onclick="copyReferralLink()" style="padding: 8px 15px;">Copy Link</button>
+                          </div>
+                        </div>
+                      </div>
+                      <% } %>
+
                     </div>
 
                     <div class="action-buttons">
@@ -347,6 +368,34 @@
         });
       });
     });
+
+    function copyReferralCode() {
+      const codeInput = document.getElementById("myReferralCode");
+      codeInput.select();
+      document.execCommand("copy");
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        icon: 'success',
+        title: 'Referral code copied!'
+      });
+    }
+
+    function copyReferralLink() {
+      const linkInput = document.getElementById("myReferralLink");
+      linkInput.select();
+      document.execCommand("copy");
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        icon: 'success',
+        title: 'Referral link copied!'
+      });
+    }
   </script>
   <!-- Standard JS Includes -->
   <script src="/js/jquery.min.js"></script>

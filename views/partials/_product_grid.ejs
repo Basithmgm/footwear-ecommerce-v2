@@ -1,0 +1,109 @@
+<%- include('./_url_helpers') %>
+<div class="row row-pb-md">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded">
+            <span>Showing <%= products.length %> of <%= totalProducts %> results</span>
+            <div class="form-inline">
+                <label class="mr-2">Sort by:</label>
+                <select class="form-control form-control-sm"
+                                                    id="sort-dropdown-ajax">
+                    <option value="<%= getUrl({ sort: 'newest' }) %>" <%= selectedSort === 'newest' ? 'selected' : '' %>>Newest Arrivals</option>
+                    <option value="<%= getUrl({ sort: 'priceLowHigh' }) %>" <%= selectedSort === 'priceLowHigh' ? 'selected' : '' %>>Price: Low to High</option>
+                    <option value="<%= getUrl({ sort: 'priceHighLow' }) %>" <%= selectedSort === 'priceHighLow' ? 'selected' : '' %>>Price: High to Low</option>
+                    <option value="<%= getUrl({ sort: 'az' }) %>" <%= selectedSort === 'az' ? 'selected' : '' %>>Name: A - Z</option>
+                    <option value="<%= getUrl({ sort: 'za' }) %>" <%= selectedSort === 'za' ? 'selected' : '' %>>Name: Z - A</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <% if (products.length > 0) { %>
+        <% products.forEach(function(product) { %>
+            <div class="col-md-4 col-lg-4 mb-4 text-center product-item-ajax">
+                <div class="product-entry border">
+                    <div class="prod-img">
+                        <a href="/product/<%= product._id %>" class="d-block">
+                            <img src="<%= product.variants.variantImages[0] %>" class="img-fluid" alt="<%= product.productName %>" style="height: 250px; object-fit: cover;" onerror="this.src='/images/placeholder.png'">
+                        </a>
+                        <% if (typeof user !== 'undefined' && user) { %>
+                            <button class="btn btn-light btn-sm position-absolute" style="top: 10px; right: 10px; z-index: 10; border-radius: 50%; width: 35px; height: 35px; padding: 0; display: flex; align-items: center; justify-content: center;" data-product-json='<%- JSON.stringify(product).replace(/'/g, "&#39;") %>' onclick="wishlistWithSizeSelection(this)">
+                                <% if (user.wishlist.some(item => item.productId.toString() === product._id.toString())) { %>
+                                    <i class="icon-heart" style="color: red;"></i>
+                                <% } else { %>
+                                    <i class="icon-heart-o"></i>
+                                <% } %>
+                            </button>
+                        <% } else { %>
+                            <button class="btn btn-light btn-sm position-absolute" style="top: 10px; right: 10px; z-index: 10; border-radius: 50%; width: 35px; height: 35px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="window.location.href='/login'">
+                                <i class="icon-heart-o"></i>
+                            </button>
+                        <% } %>
+                    </div>
+                    <div class="desc">
+                        <h2><a href="/product/<%= product._id %>"><%= product.productName %></a></h2>
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-center gap-1 flex-wrap">
+                                <span class="badge bg-light text-dark border" style="font-weight: normal;"><%= product.variants.color %></span>
+                            </div>
+                        </div>
+                        <span class="price">
+                            <% 
+                                let finalPrice = product.salePrice;
+                                let strikethroughPrice = product.regularPrice;
+                                let discountPercentage = 0;
+                                if (product.hasOffer) {
+                                    finalPrice = product.discountedPrice;
+                                    strikethroughPrice = product.salePrice;
+                                    discountPercentage = product.offerDiscount;
+                                } else if (product.salePrice < product.regularPrice) {
+                                    finalPrice = product.salePrice;
+                                    strikethroughPrice = product.regularPrice;
+                                    discountPercentage = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100);
+                                }
+                            %>
+                            <% if (finalPrice < strikethroughPrice) { %>
+                                <span class="text-danger fw-bold">₹<%= finalPrice %></span>
+                                <span class="text-muted" style="text-decoration: line-through; font-size: 0.9em; margin-left: 5px;">₹<%= strikethroughPrice %></span>
+                                <% if (discountPercentage > 0) { %>
+                                    <span class="badge bg-success text-white" style="font-size: 0.7em; margin-left: 5px; vertical-align: middle;"><%= discountPercentage %>% OFF</span>
+                                <% } %>
+                            <% } else { %>
+                                <span class="text-dark fw-bold">₹<%= finalPrice %></span>
+                            <% } %>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+<% } else { %>
+    <div class="col-12 text-center py-5">
+        <div class="alert alert-info">No products found matching your criteria.</div>
+        <a href="/shop" class="btn btn-primary mt-3">Reset Filters</a>
+    </div>
+<% } %>
+</div>
+
+<!-- Pagination -->
+<% if (products.length > 0 && totalPages > 1) { %>
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <div class="block-27">
+                <ul>
+                    <% if (currentPage > 1) { %>
+                        <li><a href="<%= getUrl({ page: currentPage - 1 }) %>"><i class="ion-ios-arrow-back"></i></a></li>
+                    <% } %>
+                    <% for(var i = 1; i <= totalPages; i++) { %>
+                        <% if (i === currentPage) { %>
+                            <li class="active"><span><%= i %></span></li>
+                        <% } else { %>
+                            <li><a href="<%= getUrl({ page: i }) %>"><%= i %></a></li>
+                        <% } %>
+                    <% } %>
+                    <% if (currentPage < totalPages) { %>
+                        <li><a href="<%= getUrl({ page: currentPage + 1 }) %>"><i class="ion-ios-arrow-forward"></i></a></li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+<% } %>

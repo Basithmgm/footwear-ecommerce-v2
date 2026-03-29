@@ -1,6 +1,8 @@
 const User = require("../models/User");
 const Role = require("../models/Role");
 const OTP = require("../models/OTP");
+const Wallet = require("../models/Wallet");
+const ReferralOffer = require("../models/ReferralOffer");
 const { sendOTPEmail } = require("../services/emailService");
 const bcrypt = require("bcryptjs");
 
@@ -43,9 +45,11 @@ const validateConfirmPassword = (password, confirmPassword) => {
 
 // Show signup page
 exports.getSignup = (req, res) => {
+  const referralCode = req.query.ref || "";
   res.render("auth/signup", {
     pageTitle: "Sign Up",
-    oldInput: { name: "", email: "" }, // view expects 'name', we'll map existing form field 'name' to 'full_name' in POST
+    oldInput: { name: "", email: "", referralCode: "" }, // view expects 'name', we'll map existing form field 'name' to 'full_name' in POST
+    referralCode,
     errors: [],
     successMessage: "",
   });
@@ -173,7 +177,7 @@ exports.postForgotPassword = async (req, res) => {
 
 // Handle signup (step 1: form + send OTP)
 exports.postSignup = async (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
+  const { name, email, password, confirmPassword, referralCode } = req.body;
   const errors = [];
 
   // Validate all fields
@@ -193,7 +197,8 @@ exports.postSignup = async (req, res) => {
   if (errors.length > 0) {
     return res.status(422).render("auth/signup", {
       pageTitle: "Sign Up",
-      oldInput: { name, email },
+      oldInput: { name, email, referralCode },
+      referralCode,
       errors,
       successMessage: "",
     });
@@ -220,6 +225,7 @@ exports.postSignup = async (req, res) => {
       full_name: name, // Converting 'name' -> 'full_name' here
       email,
       password, // plain password
+      referralCode,
       createdAt: Date.now(),
     };
 
@@ -268,8 +274,12 @@ exports.postSignup = async (req, res) => {
 
 // Handle login
 exports.postLogin = async (req, res) => {
-  const { email, password, rememberMe } = req.body;
-  console.log("LOGIN START:", { email, rememberMe }); // DEBUG LOG
+  let { email, password, rememberMe } = req.body;
+
+  // Defensive: trim and lowercase email manually
+  email = email ? email.trim().toLowerCase() : "";
+
+  console.log("DEBUG: Login Attempt for Email:", email);
   const errors = [];
 
   // Validate email
@@ -294,7 +304,7 @@ exports.postLogin = async (req, res) => {
   try {
     // Find user and populate Role to check permissions
     const user = await User.findOne({ email }).populate("role_id");
-    console.log("LOGIN User found:", user ? user._id : "None"); // DEBUG LOG
+    console.log("DEBUG: User Query Result:", user ? `Found (ID: ${user._id}, Verified: ${user.isVerified})` : "NOT FOUND");
 
     if (!user) {
       return res.status(401).render("auth/login", {
@@ -307,9 +317,9 @@ exports.postLogin = async (req, res) => {
 
     // Compare plain password with stored hash
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("DEBUG: Password Comparison Result:", isMatch ? "MATCH" : "MISMATCH");
 
     if (!isMatch) {
-      console.log("LOGIN Password match fail"); // DEBUG LOG
       return res.status(401).render("auth/login", {
         pageTitle: "Login",
         oldInput: { email },
@@ -502,6 +512,27 @@ exports.postVerifyOTP = async (req, res) => {
     let user = await User.findOne({ email });
     const hashedPassword = await bcrypt.hash(signupData.password, 10);
 
+    const generateReferralCode = (emailStr) => {
+      const prefix = emailStr.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 5).toUpperCase();
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = prefix;
+      for (let i = 0; i < 4; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    };
+
+    let newReferralCode = generateReferralCode(signupData.email);
+    // Ensure uniqueness
+    while (await User.findOne({ referralCode: newReferralCode })) {
+      newReferralCode = generateReferralCode(signupData.email);
+    }
+
+    let referrer = null;
+    if (signupData.referralCode) {
+      referrer = await User.findOne({ referralCode: signupData.referralCode });
+    }
+
     if (!user) {
       user = new User({
         full_name: signupData.full_name,
@@ -511,6 +542,8 @@ exports.postVerifyOTP = async (req, res) => {
         status: "Active",
         role_id: userRole._id, // Assign Role ID
         last_login_at: new Date(),
+        referralCode: newReferralCode,
+        referredBy: referrer ? referrer._id : undefined
       });
       await user.save();
     } else {
@@ -519,7 +552,45 @@ exports.postVerifyOTP = async (req, res) => {
       user.status = "Active";
       user.role_id = userRole._id;
       user.last_login_at = new Date();
+      if (!user.referralCode) user.referralCode = newReferralCode;
+      if (!user.referredBy && referrer) user.referredBy = referrer._id;
       await user.save();
+    }
+
+    // Process Referral Rewards
+    if (referrer) {
+      const referralOffer = await ReferralOffer.findOne({ isActive: true });
+      if (referralOffer) {
+        // Credit Referrer
+        if (referralOffer.referrerReward > 0) {
+          let referrerWallet = await Wallet.findOne({ userId: referrer._id });
+          if (!referrerWallet) {
+            referrerWallet = new Wallet({ userId: referrer._id, balance: 0, transactions: [] });
+          }
+          referrerWallet.balance += referralOffer.referrerReward;
+          referrerWallet.transactions.push({
+            amount: referralOffer.referrerReward,
+            type: "Credit",
+            description: "Referral Bonus (Referrer)"
+          });
+          await referrerWallet.save();
+        }
+
+        // Credit Referee
+        if (referralOffer.refereeReward > 0) {
+          let refereeWallet = await Wallet.findOne({ userId: user._id });
+          if (!refereeWallet) {
+            refereeWallet = new Wallet({ userId: user._id, balance: 0, transactions: [] });
+          }
+          refereeWallet.balance += referralOffer.refereeReward;
+          refereeWallet.transactions.push({
+            amount: referralOffer.refereeReward,
+            type: "Credit",
+            description: "Referral Bonus (Referee)"
+          });
+          await refereeWallet.save();
+        }
+      }
     }
 
     // Delete OTPs

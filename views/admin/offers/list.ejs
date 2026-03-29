@@ -1,0 +1,85 @@
+<%- include('../../partials/admin/header') %>
+<%- include('../../partials/admin/sidebar', { path: '/admin/offers' }) %>
+<main class="admin-content">
+  <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+    <h2 class="h3 mb-0">Offer Management</h2>
+    <a href="/admin/offers/add" class="btn btn-primary d-flex align-items-center">
+      <i class="fas fa-plus me-2"></i> Create New Offer
+    </a>
+  </div>
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Offer Name</th>
+              <th>Type</th>
+              <th>Target</th>
+              <th>Discount</th>
+              <th>Expires</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if(offers.length > 0) { %>
+              <% offers.forEach(offer => { %>
+                <tr>
+                  <td><span class="fw-bold"><%= offer.name %></span></td>
+                  <td><span class="badge bg-info text-dark"><%= offer.offerType %></span></td>
+                  <td><%= offer.targetId ? (offer.targetId.name || offer.targetId.productName || 'Unknown') : 'N/A' %></td>
+                  <td>
+                    <span class="text-success fw-bold">
+                      <% if (offer.discountType === 'Percentage') { %>
+                        <%= offer.discountValue %>% OFF
+                      <% } else { %>
+                        ₹<%= offer.discountValue %> OFF
+                      <% } %>
+                    </span>
+                  </td>
+                  <td><%= new Date(offer.expiresAt).toLocaleDateString() %></td>
+                  <td class="text-end" style="min-width: 100px;">
+                    <a href="/admin/offers/edit/<%= offer._id %>" class="btn btn-sm btn-outline-primary me-2">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteOffer('<%= offer._id %>')">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="6" class="text-center py-4 text-muted">No offers found. Create one!</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+  function deleteOffer(id) {
+    Swal.fire({
+      title: 'Delete this Offer?',
+      text: "This will permanently remove the discount from the target item!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        fetch(`/admin/offers/delete/${id}`, { method: 'DELETE' })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire('Deleted!', data.message, 'success').then(() => location.reload());
+            } else {
+              Swal.fire('Error!', data.message, 'error');
+            }
+          });
+      }
+    });
+  }
+</script>
+<%- include('../../partials/admin/footer') %>

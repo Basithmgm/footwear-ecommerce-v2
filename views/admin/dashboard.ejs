@@ -1,0 +1,367 @@
+<%- include('../partials/admin/header') %>
+<%- include('../partials/admin/sidebar') %>
+
+<style>
+    :root {
+        --primary: #4e73df;
+        --secondary: #858796;
+        --success: #1cc88a;
+        --info: #36b9cc;
+        --warning: #f6c23e;
+        --danger: #e74a3b;
+        --dark: #5a5c69;
+        --glass: rgba(255, 255, 255, 0.1);
+        --glass-border: rgba(255, 255, 255, 0.2);
+    }
+
+    .main-content {
+        padding: 2rem;
+        background-color: #f8f9fc;
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .kpi-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-left: 5px solid var(--primary);
+        transition: transform 0.2s;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .kpi-card.revenue { border-left-color: var(--primary); }
+    .kpi-card.aov { border-left-color: var(--success); }
+    .kpi-card.conversion { border-left-color: var(--info); }
+    .kpi-card.abandon { border-left-color: var(--warning); }
+    .kpi-card.clv { border-left-color: var(--danger); }
+
+    .kpi-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #5a5c69;
+    }
+
+    .chart-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .chart-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .top-products-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .top-products-table th {
+        text-align: left;
+        padding: 1rem;
+        border-bottom: 2px solid #e3e6f0;
+        color: var(--secondary);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .top-products-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e3e6f0;
+        vertical-align: middle;
+    }
+
+    .product-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        object-fit: cover;
+        margin-right: 1rem;
+    }
+
+    .filter-btn-group {
+        background: #eaecf4;
+        padding: 0.25rem;
+        border-radius: 8px;
+        display: inline-flex;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: 0.2s;
+    }
+
+    .filter-btn.active {
+        background: white;
+        color: var(--primary);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    @media (max-width: 1024px) {
+        .chart-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="main-content">
+    <div class="dashboard-header">
+        <h2 class="h3 mb-0 text-gray-800">Admin Analytics Dashboard</h2>
+        <div class="filter-btn-group">
+            <button class="filter-btn" data-filter="today">Today</button>
+            <button class="filter-btn" data-filter="week">Weekly</button>
+            <button class="filter-btn active" data-filter="month">Monthly</button>
+            <button class="filter-btn" data-filter="year">Yearly</button>
+        </div>
+    </div>
+
+    <!-- Big Five KPI Cards -->
+    <div class="kpi-container">
+        <div class="kpi-card revenue">
+            <div class="kpi-label">Total Revenue</div>
+            <div class="kpi-value" id="kpi-revenue">₹0</div>
+        </div>
+        <div class="kpi-card aov">
+            <div class="kpi-label">Avg Order Value</div>
+            <div class="kpi-value" id="kpi-aov">₹0</div>
+        </div>
+        <div class="kpi-card conversion">
+            <div class="kpi-label">Conversion Rate</div>
+            <div class="kpi-value" id="kpi-conversion">0%</div>
+        </div>
+        <div class="kpi-card abandon">
+            <div class="kpi-label">Abandonment Rate</div>
+            <div class="kpi-value" id="kpi-abandon">0%</div>
+        </div>
+        <div class="kpi-card clv">
+            <div class="kpi-label">Customer Lifetime Value</div>
+            <div class="kpi-value" id="kpi-clv">₹0</div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="chart-grid">
+        <div class="chart-card">
+            <div class="chart-title">Sales Trend (Revenue Over Time)</div>
+            <div id="sales-trend-chart"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Order Status Breakdown</div>
+            <div id="order-status-chart"></div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="chart-grid">
+        <div class="chart-card">
+            <div class="chart-title">Top 5 Best Selling Shoes</div>
+            <table class="top-products-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Sold</th>
+                        <th>Revenue</th>
+                        <th>Stock Trend</th>
+                    </tr>
+                </thead>
+                <tbody id="top-products-body">
+                    <!-- Dynamic Content -->
+                </tbody>
+            </table>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Sales by Shoe Size</div>
+            <div id="size-chart"></div>
+        </div>
+    </div>
+
+    <!-- Category Chart -->
+    <div class="chart-card mb-4">
+        <div class="chart-title">Category Performance</div>
+        <div id="category-chart"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    let salesTrendChart, orderStatusChart, sizeChart, categoryChart;
+
+    const fetchDashboardData = async (filter = 'month') => {
+        try {
+            const response = await fetch(`/admin/api/dashboard-stats?filter=${filter}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                updateKPIs(data.kpis);
+                updateSalesTrendChart(data.charts.salesTrend, filter);
+                updateOrderStatusChart(data.charts.orderStatus);
+                updateSizeChart(data.charts.sizeSales);
+                updateCategoryChart(data.charts.categorySales);
+                updateTopProducts(data.topProducts);
+            }
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        }
+    };
+
+    const updateKPIs = (kpis) => {
+        document.getElementById('kpi-revenue').innerText = `₹${kpis.totalRevenue.toLocaleString()}`;
+        document.getElementById('kpi-aov').innerText = `₹${parseFloat(kpis.avgOrderValue).toLocaleString()}`;
+        document.getElementById('kpi-conversion').innerText = `${kpis.conversionRate}%`;
+        document.getElementById('kpi-abandon').innerText = `${kpis.abandonmentRate}%`;
+        document.getElementById('kpi-clv').innerText = `₹${parseFloat(kpis.clv).toLocaleString()}`;
+    };
+
+    const updateSalesTrendChart = (trendData, filter) => {
+        const options = {
+            series: [{
+                name: 'Revenue',
+                data: trendData.map(d => d.revenue)
+            }],
+            chart: {
+                height: 350,
+                type: 'area',
+                toolbar: { show: false },
+                zoom: { enabled: false }
+            },
+            dataLabels: { enabled: false },
+            colors: ['#4e73df'],
+            stroke: { curve: 'smooth' },
+            xaxis: {
+                categories: trendData.map(d => d._id),
+                labels: { rotate: -45 }
+            },
+            tooltip: { y: { formatter: (val) => `₹${val.toLocaleString()}` } }
+        };
+
+        if (salesTrendChart) salesTrendChart.destroy();
+        salesTrendChart = new ApexCharts(document.querySelector("#sales-trend-chart"), options);
+        salesTrendChart.render();
+    };
+
+    const updateOrderStatusChart = (statusData) => {
+        const options = {
+            series: statusData.map(d => d.count),
+            chart: { type: 'donut', height: 350 },
+            labels: statusData.map(d => d._id),
+            colors: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#5a5c69'],
+            responsive: [{
+                breakpoint: 480,
+                options: { chart: { width: 200 }, legend: { position: 'bottom' } }
+            }]
+        };
+
+        if (orderStatusChart) orderStatusChart.destroy();
+        orderStatusChart = new ApexCharts(document.querySelector("#order-status-chart"), options);
+        orderStatusChart.render();
+    };
+
+    const updateSizeChart = (sizeData) => {
+        const options = {
+            series: [{ data: sizeData.map(d => d.count) }],
+            chart: { type: 'bar', height: 350 },
+            colors: ['#36b9cc'],
+            plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+            dataLabels: { enabled: false },
+            xaxis: { categories: sizeData.map(d => `Size ${d._id}`) }
+        };
+
+        if (sizeChart) sizeChart.destroy();
+        sizeChart = new ApexCharts(document.querySelector("#size-chart"), options);
+        sizeChart.render();
+    };
+
+    const updateCategoryChart = (categoryData) => {
+        const options = {
+            series: [{
+                name: 'Revenue',
+                data: categoryData.map(d => d.value)
+            }],
+            chart: { type: 'bar', height: 350 },
+            plotOptions: { bar: { columnWidth: '45%', borderRadius: 8 } },
+            colors: ['#1cc88a'],
+            xaxis: { categories: categoryData.map(d => d._id) }
+        };
+
+        if (categoryChart) categoryChart.destroy();
+        categoryChart = new ApexCharts(document.querySelector("#category-chart"), options);
+        categoryChart.render();
+    };
+
+    const updateTopProducts = (products) => {
+        const body = document.getElementById('top-products-body');
+        body.innerHTML = products.map(p => `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <img src="${p.image}" class="product-img" alt="${p.name}">
+                        <span class="font-weight-bold">${p.name}</span>
+                    </div>
+                </td>
+                <td>${p.sold} Units</td>
+                <td>₹${p.revenue.toLocaleString()}</td>
+                <td><span class="badge badge-success">Trending</span></td>
+            </tr>
+        `).join('');
+    };
+
+    // Filter Button Clicks
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            fetchDashboardData(e.target.dataset.filter);
+        });
+    });
+
+    // Initial Load
+    document.addEventListener('DOMContentLoaded', () => fetchDashboardData('month'));
+</script>
+
+<%- include('../partials/admin/footer') %>

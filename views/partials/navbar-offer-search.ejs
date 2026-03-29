@@ -13,9 +13,9 @@
         <!-- Search on the right -->
         <div class="col-sm-8 col-md-8">
           <div class="header-top-right">
-            <form action="/search" method="get" class="search-wrap">
+            <form action="<%= (locals.activeMenu === 'men') ? '/men' : ((locals.activeMenu === 'women') ? '/women' : '/shop') %>" method="get" class="search-wrap">
               <div class="form-group">
-                <input type="search" name="q" class="form-control search search-narrow" placeholder="Search" />
+                <input type="search" name="search" class="form-control search search-narrow" placeholder="Search" />
                 <button aria-label="submit-search" class="btn btn-primary submit-search text-center" type="submit">
                   <i class="icon-search"></i>
                 </button>
@@ -48,14 +48,16 @@
                   <li><a href="/women">Shop All Women Products</a></li>
                 </ul>
               </li>
-              <li><a href="/about">About</a></li>
-              <li><a href="/contact">Contact</a></li>
+              <li class="<%= (locals.activeMenu === 'offers') ? 'active' : '' %>"><a href="/offers">Offers</a></li>
+              <li class="<%= (locals.activeMenu === 'about') ? 'active' : '' %>"><a href="/about">About</a></li>
+              <li class="<%= (locals.activeMenu === 'contact') ? 'active' : '' %>"><a href="/contact">Contact</a></li>
 
               <% if (locals.user) { %>
                 <li class="has-dropdown <%= (locals.activeMenu === 'profile') ? 'active' : '' %>">
                   <a href="/profile">My Profile</a>
                   <ul class="dropdown">
                     <li><a href="/profile">View Profile</a></li>
+                    <li><a href="/wallet">My Wallet</a></li>
                     <li>
                       <form action="/logout" method="POST" style="margin: 0">
                         <button type="submit" class="fw-navbar-btn">
@@ -85,26 +87,26 @@
 
   <!-- Offer banner with Owl Carousel -->
   <!-- Offer banner with Marquee -->
-  <% if (locals.activeBanners && activeBanners.length> 0) { %>
+  <% if (locals.activeBanners && locals.activeBanners.length > 0) { %>
     <div class="marquee-container"
-      style="background-color: <%= locals.bannerBgColor %>; color: <%= locals.bannerTextColor %>;">
-      <div class="marquee-content" style="animation-duration: <%= locals.bannerSpeed %>s;">
-        <% activeBanners.forEach((banner, index)=> { %>
-          <% if (index> 0) { %>
-            <span class="separator" style="color: <%= locals.bannerTextColor %>;">|</span>
+      style="background-color: <%= locals.bannerBgColor || '#88c8bc' %>; color: <%= locals.bannerTextColor || '#ffffff' %>;">
+      <div class="marquee-content" style="animation-duration: <%= locals.bannerSpeed || 20 %>s;">
+        <% locals.activeBanners.forEach((banner, index) => { %>
+          <% if (index > 0) { %>
+            <span class="separator" style="color: <%= locals.bannerTextColor || '#ffffff' %>;">|</span>
             <% } %>
-              <a href="<%= banner.link %>" style="color: <%= locals.bannerTextColor %>;">
+              <a href="<%= banner.link %>" style="color: <%= locals.bannerTextColor || '#ffffff' %>;">
                 <%= banner.title %>
               </a>
               <% }) %>
 
-                <span class="separator" style="color: <%= locals.bannerTextColor %>;">|</span>
+                <span class="separator" style="color: <%= locals.bannerTextColor || '#ffffff' %>;">|</span>
 
-                <% activeBanners.forEach((banner, index)=> { %>
-                  <% if (index> 0) { %>
-                    <span class="separator" style="color: <%= locals.bannerTextColor %>;">|</span>
+                <% locals.activeBanners.forEach((banner, index) => { %>
+                  <% if (index > 0) { %>
+                    <span class="separator" style="color: <%= locals.bannerTextColor || '#ffffff' %>;">|</span>
                     <% } %>
-                      <a href="<%= banner.link %>" style="color: <%= locals.bannerTextColor %>;">
+                      <a href="<%= banner.link %>" style="color: <%= locals.bannerTextColor || '#ffffff' %>;">
                         <%= banner.title %>
                       </a>
                       <% }) %>

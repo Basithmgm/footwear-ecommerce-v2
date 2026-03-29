@@ -81,6 +81,11 @@
                                                                         item.itemStatus === 'Returned' ? 'badge-warning' : 
                                                                         item.itemStatus === 'Return Requested' ? 'badge-info' : 'badge-secondary' %>">
                                                             <%= item.itemStatus %>
+                                                            <% if (item.cancelReason && item.itemStatus === 'Cancelled') { %>
+                                                                <br><small class="text-white-50">Reason: <%= item.cancelReason %></small>
+                                                            <% } else if (item.returnReason && (item.itemStatus === 'Return Requested' || item.itemStatus === 'Returned')) { %>
+                                                                <br><small class="text-white-50">Reason: <%= item.returnReason %></small>
+                                                            <% } %>
                                                         </span>
                                                         <% if (item.adminReturnComment) { %>
                                                             <small class="d-block mt-1 text-muted"><strong>Admin
@@ -170,12 +175,26 @@
                                            'badge-info' %>">
                                             Status: <%= order.orderStatus %>
                                         </span>
+                                        <% if (order.orderStatus === 'Cancelled' && order.cancelReason) { %>
+                                            <small class="d-block mt-2 text-danger"><strong>Cancellation Reason:</strong> <%= order.cancelReason %></small>
+                                        <% } else if (order.orderStatus === 'Return Requested' || order.orderStatus === 'Returned') { %>
+                                            <% if (order.returnReason) { %>
+                                                <small class="d-block mt-2 text-info"><strong>Return Reason:</strong> <%= order.returnReason %></small>
+                                            <% } %>
+                                        <% } %>
                                     </div>
-                                    <div>
-                                        <strong class="d-block mb-1">Payment Method</strong>
-                                        <span class="text-muted">
-                                            <%= order.paymentMethod %> (<%= order.paymentStatus %>)
-                                        </span>
+                                    <div class="mt-4">
+                                        <% if (order.paymentStatus === 'Pending' && order.paymentMethod === 'Razorpay' && order.orderStatus !== 'Cancelled') { %>
+                                            <button onclick="retryPayment('<%= order._id %>')" class="btn btn-primary btn-block mb-2">Retry Payment</button>
+                                        <% } %>
+
+                                        <% if (['Ordered', 'Payment Pending', 'Shipped'].includes(order.orderStatus)) { %>
+                                            <button onclick="cancelOrder('<%= order._id %>')" class="btn btn-danger btn-block mb-2">Cancel Entire Order</button>
+                                        <% } %>
+
+                                        <% if (order.orderStatus === 'Delivered') { %>
+                                            <button onclick="returnOrder('<%= order._id %>')" class="btn btn-warning btn-block mb-2">Return Entire Order</button>
+                                        <% } %>
                                     </div>
                                 </div>
                             </div>
@@ -217,6 +236,9 @@
     <script src="/js/main.js"></script>
     <script src="/js/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="/css/sweetalert2.min.css">
+    
+    <!-- Razorpay SDK for Retry -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <script>
         function cancelOrderItem(orderId, itemId) {
@@ -319,6 +341,124 @@
             })
         }
     </script>
+    <script>
+        function cancelOrder(orderId) {
+            Swal.fire({
+                title: 'Cancel Entire Order?',
+                text: "Are you sure you want to cancel the full order? This cannot be undone.",
+                input: 'text',
+                inputPlaceholder: 'Reason for cancellation...',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, cancel order',
+                confirmButtonColor: '#d33',
+                showLoaderOnConfirm: true,
+                preConfirm: (reason) => {
+                    return fetch(`/orders/cancel/${orderId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason })
+                    })
+                    .then(response => response.json())
+                    .catch(error => Swal.showValidationMessage(`Request failed: ${error}`))
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value.success) {
+                    Swal.fire('Cancelled!', 'Your order has been cancelled.', 'success').then(() => location.reload());
+                } else if (result.isConfirmed) {
+                    Swal.fire('Error!', result.value.message, 'error');
+                }
+            })
+        }
+
+        function returnOrder(orderId) {
+            Swal.fire({
+                title: 'Return Entire Order?',
+                text: "Please provide a reason for returning the full order:",
+                input: 'text',
+                inputValidator: (value) => {
+                    if (!value) return 'You need to write a reason!'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Submit Return Request',
+                showLoaderOnConfirm: true,
+                preConfirm: (reason) => {
+                    return fetch(`/orders/return/${orderId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason })
+                    })
+                    .then(response => response.json())
+                    .catch(error => Swal.showValidationMessage(`Request failed: ${error}`))
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value.success) {
+                    Swal.fire('Requested!', 'Return request submitted successfully.', 'success').then(() => location.reload());
+                } else if (result.isConfirmed) {
+                    Swal.fire('Error!', result.value.message, 'error');
+                }
+            })
+        }
+
+        async function retryPayment(orderId) {
+            try {
+                const response = await fetch('/checkout/razorpay/retry-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const options = {
+                        key: data.key_id,
+                        amount: data.order.amount,
+                        currency: "INR",
+                        name: "Footwear",
+                        description: "Payment for your order",
+                        order_id: data.order.id,
+                        handler: async function (response) {
+                            const verifyRes = await fetch('/checkout/razorpay/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    orderId: orderId
+                                })
+                            });
+                            const verifyData = await verifyRes.json();
+                            if (verifyData.success) {
+                                Swal.fire('Success', 'Payment completed successfully!', 'success').then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire('Error', verifyData.message, 'error');
+                            }
+                        },
+                        prefill: {
+                            name: "<%= user?.full_name || '' %>",
+                            email: "<%= user?.email || '' %>",
+                        },
+                        theme: { color: "#88c8bc" }
+                    };
+                    const rzp1 = new Razorpay(options);
+                    rzp1.open();
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Failed to initiate retry payment', 'error');
+            }
+        }
+
+    // Force a reload if the page is loaded from the Back-Forward Cache (BFCache)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
 </body>
 
 </html>

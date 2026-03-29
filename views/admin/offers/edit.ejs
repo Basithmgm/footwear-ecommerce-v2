@@ -1,0 +1,99 @@
+<%- include('../../partials/admin/header') %>
+<%- include('../../partials/admin/sidebar', { path: '/admin/offers' }) %>
+
+<main class="admin-content">
+  <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+    <h2 class="h3 mb-0">Edit Offer</h2>
+    <a href="/admin/offers" class="btn btn-outline-secondary">Back to Offers</a>
+  </div>
+
+  <div class="card shadow-sm border-0" style="max-width: 600px;">
+    <div class="card-body p-4">
+      <form id="editOfferForm">
+        <div class="mb-3">
+          <label class="form-label fw-bold">Offer Name</label>
+          <input type="text" class="form-control" name="name" value="<%= offer.name %>" required>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Discount Type</label>
+            <select class="form-select" name="discountType" id="discountType" required>
+              <option value="Percentage" <%= offer.discountType === 'Percentage' ? 'selected' : '' %>>Percentage (%)</option>
+              <option value="Fixed Amount" <%= offer.discountType === 'Fixed Amount' ? 'selected' : '' %>>Fixed Amount (₹)</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold" id="discountValueLabel">Discount Value <%= offer.discountType === 'Percentage' ? '(%)' : '(₹)' %></label>
+            <input type="number" class="form-control" name="discountValue" id="discountValue" value="<%= offer.discountValue %>" required min="1" <%= offer.discountType === 'Percentage' ? 'max="99"' : '' %>>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Expiration Date</label>
+          <% 
+            const d = new Date(offer.expiresAt);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+          %>
+          <input type="date" class="form-control" name="expiresAt" value="<%= dateString %>" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold text-muted">Offer Type (Read-Only)</label>
+          <input type="text" class="form-control bg-light" value="<%= offer.offerType %> Offer" readonly disabled>
+          <small class="text-muted">You cannot change the target type of an existing offer.</small>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold text-muted">Target (Read-Only)</label>
+          <input type="text" class="form-control bg-light" value="<%= targetName %>" readonly disabled>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script>
+  const discountTypeSelect = document.getElementById('discountType');
+  const discountValueLabel = document.getElementById('discountValueLabel');
+  const discountValueInput = document.getElementById('discountValue');
+
+  discountTypeSelect.addEventListener('change', function() {
+    if (this.value === 'Percentage') {
+      discountValueLabel.innerText = "Discount Value (%)";
+      discountValueInput.max = "99";
+    } else {
+      discountValueLabel.innerText = "Discount Value (₹)";
+      discountValueInput.removeAttribute('max');
+    }
+  });
+
+  document.getElementById('editOfferForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    // Convert expiresAt to proper Date standard
+    data.expiresAt = new Date(data.expiresAt).toISOString();
+
+    const response = await fetch('/admin/offers/edit/<%= offer._id %>', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      Swal.fire('Success!', result.message, 'success').then(() => window.location.href = '/admin/offers');
+    } else {
+      Swal.fire('Error', result.message, 'error');
+    }
+  });
+</script>
+
+<%- include('../../partials/admin/footer') %>

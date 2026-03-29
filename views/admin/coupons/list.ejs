@@ -1,0 +1,143 @@
+<%- include('../../partials/admin/header.ejs') %>
+<%- include('../../partials/admin/sidebar.ejs') %>
+
+<main class="admin-content">
+  <section class="content-main">
+    <div class="content-header">
+      <div>
+        <h2 class="content-title card-title">Manage Coupons</h2>
+        <p>View, disable, or delete active coupons.</p>
+      </div>
+      <div>
+        <a href="/admin/coupons/add" class="btn btn-primary btn-sm rounded"><i class="material-icons md-plus"></i> Create new</a>
+      </div>
+    </div>
+
+
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Discount</th>
+                <th>Min Purchase</th>
+                <th>Expires</th>
+                <th>Usage</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (coupons && coupons.length > 0) { %>
+                <% coupons.forEach(coupon => { %>
+                  <tr>
+                    <td><strong class="text-primary"><%= coupon.code %></strong></td>
+                    <td>
+                      <%= coupon.discountType === 'Percentage' ? coupon.discountValue + '%' : '₹' + coupon.discountValue %>
+                    </td>
+                    <td>₹<%= coupon.minPurchaseAmount %></td>
+                    <td>
+                      <%= new Date(coupon.expiresAt).toLocaleDateString() %>
+                      <% if(new Date(coupon.expiresAt) < new Date()) { %>
+                        <span class="badge rounded-pill alert-danger ms-1">Expired</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <%= coupon.usedCount %> <%= coupon.usageLimit ? '/ ' + coupon.usageLimit : '' %>
+                    </td>
+                    <td>
+                      <span class="badge rounded-pill <%= coupon.isActive ? 'alert-success' : 'alert-warning' %>" id="status-<%= coupon._id %>">
+                        <%= coupon.isActive ? 'Active' : 'Inactive' %>
+                      </span>
+                    </td>
+                    <td class="text-end" style="min-width: 250px;">
+                      <a href="/admin/coupons/edit/<%= coupon._id %>" class="btn btn-sm btn-light font-sm rounded me-2">
+                        <i class="material-icons md-edit"></i> Edit
+                      </a>
+                      <button onclick="toggleCouponStatus('<%= coupon._id %>')" class="btn btn-sm font-sm rounded <%= coupon.isActive ? 'btn-danger' : 'btn-success' %> me-2 toggle-btn-<%= coupon._id %>">
+                        <%= coupon.isActive ? 'Deactivate' : 'Activate' %>
+                      </button>
+                      <button onclick="deleteCoupon('<%= coupon._id %>')" class="btn btn-sm btn-light font-sm rounded text-danger">
+                        <i class="material-icons md-delete_forever"></i> Delete
+                      </button>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="7" class="text-center">No coupons found.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+  <%- include('../../partials/admin/footer.ejs') %>
+  
+  <link rel="stylesheet" href="/css/sweetalert2.min.css">
+  <script src="/js/sweetalert2.all.min.js"></script>
+  <script>
+    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+      Swal.fire('Error', '<%= errorMessage %>', 'error');
+    <% } %>
+    <% if (typeof successMessage !== 'undefined' && successMessage) { %>
+      Swal.fire('Success', '<%= successMessage %>', 'success');
+    <% } %>
+  </script>
+  <script>
+    function toggleCouponStatus(id) {
+      Swal.fire({
+        title: 'Change Status?',
+        text: "Are you sure you want to change this coupon's status?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, change it!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fetch(`/admin/coupons/toggle/${id}`, { method: 'PATCH' })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                Swal.fire('Updated!', data.message, 'success').then(() => location.reload());
+              } else {
+                Swal.fire('Error!', data.message, 'error');
+              }
+            })
+            .catch(err => Swal.fire('Error!', 'Something went wrong.', 'error'));
+        }
+      });
+    }
+
+    function deleteCoupon(id) {
+      Swal.fire({
+        title: 'Delete Coupon?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fetch(`/admin/coupons/delete/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                Swal.fire('Deleted!', data.message, 'success').then(() => location.reload());
+              } else {
+                Swal.fire('Error!', data.message, 'error');
+              }
+            })
+            .catch(err => Swal.fire('Error!', 'Something went wrong.', 'error'));
+        }
+      });
+    }
+  </script>
+</main>

@@ -198,9 +198,8 @@
                                 </div>
                                 <p class="price mb-4" id="price-display">
                                     <!-- Dynamic Price -->
-                                    <span class="original-price" id="reg-price"></span>
-                                    <span class="text-dark fw-bold" style="font-size: 1.5em;" id="sale-price">Select
-                                        Size</span>
+                                    <span class="text-dark fw-bold" style="font-size: 1.5em;" id="sale-price">Select Size</span>
+                                    <span class="original-price" id="reg-price" style="margin-left: 10px;"></span>
                                     <span class="badge bg-success text-white ml-2" id="discount-badge"
                                         style="display:none; font-size: 0.6em; vertical-align: middle;"></span>
                                 </p>
@@ -291,11 +290,11 @@
                                                 <% } %>
 
                                                     <% if (typeof user !=='undefined' && user) { %>
-                                                        <% const wishlist=user.wishlist || []; const
-                                                            validWishlist=wishlist.filter(id=> id); // Filter out nulls
-                                                            const isInWishlist = validWishlist.some(id => id.toString()
-                                                            === product._id.toString());
-                                                            %>
+                                                        <%  const wishlist = user.wishlist || [];
+                                                            const isInWishlist = wishlist.some(item => 
+                                                                item.productId && item.productId.toString() === product._id.toString()
+                                                            );
+                                                        %>
                                                             <button type="button" id="wishlist-btn-detail"
                                                                 class="btn-wishlist-custom <%= isInWishlist ? 'btn-wishlist-active' : '' %>"
                                                                 data-product-id="<%= product._id %>"
@@ -446,14 +445,31 @@
                                                     <%= rProduct.productName %>
                                                 </a></h2>
                                             <span class="price">
-                                                <% if(rProduct.salePrice < rProduct.regularPrice) { %>
-                                                    <span class="text-muted" style="text-decoration: line-through;">₹<%=
-                                                            rProduct.regularPrice %></span>
-                                                    <span class="text-danger font-weight-bold">₹<%= rProduct.salePrice
-                                                            %></span>
-                                                    <% } else { %>
-                                                        <span class="font-weight-bold">₹<%= rProduct.salePrice %></span>
-                                                        <% } %>
+                                                <% 
+                                                    let rpPrice = rProduct.salePrice;
+                                                    let rsPrice = rProduct.regularPrice;
+                                                    let rdPerc = 0;
+
+                                                    if (rProduct.hasOffer) {
+                                                        rpPrice = rProduct.discountedPrice;
+                                                        rsPrice = rProduct.salePrice;
+                                                        rdPerc = rProduct.offerDiscount;
+                                                    } else if (rProduct.salePrice < rProduct.regularPrice) {
+                                                        rpPrice = rProduct.salePrice;
+                                                        rsPrice = rProduct.regularPrice;
+                                                        rdPerc = Math.round(((rProduct.regularPrice - rProduct.salePrice) / rProduct.regularPrice) * 100);
+                                                    }
+                                                %>
+
+                                                <% if (rpPrice < rsPrice) { %>
+                                                    <span class="text-danger fw-bold">₹<%= rpPrice %></span>
+                                                    <span class="text-muted" style="text-decoration: line-through; font-size: 0.9em; margin-left: 5px;">₹<%= rsPrice %></span>
+                                                    <% if (rdPerc > 0) { %>
+                                                        <span class="badge bg-success text-white" style="font-size: 0.7em; margin-left: 5px; vertical-align: middle;"><%= rdPerc %>% OFF</span>
+                                                    <% } %>
+                                                <% } else { %>
+                                                    <span class="text-dark fw-bold">₹<%= rpPrice %></span>
+                                                <% } %>
                                             </span>
                                         </div>
                                     </div>
@@ -652,14 +668,31 @@
             function selectSize(sizeObj) {
                 selectedSize = sizeObj;
 
-                // Update Price
-                $('#sale-price').text('₹' + sizeObj.salePrice);
-                // Update Discount
-                if (sizeObj.regularPrice > sizeObj.salePrice) {
+                // Update Price and Discount
+                if (productData.hasOffer) {
+                    $('#sale-price').text('₹' + sizeObj.discountedPrice).addClass('text-danger').removeClass('text-dark');
+                    $('#reg-price').text('₹' + sizeObj.salePrice);
+                    $('#discount-badge').text(productData.offerDiscount + '% OFF').css({
+                        'display': 'inline-block',
+                        'font-size': '0.7em',
+                        'margin-left': '10px'
+                    }).show();
+                } else if (sizeObj.regularPrice > sizeObj.salePrice) {
+                    $('#sale-price').text('₹' + sizeObj.salePrice).addClass('text-danger').removeClass('text-dark');
                     $('#reg-price').text('₹' + sizeObj.regularPrice);
-                    const discount = Math.round(((sizeObj.regularPrice - sizeObj.salePrice) / sizeObj.regularPrice) * 100);
-                    $('#discount-badge').text(discount + '% OFF').show();
-                } else {
+                    const disc = Math.round(((sizeObj.regularPrice - sizeObj.salePrice) / sizeObj.regularPrice) * 100);
+                    if (disc > 0) {
+                        $('#discount-badge').text(disc + '% OFF').css({
+                            'display': 'inline-block',
+                            'font-size': '0.7em',
+                            'margin-left': '10px'
+                        }).show();
+                    } else {
+                        $('#discount-badge').hide();
+                    }
+                }
+ else {
+                    $('#sale-price').text('₹' + sizeObj.salePrice).removeClass('text-danger').addClass('text-dark');
                     $('#reg-price').text('');
                     $('#discount-badge').hide();
                 }
@@ -832,8 +865,8 @@
             console.log("Product ID:", "<%= product._id %>");
             <% if (typeof user !== 'undefined' && user) { %>
                 try {
-                    console.log("User Wishlist (Raw):", <% - JSON.stringify(user.wishlist || []) %>);
-                    const isInWishlist = <% - user.wishlist && user.wishlist.some(id => id.toString() === product._id.toString()) %>;
+                    console.log("User Wishlist (Raw):", <%- JSON.stringify(user.wishlist || []) %>);
+                    const isInWishlist = <%= user.wishlist && user.wishlist.some(item => (item.productId && item.productId._id ? item.productId._id.toString() : item.productId ? item.productId.toString() : '') === product._id.toString()) %>;
                     console.log("Is in wishlist?", isInWishlist);
                 } catch (e) {
                     console.error("Error checking wishlist:", e);
@@ -843,6 +876,14 @@
             <% } %>
         });
     </script>
+    <script>
+    // Force a reload if the page is loaded from the Back-Forward Cache (BFCache)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
 </body>
 
 </html>

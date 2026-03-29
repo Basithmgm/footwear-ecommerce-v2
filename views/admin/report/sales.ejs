@@ -1,0 +1,340 @@
+<%- include('../../partials/admin/header.ejs') %>
+<%- include('../../partials/admin/sidebar.ejs') %>
+
+<main class="admin-content">
+  <section class="content-main">
+    <div class="content-header">
+      <div>
+        <h2 class="content-title card-title">Sales Report</h2>
+        <p>Comprehensive overview of your store's performance.</p>
+      </div>
+      <div>
+        <!-- Client-Side Export Buttons -->
+        <button class="btn btn-danger btn-sm rounded font-sm me-2" onclick="downloadPDF()">
+          <i class="material-icons md-picture_as_pdf"></i> Export PDF
+        </button>
+        <button class="btn btn-success btn-sm rounded font-sm" onclick="downloadExcel()">
+          <i class="material-icons md-grid_on"></i> Export Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card mb-4 shadow-sm border-0">
+      <div class="card-body">
+          <form action="/admin/sales-report" method="GET" class="row gx-3 align-items-end" onsubmit="return validateForm(event)">
+          <div class="col-md-3">
+            <label class="form-label">Date Filter</label>
+            <select name="filterType" id="filterType" class="form-select" onchange="toggleCustomDates()">
+              <option value="daily" <%= filterType === 'daily' ? 'selected' : '' %>>Daily (Today)</option>
+              <option value="weekly" <%= filterType === 'weekly' ? 'selected' : '' %>>Weekly (Last 7 Days)</option>
+              <option value="yearly" <%= filterType === 'yearly' ? 'selected' : '' %>>Yearly (This Year)</option>
+              <option value="custom" <%= filterType === 'custom' ? 'selected' : '' %>>Custom Date Range</option>
+            </select>
+          </div>
+          
+          <div class="col-md-3 custom-date-group" style="display: <%= filterType === 'custom' ? 'block' : 'none' %>">
+            <label class="form-label">Start Date</label>
+            <input type="date" name="startDate" id="startDate" class="form-control" value="<%= startDate %>">
+          </div>
+          <div class="col-md-3 custom-date-group" style="display: <%= filterType === 'custom' ? 'block' : 'none' %>">
+            <label class="form-label">End Date</label>
+            <input type="date" name="endDate" id="endDate" class="form-control" value="<%= endDate %>">
+          </div>
+
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="material-icons md-search"></i> Generate
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="row mb-4">
+      <div class="col-lg-3">
+        <div class="card card-body bg-light border-0 text-center shadow-sm">
+          <h6 class="text-muted mb-2">Order Count</h6>
+          <h3 class="mb-0 text-primary"><%= salesCount %></h3>
+        </div>
+      </div>
+      <div class="col-lg-3">
+        <div class="card card-body bg-light border-0 text-center shadow-sm">
+          <h6 class="text-muted mb-2">Gross Sales (Post-Disc)</h6>
+          <h3 class="mb-0 text-success">₹<%= totalSalesAmount.toFixed(2) %></h3>
+        </div>
+      </div>
+      <div class="col-lg-3">
+        <div class="card card-body bg-light border-0 text-center shadow-sm">
+          <h6 class="text-muted mb-2">Total Returned Amount</h6>
+          <h3 class="mb-0 text-danger">₹<%= totalReturnedAmount.toFixed(2) %></h3>
+        </div>
+      </div>
+      <div class="col-lg-3">
+        <div class="card card-body bg-light border-0 text-center shadow-sm">
+          <h6 class="text-muted mb-2">Net Sales Revenue</h6>
+          <h3 class="mb-0 text-dark">₹<%= finalNetRevenue.toFixed(2) %></h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="salesTable">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Method</th>
+                <th>Amount (Rs)</th>
+                <th>Discount (Rs)</th>
+                <th>Returns (Rs)</th>
+                <th>Net (Rs)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (orders && orders.length > 0) { %>
+                <% orders.forEach(order => { 
+                   let amt = order.totalAmount || 0;
+                   let disc = (order.discountAmount || order.discount || 0);
+                   let gross = amt + disc;
+
+                   let returns = 0;
+                   if (order.items && order.items.length > 0) {
+                       order.items.forEach(item => {
+                           if (item.itemStatus === 'Returned') {
+                               returns += (item.finalPricePaid || item.itemTotal || 0);
+                           }
+                       });
+                   }
+                   let net = amt - returns;
+                %>
+                <tr>
+                  <td><%= new Date(order.orderedDate).toLocaleDateString() %></td>
+                  <td><%= order._id.toString().substring(0, 8).toUpperCase() %></td>
+                  <td><%= order.userId ? order.userId.email : 'Guest' %></td>
+                  <td><span class="badge bg-secondary"><%= order.paymentMethod || 'COD' %></span></td>
+                  <td><%= gross.toFixed(2) %></td>
+                  <td class="text-danger">-<%= disc.toFixed(2) %></td>
+                  <td class="text-warning">-<%= returns.toFixed(2) %></td>
+                  <td class="fw-bold text-success"><%= net.toFixed(2) %></td>
+                </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="7" class="text-center py-4 text-muted">No sales found for the selected period.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+  <%- include('../../partials/admin/footer.ejs') %>
+</main>
+
+<!-- CDN Libraries for Export & SweetAlert2 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="/css/sweetalert2.min.css">
+<script src="/js/sweetalert2.all.min.js"></script>
+
+<script>
+  function toggleCustomDates() {
+    const type = document.getElementById('filterType').value;
+    const groups = document.querySelectorAll('.custom-date-group');
+    groups.forEach(el => {
+      el.style.display = type === 'custom' ? 'block' : 'none';
+      if (type !== 'custom') {
+        el.querySelector('input').value = '';
+      }
+    });
+  }
+
+  function validateForm(event) {
+    const type = document.getElementById('filterType').value;
+    if (type === 'custom') {
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+      if (!start || !end) {
+        event.preventDefault();
+        Swal.fire('Validation Error', 'Please select both Start and End dates for custom filtering.', 'warning');
+        return false;
+      }
+      if (new Date(start) > new Date(end)) {
+        event.preventDefault();
+        Swal.fire('Validation Error', 'Start Date cannot be after End Date.', 'warning');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function downloadPDF() {
+    const rawData = <%- JSON.stringify(orders || []).replace(/</g, '\\u003c') %>;
+    
+    if (!rawData || rawData.length === 0) {
+      Swal.fire('No Data', 'No sales data available to export.', 'info');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape'); // Switch to landscape to fit columns beautifully
+    
+    // Header Setup
+    doc.setFontSize(22);
+    doc.setTextColor(4, 110, 102); // Brand color matching the table header
+    doc.text('Sales Report', 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+    doc.text(`Total Orders: <%= salesCount %>`, 14, 36);
+    doc.text(`Gross Sales (Post-Disc): Rs <%= totalSalesAmount.toFixed(2) %>`, 14, 42);
+    doc.text(`Total Returns: Rs <%= totalReturnedAmount.toFixed(2) %>`, 14, 48);
+    doc.text(`Net Revenue: Rs <%= finalNetRevenue.toFixed(2) %>`, 14, 54);
+
+    // Build Table Data
+    const tableBody = rawData.map(order => {
+      let amt = order.totalAmount || 0;
+      let disc = (order.discountAmount || order.discount || 0);
+      let gross = amt + disc;
+      
+      let returns = 0;
+      if (order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+          if (item.itemStatus === 'Returned') {
+            returns += (item.finalPricePaid || item.itemTotal || 0);
+          }
+        });
+      }
+      let net = amt - returns;
+
+      return [
+        new Date(order.orderedDate).toLocaleDateString(),
+        order._id.toString().substring(0, 8).toUpperCase(),
+        order.userId ? (order.userId.email || 'Guest') : 'Guest',
+        order.paymentMethod || 'COD',
+        qtyPurchased.toString(),
+        qtyReturned.toString(),
+        gross.toFixed(2),
+        disc.toFixed(2),
+        returns.toFixed(2),
+        net.toFixed(2)
+      ];
+    });
+
+    doc.autoTable({
+      head: [['Date', 'Order ID', 'Customer', 'Method', 'Qty Purchased', 'Qty Returned', 'Gross', 'Disc', 'Returns', 'Net']],
+      body: tableBody,
+      startY: 56,
+      theme: 'grid',
+      styles: { 
+        fontSize: 10, 
+        cellPadding: 4, 
+        valign: 'middle', 
+        font: 'helvetica' 
+      },
+      headStyles: { 
+        fillColor: [4, 110, 102], 
+        textColor: 255, 
+        fontStyle: 'bold', 
+        halign: 'center' 
+      },
+      columnStyles: {
+        4: { halign: 'center' },
+        5: { halign: 'center' },
+        6: { halign: 'right' },
+        7: { halign: 'right' },
+        8: { halign: 'right', fontStyle: 'bold', textColor: [4, 110, 102] }
+      },
+      alternateRowStyles: { fillColor: [249, 249, 249] },
+      margin: { top: 56, left: 14, right: 14, bottom: 20 }
+    });
+
+    // Add Page Numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(9);
+        doc.setTextColor(150);
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+    }
+
+    doc.save('sales_report.pdf');
+    Swal.fire({
+      toast: true, position: 'top-end', icon: 'success',
+      title: 'PDF Downloaded successfully!', showConfirmButton: false, timer: 3000
+    });
+  }
+
+  function downloadExcel() {
+    const rawData = <%- JSON.stringify(orders || []).replace(/</g, '\\u003c') %>;
+    
+    if (!rawData || rawData.length === 0) {
+      Swal.fire('No Data', 'No sales data available to export.', 'info');
+      return;
+    }
+
+    const excelData = rawData.map(order => {
+      let amt = order.totalAmount || 0;
+      let disc = (order.discountAmount || order.discount || 0);
+      let gross = amt + disc;
+      
+      let qtyPurchased = 0;
+      let qtyReturned = 0;
+      
+      if (order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+          // Count as purchased if it wasn't cancelled
+          if (item.itemStatus !== 'Cancelled') {
+            qtyPurchased += item.quantity;
+          }
+          // Count as returned if it was actually returned
+          if (item.itemStatus === 'Returned') {
+            qtyReturned += item.quantity;
+          }
+        });
+      }
+      
+      let returns = 0;
+      if (order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+          if (item.itemStatus === 'Returned') {
+            returns += (item.finalPricePaid || item.itemTotal || 0);
+          }
+        });
+      }
+      let net = amt - returns;
+
+      return {
+        "Date": new Date(order.orderedDate).toLocaleDateString(),
+        "Order ID": order._id.toString().substring(0, 8).toUpperCase(),
+        "Customer": order.userId ? (order.userId.email || 'Guest') : 'Guest',
+        "Payment Method": order.paymentMethod || 'COD',
+        "Gross Sales (Rs)": gross.toFixed(2),
+        "Discount (Rs)": disc.toFixed(2),
+        "Returns (Rs)": returns.toFixed(2),
+        "Net Revenue (Rs)": net.toFixed(2),
+        "Quantity Purchased": qtyPurchased,
+        "Quantity Returned": qtyReturned
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
+    XLSX.writeFile(wb, 'sales_report.xlsx');
+    
+    Swal.fire({
+      toast: true, position: 'top-end', icon: 'success',
+      title: 'Excel Downloaded successfully!', showConfirmButton: false, timer: 3000
+    });
+  }
+</script>

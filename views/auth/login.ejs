@@ -202,16 +202,23 @@
       });
     })();
 
-      // SweetAlert2 error popup from server-side validation
-      <% if (locals.errors?.length > 0) { %>
-      Swal.fire({
-        icon: 'error',
-        title: 'Login Failed',
-        html: '<%- errors.map(e => e.msg).join("<br>") %>',
-        confirmButtonText: 'Try Again',
-        confirmButtonColor: '#444'
-      });
-      <% } %>
+    // SweetAlert2 error popup from server-side validation
+    <% if (locals.errors?.length > 0) { %>
+    Swal.fire({
+      icon: 'error',
+      title: 'Login Failed',
+      html: '<%- errors.map(e => e.msg).join("<br>") %>',
+      confirmButtonText: 'Try Again',
+      confirmButtonColor: '#444'
+    });
+    <% } %>
+
+    // Prevent going back to login after successful login
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted || (typeof window.performance != 'undefined' && window.performance.navigation.type === 2)) {
+        window.location.reload();
+      }
+    });
   </script>
 </body>
 

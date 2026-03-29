@@ -1,0 +1,121 @@
+<script>
+(function() {
+    function initAjaxFilters() {
+        const productContainer = document.getElementById('shop-main-container');
+        if (!productContainer) return;
+
+        console.log('AJAX Filter Script Initialization...');
+
+        // 1. Link Interceptor (Delegated)
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (!link || !link.href) return;
+
+            // Check if it's a sidebar filter or pagination
+            const isSidebar = link.closest('#sidebar-filters');
+            const isPagination = link.closest('.pagination, .block-27');
+            
+            if (isSidebar || isPagination) {
+                const url = new URL(link.href, window.location.href);
+                const path = url.pathname;
+                
+                // Whitelist paths (strip trailing slash if exists)
+                const cleanPath = path.replace(/\/$/, '') || '/';
+                if (['/shop', '/offers', '/men', '/women'].some(p => cleanPath === p)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Intercepting AJAX Link:', url.href);
+                    handleUpdate(url.href);
+                }
+            }
+        }, true); // Use capture phase to beat other listeners
+
+        // 2. Checkbox Interceptor (Delegated)
+        document.addEventListener('change', function(e) {
+            if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+                const link = e.target.closest('a');
+                if (link && link.href) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Intercepting Checkbox Change:', link.href);
+                    handleUpdate(link.href);
+                }
+            }
+        }, true);
+
+        // 3. Form Interceptor (Delegated)
+        document.addEventListener('submit', function(e) {
+            const form = e.target.closest('form');
+            if (form) {
+                const url = new URL(form.action || window.location.href, window.location.href);
+                const path = url.pathname;
+                
+                const cleanPath = path.replace(/\/$/, '') || '/';
+                if (['/shop', '/offers', '/men', '/women'].some(p => cleanPath === p)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const formData = new FormData(form);
+                    const params = new URLSearchParams();
+                    for (const [key, value] of formData.entries()) {
+                        if (value) params.append(key, value);
+                    }
+                    
+                    const finalUrl = `${path}?${params.toString()}`;
+                    console.log('Intercepting AJAX Form:', finalUrl);
+                    handleUpdate(finalUrl);
+                }
+            }
+        }, true);
+
+        // 4. Sorting Interceptor (Delegated)
+        document.addEventListener('change', function(e) {
+            if (e.target.id === 'sort-dropdown-ajax') {
+                e.preventDefault();
+                e.stopPropagation();
+                handleUpdate(e.target.value);
+            }
+        }, true);
+
+        async function handleUpdate(url) {
+            const ajaxUrl = new URL(url, window.location.href);
+            ajaxUrl.searchParams.set('ajax', 'true');
+
+            // Feedback
+            productContainer.style.opacity = '0.5';
+            productContainer.style.pointerEvents = 'none';
+
+            try {
+                const response = await fetch(ajaxUrl.toString(), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!response.ok) throw new Error('Response error');
+                const html = await response.text();
+                
+                // Update
+                productContainer.innerHTML = html;
+                window.history.pushState({ path: url }, '', url);
+                
+                window.scrollTo({
+                    top: productContainer.offsetTop - 100,
+                    behavior: 'smooth'
+                });
+            } catch (err) {
+                console.error('AJAX Fail:', err);
+                window.location.href = url;
+            } finally {
+                productContainer.style.opacity = '1';
+                productContainer.style.pointerEvents = 'auto';
+            }
+        }
+
+        window.onpopstate = () => window.location.reload();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAjaxFilters);
+    } else {
+        initAjaxFilters();
+    }
+})();
+</script>

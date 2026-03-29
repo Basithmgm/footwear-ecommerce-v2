@@ -30,22 +30,27 @@
     <div id="page">
         <%- include('../partials/navbar-offer-search') %>
 
-            <div class="breadcrumbs">
+            <div class="breadcrumbs" style="padding-bottom: 1em; margin-bottom: 0;">
                 <div class="container">
                     <div class="row">
                         <div class="col">
-                            <p class="bread"><span><a href="/">Home</a></span> / <span>Shopping Cart</span></p>
+                            <p class="bread" style="margin-bottom: 0;"><span><a href="/">Home</a></span> / <span>Shopping Cart</span></p>
                         </div>
                     </div>
                 </div>
             </div>
 
 
-            <div class="colorlib-product cart-container">
+            <div class="colorlib-product cart-container" style="padding-top: 0.5em;">
                 <div class="container">
-                    <div class="row row-pb-lg">
+                    <div class="row mb-2">
+                        <div class="col-sm-8 offset-sm-2 text-center colorlib-heading" style="margin-bottom: 1em;">
+                            <h2>Cart</h2>
+                        </div>
+                    </div>
+                    <div class="row mb-4">
                         <div class="col-md-12">
-                            <div class="product-name d-flex">
+                            <div class="product-name d-flex align-items-center bg-light rounded shadow-sm mb-3 font-weight-bold" style="padding: 15px 0;">
                                 <div class="one-forth text-left px-4">
                                     <span>Product Details</span>
                                 </div>
@@ -65,7 +70,7 @@
 
                             <% if(cartItems && cartItems.length> 0) { %>
                                 <% cartItems.forEach(item=> { %>
-                                    <div class="product-cart d-flex align-items-center" id="row-<%= item._id %>">
+                                    <div class="product-cart d-flex align-items-center border rounded shadow-sm mb-3 bg-white" id="row-<%= item._id %>" style="padding: 10px 0;">
                                         <div class="one-forth">
                                             <div class="product-img"
                                                 style="background-image: url('<%= item.image %>');">
@@ -129,24 +134,54 @@
                     </div>
 
                     <% if(cartItems && cartItems.length> 0) { %>
-                        <div class="row row-pb-lg">
+                        <div class="row mb-3">
                             <div class="col-md-12">
-                                <div class="total-wrap">
+                                <div class="total-wrap p-4 bg-white border rounded shadow-sm mb-4">
                                     <div class="row">
                                         <div class="col-sm-8">
-                                            <form action="#">
-                                                <div class="row form-group">
-                                                    <div class="col-sm-9">
-                                                        <input type="text" name="quantity"
-                                                            class="form-control input-number"
-                                                            placeholder="Your Coupon Number...">
+                                            <h4 class="mb-3">Apply Coupon</h4>
+                                            <% if (appliedCoupon) { %>
+                                                <div class="alert alert-success d-flex justify-content-between align-items-center mb-4 px-3 py-2" style="max-width: 400px;">
+                                                    <div>
+                                                        <strong class="text-success" style="font-size: 16px;"><i class="icon-tag"></i> <%= appliedCoupon.code %></strong> applied!
+                                                        <div class="small font-weight-bold mt-1 text-dark">Discount: - ₹<%= couponDiscountAmount %></div>
                                                     </div>
-                                                    <div class="col-sm-3">
-                                                        <input type="submit" value="Apply Coupon"
-                                                            class="btn btn-primary">
+                                                    <button class="btn btn-sm btn-danger py-1 px-2" onclick="removeCoupon()">Remove</button>
+                                                </div>
+                                            <% } else { %>
+                                                <div class="input-group mb-4" style="max-width: 400px;">
+                                                    <input type="text" class="form-control" id="couponCodeInput" placeholder="Enter coupon code" style="text-transform: uppercase; height: 45px;">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-primary px-3" type="button" onclick="applyCouponInput()" style="height: 45px;">Apply</button>
                                                     </div>
                                                 </div>
-                                            </form>
+                                            <% } %>
+
+                                            <h5 class="mb-3">Available Coupons</h5>
+                                            <% if (typeof activeCoupons !== 'undefined' && activeCoupons.length > 0) { %>
+                                                <div class="row">
+                                                    <% activeCoupons.forEach(coupon => { %>
+                                                        <div class="col-md-6 mb-3">
+                                                            <div class="border p-3 rounded shadow-sm" style="background-color: #fff; border-color: #eee !important;">
+                                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                    <span class="badge badge-success px-2 py-1" style="font-size: 14px; letter-spacing: 1px;"><%= coupon.code %></span>
+                                                                    <% if (!appliedCoupon) { %>
+                                                                    <button class="btn btn-sm btn-outline-primary py-0 px-2 cursor-pointer" style="font-size: 12px; border-width: 2px;" onclick="applyCouponDirect('<%= coupon.code %>')">Apply</button>
+                                                                    <% } %>
+                                                                </div>
+                                                                <div class="text-dark font-weight-bold" style="font-size: 15px;">
+                                                                    Get <%= coupon.discountType === 'Percentage' ? coupon.discountValue + '% OFF' : '₹' + coupon.discountValue + ' OFF' %>
+                                                                </div>
+                                                                <div class="small text-muted mt-1">
+                                                                    On minimum purchase of ₹<%= coupon.minPurchaseAmount %>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    <% }) %>
+                                                </div>
+                                            <% } else { %>
+                                                <p class="text-muted">No coupons available at the moment.</p>
+                                            <% } %>
                                         </div>
                                         <div class="col-sm-4 text-center">
                                             <div class="total">
@@ -155,12 +190,15 @@
                                                                 originalTotal || subtotal %>
                                                         </span></p>
                                                     <p><span>Delivery:</span> <span>₹0.00</span></p>
-                                                    <p><span>Discount:</span> <span id="cart-discount"
+                                                    <p><span>Offer Discount:</span> <span id="cart-discount"
                                                             class="text-success">- ₹<%= totalDiscount || 0 %></span></p>
+                                                    <% if (appliedCoupon) { %>
+                                                    <p><span>Coupon (<%= appliedCoupon.code %>):</span> <span class="text-success font-weight-bold">- ₹<%= couponDiscountAmount %></span></p>
+                                                    <% } %>
                                                 </div>
                                                 <div class="grand-total">
                                                     <p><span><strong>Total:</strong></span> <span id="cart-total">₹<%=
-                                                                subtotal %></span></p>
+                                                                finalTotal || subtotal %></span></p>
                                                 </div>
                                             </div>
                                             <div class="checkout-btn-wrap">
@@ -343,7 +381,59 @@
                             });
                         });
                     });
+
+                    // Coupon Logic
+                    window.applyCouponInput = function() {
+                        const code = $('#couponCodeInput').val().trim();
+                        applyCouponDirect(code);
+                    };
+
+                    window.applyCouponDirect = async function(code) {
+                        if (!code) {
+                            Swal.fire('Warning', 'Please enter a coupon code.', 'warning');
+                            return;
+                        }
+                        try {
+                            const response = await fetch('/checkout/apply-coupon', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ couponCode: code })
+                            });
+                            const resData = await response.json();
+                            if (resData.success) {
+                                Swal.fire({ icon: 'success', title: 'Coupon Applied', text: resData.message, showConfirmButton: false, timer: 1500 });
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                Swal.fire('Error', resData.message, 'error');
+                            }
+                        } catch (err) {
+                            Swal.fire('Error', 'Failed to apply coupon.', 'error');
+                        }
+                    };
+
+                    window.removeCoupon = async function() {
+                        try {
+                            const response = await fetch('/checkout/remove-coupon', { method: 'POST' });
+                            const resData = await response.json();
+                            if (resData.success) {
+                                Swal.fire({ icon: 'success', title: 'Coupon Removed', showConfirmButton: false, timer: 1500 });
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                Swal.fire('Error', resData.message, 'error');
+                            }
+                        } catch (err) {
+                            Swal.fire('Error', 'Failed to remove coupon.', 'error');
+                        }
+                    };
                 </script>
+                <script>
+    // Force a reload if the page is loaded from the Back-Forward Cache (BFCache)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
 </body>
 
 </html>

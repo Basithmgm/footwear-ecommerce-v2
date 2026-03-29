@@ -23,6 +23,10 @@ module.exports = function auth(req, res, next) {
 
   } else {
     // 4. No session at all
+    // Check if it's an AJAX/Fetch request
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes("application/json"))) {
+      return res.status(401).json({ success: false, message: "Session expired. Please login again." });
+    }
     return res.redirect("/login");
   }
 };

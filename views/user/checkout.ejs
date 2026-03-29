@@ -56,11 +56,11 @@
     <div id="page">
         <%- include('../partials/navbar-offer-search') %>
 
-            <div class="breadcrumbs">
+            <div class="breadcrumbs" style="padding-bottom: 1em; margin-bottom: 0;">
                 <div class="container">
                     <div class="row">
                         <div class="col">
-                            <p class="bread"><span><a href="/">Home</a></span> / <span><a href="/cart">Cart</a></span> /
+                            <p class="bread" style="margin-bottom: 0;"><span><a href="/">Home</a></span> / <span><a href="/cart">Cart</a></span> /
                                 <span>Checkout</span>
                             </p>
                         </div>
@@ -68,8 +68,13 @@
                 </div>
             </div>
 
-            <div class="colorlib-product">
+            <div class="colorlib-product" style="padding-top: 2em;">
                 <div class="container">
+                    <div class="row">
+                        <div class="col-sm-8 offset-sm-2 text-center colorlib-heading mb-4" style="margin-bottom: 2em;">
+                            <h2>Checkout</h2>
+                        </div>
+                    </div>
                     <div class="row">
                         <!-- Right Column (Desktop): Order Summary -->
                         <!-- Reordering for mobile: summary usually bottom, but let's stick to standard layout -->
@@ -136,19 +141,76 @@
                                             </div>
                                         </div>
                                         <div class="form-group">
+    <div class="col-md-12">
+        <div class="radio">
+            <label>
+                <input type="radio" name="payment" value="Wallet" <%= walletBalance < total ? 'disabled' : '' %>> 
+                Wallet Balance (₹<%= walletBalance.toFixed(2) %>)
+                <% if(walletBalance < total) { %>
+                    <span class="text-danger small">- Insufficient Balance</span>
+                <% } %>
+            </label>
+        </div>
+    </div>
+</div>
+
+                                        <div class="form-group">
                                             <div class="col-md-12">
                                                 <div class="radio">
-                                                    <label><input type="radio" name="payment" value="Online" disabled>
-                                                        Online Payment (Coming Soon)</label>
+                                                    <label><input type="radio" name="payment" value="Online"> 
+                                                        Online Payment (Razorpay)</label>
                                                 </div>
                                             </div>
                                         </div>
+
+
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="col-lg-4">
+                            <!-- Coupon Application Box -->
+                            <div class="checkout-summary mb-4">
+                                <h3 class="mb-3">Apply Coupon</h3>
+                                <% if (appliedCoupon) { %>
+                                    <div class="alert alert-success d-flex justify-content-between align-items-center mb-0 px-3 py-2">
+                                        <div>
+                                            <strong class="text-success" style="font-size: 16px;"><i class="icon-tag"></i> <%= appliedCoupon.code %></strong> applied!
+                                            <div class="small font-weight-bold mt-1 text-dark">Discount: - ₹<%= couponDiscountAmount %></div>
+                                        </div>
+                                        <button class="btn btn-sm btn-danger py-1 px-2" onclick="removeCoupon()">Remove</button>
+                                    </div>
+                                <% } else { %>
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control" id="couponCodeInput" placeholder="Enter coupon code" style="text-transform: uppercase; height: 45px;">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-primary px-3" type="button" onclick="applyCouponInput()" style="height: 45px;">Apply</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <% if (activeCoupons && activeCoupons.length > 0) { %>
+                                        <h6 class="mt-4 mb-2 text-muted font-weight-bold"><i class="icon-tags"></i> Available Coupons</h6>
+                                        <div style="max-height: 250px; overflow-y: auto; padding-right: 5px;" class="custom-scrollbar">
+                                            <% activeCoupons.forEach(coupon => { %>
+                                                <div class="border p-2 mb-2 rounded shadow-sm" style="background-color: #fff; border-color: #eee !important;">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span class="badge badge-success px-2 py-1" style="font-size: 13px; letter-spacing: 1px;"><%= coupon.code %></span>
+                                                        <button class="btn btn-sm btn-outline-primary py-0 px-2 cursor-pointer" style="font-size: 12px; border-width: 2px;" onclick="applyCouponDirect('<%= coupon.code %>')">Apply</button>
+                                                    </div>
+                                                    <div class="text-dark font-weight-bold mt-2" style="font-size: 14px;">
+                                                        Get <%= coupon.discountType === 'Percentage' ? coupon.discountValue + '% OFF' : '₹' + coupon.discountValue + ' OFF' %>
+                                                    </div>
+                                                    <div class="small text-muted mt-1">
+                                                        On minimum purchase of ₹<%= coupon.minPurchaseAmount %>
+                                                    </div>
+                                                </div>
+                                            <% }) %>
+                                        </div>
+                                    <% } %>
+                                <% } %>
+                            </div>
+
                             <div class="checkout-summary">
                                 <h3>Order Summary</h3>
                                 <div class="d-flex justify-content-between mb-2">
@@ -157,8 +219,14 @@
                                 </div>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Discount</span>
-                                    <span class="text-success">- ₹<%= totalDiscount || 0 %></span>
+                                    <span class="text-success">- ₹<%= (totalDiscount || 0) %></span>
                                 </div>
+                                <% if (couponDiscountAmount > 0) { %>
+                                <div class="d-flex justify-content-between mb-2 font-weight-bold text-success">
+                                    <span>Coupon (<%= appliedCoupon.code %>)</span>
+                                    <span>- ₹<%= couponDiscountAmount %></span>
+                                </div>
+                                <% } %>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Shipping</span>
                                     <span>
@@ -172,7 +240,7 @@
                                 <hr>
                                 <div class="d-flex justify-content-between mb-4">
                                     <span class="font-weight-bold">Total</span>
-                                    <span class="font-weight-bold h5">₹<%= total %></span>
+                                    <span class="font-weight-bold h5" id="cart-total-value">₹<%= total %></span>
                                 </div>
 
                                 <h5>Items</h5>
@@ -276,6 +344,9 @@
     <script src="/js/magnific-popup-options.js"></script>
     <script src="/js/main.js"></script>
 
+    <!-- Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
     <script>
         $(document).ready(function () {
             // Address Selection Highlight
@@ -292,9 +363,6 @@
             $('#addAddressForm').submit(async function (e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                const data = Object.fromEntries(formData.entries()); // Simple serialization
-
-                // Manual JSON construction since FormData entries to JSON might need polyfill or handling
                 const payload = {};
                 formData.forEach((value, key) => payload[key] = value);
 
@@ -319,13 +387,18 @@
                 }
             });
 
-            // Place Order
+            // Place Order (COD / Wallet / Razorpay)
             $('#btn-place-order').click(async function () {
                 const addressId = $('input[name="addressId"]:checked').val();
                 const paymentMethod = $('input[name="payment"]:checked').val();
 
                 if (!addressId) {
                     Swal.fire('Warning', 'Please select a shipping address', 'warning');
+                    return;
+                }
+
+                if (paymentMethod === 'Online') {
+                    startRazorpay(addressId);
                     return;
                 }
 
@@ -351,8 +424,132 @@
                     $(this).prop('disabled', false).text('Place Order');
                 }
             });
+
+            async function startRazorpay(addressId) {
+                try {
+                    const response = await fetch('/checkout/razorpay/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ addressId })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const options = {
+                            key: data.key_id,
+                            amount: data.order.amount,
+                            currency: "INR",
+                            name: "Footwear",
+                            description: "Payment for your order",
+                            order_id: data.order.id,
+                            handler: async function (response) {
+                                try {
+                                    const verifyRes = await fetch('/checkout/razorpay/verify-payment', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            razorpay_order_id: response.razorpay_order_id,
+                                            razorpay_payment_id: response.razorpay_payment_id,
+                                            razorpay_signature: response.razorpay_signature,
+                                            orderId: data.orderId
+                                        })
+                                    });
+                                    const verifyData = await verifyRes.json();
+                                    if (verifyData.success) {
+                                        window.location.href = `/checkout/success/${verifyData.orderId}`;
+                                    } else {
+                                        Swal.fire('Error', verifyData.message, 'error').then(() => {
+                                            window.location.href = '/orders'; // Redirect to orders since order is saved as Pending
+                                        });
+                                    }
+                                } catch (err) {
+                                    Swal.fire('Error', 'Payment verification failed', 'error').then(() => {
+                                        window.location.href = '/orders';
+                                    });
+                                }
+                            },
+                            "modal": {
+                                "ondismiss": function(){
+                                    Swal.fire({
+                                        title: 'Payment Interrupted',
+                                        text: "Your order has been saved as 'Payment Pending'. You can complete the payment later from your order history.",
+                                        icon: 'info',
+                                        confirmButtonText: 'Go to My Orders'
+                                    }).then(() => {
+                                        window.location.href = '/orders';
+                                    });
+                                }
+                            },
+                            prefill: {
+                                name: "<%= user?.full_name || '' %>",
+                                email: "<%= user?.email || '' %>",
+                            },
+                            theme: { color: "#88c8bc" }
+                        };
+                        const rzp1 = new Razorpay(options);
+                        rzp1.open();
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire('Error', 'Failed to initialize Razorpay', 'error');
+                }
+            }
+
+            // Coupon Logic
+            window.applyCouponInput = function() {
+                const code = $('#couponCodeInput').val().trim();
+                applyCouponDirect(code);
+            };
+
+            window.applyCouponDirect = async function(code) {
+                if (!code) {
+                    Swal.fire('Warning', 'Please enter a coupon code.', 'warning');
+                    return;
+                }
+                try {
+                    const response = await fetch('/checkout/apply-coupon', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ couponCode: code })
+                    });
+                    const resData = await response.json();
+                    if (resData.success) {
+                        Swal.fire({ icon: 'success', title: 'Coupon Applied', text: resData.message, showConfirmButton: false, timer: 1500 });
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        Swal.fire('Error', resData.message, 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Failed to apply coupon.', 'error');
+                }
+            };
+
+            window.removeCoupon = async function() {
+                try {
+                    const response = await fetch('/checkout/remove-coupon', { method: 'POST' });
+                    const resData = await response.json();
+                    if (resData.success) {
+                        Swal.fire({ icon: 'success', title: 'Coupon Removed', showConfirmButton: false, timer: 1500 });
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        Swal.fire('Error', resData.message, 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Failed to remove coupon.', 'error');
+                }
+            };
         });
     </script>
+    <script>
+    // Force a reload if the page is loaded from the Back-Forward Cache (BFCache)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
 </body>
 
 </html>

@@ -16,13 +16,18 @@ const bcrypt = require('bcryptjs');
 
 exports.postLogin = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        let { email, password } = req.body;
+
+        // Defensive: trim and lowercase email manually
+        email = email ? email.trim().toLowerCase() : "";
+
+        console.log("DEBUG: Admin Login Attempt for Email:", email);
 
         // Find user by email and populate role
         const user = await User.findOne({ email }).populate('role_id');
+        console.log("DEBUG: Admin Query Result:", user ? `Found (ID: ${user._id}, Role: ${user.role_id?.role_name || "None"})` : "NOT FOUND");
 
         if (!user) {
-            console.log("❌ Admin Login Failed: User not found");
             return res.render('auth/admin/login', {
                 pageTitle: 'Admin Login',
                 error: 'Invalid admin credentials'

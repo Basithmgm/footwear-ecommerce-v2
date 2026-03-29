@@ -1,0 +1,11 @@
+[dotenv@17.2.3] injecting env (16) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+Active Categories: 91
+Categories with valid products count: 5
+Filtered Categories count: 5
+Categories WITH OFFERS count AFTER filtered: 0
+Active Categories with offers (no product filter): 1
+Names of cats with offers: [ 'Sports / Performance' ]
+Categories IDs with offers: [ '6976438bda07065284cfce4d' ]
+Products matched by getOffers query: 1
+ALL products mapped to the category that has an offer:
+Products directly in category Sports / Performance: 0

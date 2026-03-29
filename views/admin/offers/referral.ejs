@@ -1,0 +1,129 @@
+<%- include('../../partials/admin/header.ejs') %>
+<%- include('../../partials/admin/sidebar.ejs') %>
+
+<main class="admin-content">
+  <header class="main-header navbar">
+    <div class="col-search"></div>
+    <div class="col-nav">
+      <ul class="nav">
+        <!-- Optional notifications/actions -->
+      </ul>
+    </div>
+  </header>
+
+  <section class="content-main">
+    <div class="content-header">
+      <div>
+        <h2 class="content-title card-title">Referral Offer Configuration</h2>
+        <p>Set up rewards for users when they invite friends.</p>
+      </div>
+    </div>
+
+    <!-- Feedback messages -->
+    <% if (typeof successMessage !== 'undefined' && successMessage) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= successMessage %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= errorMessage %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+
+    <div class="card mb-4 shadow-sm">
+      <div class="card-body">
+        <form id="referralConfigForm" action="/admin/referral-offer" method="POST">
+          <div class="row gx-4">
+            
+            <!-- Left Column: Toggles and Text Info -->
+            <div class="col-md-5 mb-4 mb-md-0 border-end">
+              <h5 class="mb-4">Status & Details</h5>
+              
+              <div class="mb-4 form-check form-switch p-0">
+                <label class="form-check-label ms-5 fw-bold" for="isActive">Enable Referral Program</label>
+                <input class="form-check-input fs-5 ms-0 mt-0" type="checkbox" id="isActive" name="isActive" <%= referralOffer && referralOffer.isActive ? 'checked' : '' %>>
+                <small class="form-text text-muted d-block ms-5 mt-1">When disabled, no rewards will be issued for new referrers.</small>
+              </div>
+
+              <div class="mb-4">
+                <label for="title" class="form-label fw-bold">Offer Title</label>
+                <input type="text" class="form-control" id="title" name="title" value="<%= referralOffer ? referralOffer.title : 'Refer & Earn' %>" placeholder="e.g. Refer & Earn" required>
+              </div>
+
+              <div class="mb-4">
+                <label for="description" class="form-label fw-bold">Offer Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3" required><%= referralOffer ? referralOffer.description : 'Invite your friends and earn rewards!' %></textarea>
+                <small class="form-text text-muted">This text can be shown to users explaining the benefits.</small>
+              </div>
+            </div>
+
+            <!-- Right Column: Reward Amounts -->
+            <div class="col-md-7 ps-md-4">
+              <h5 class="mb-4">Reward Settings</h5>
+              
+              <div class="row">
+                <div class="col-lg-6 mb-4">
+                  <div class="card bg-light border-0 h-100">
+                    <div class="card-body">
+                      <h6 class="card-title text-primary"><i class="material-icons md-person_add me-2"></i>Referrer Reward</h6>
+                      <p class="text-muted small">Amount credited to the existing user who shared their link.</p>
+                      <div class="input-group mt-3">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" class="form-control" id="referrerReward" name="referrerReward" value="<%= referralOffer ? referralOffer.referrerReward : 100 %>" min="0" step="1" required>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                  <div class="card bg-light border-0 h-100">
+                    <div class="card-body">
+                      <h6 class="card-title text-success"><i class="material-icons md-person me-2"></i>Referee Reward</h6>
+                      <p class="text-muted small">Amount credited to the new user when they sign up.</p>
+                      <div class="input-group mt-3">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" class="form-control" id="refereeReward" name="refereeReward" value="<%= referralOffer ? referralOffer.refereeReward : 50 %>" min="0" step="1" required>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
+                  <i class="material-icons md-save me-2"></i> Save Configuration
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+  <%- include('../../partials/admin/footer.ejs') %>
+  
+  <link rel="stylesheet" href="/css/sweetalert2.min.css">
+  <script src="/js/sweetalert2.all.min.js"></script>
+  <script>
+    document.getElementById('referralConfigForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      Swal.fire({
+        title: 'Save Configuration?',
+        text: "Are you sure you want to apply these referral settings?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#088178',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, save it!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.submit();
+        }
+      });
+    });
+  </script>
+</main>

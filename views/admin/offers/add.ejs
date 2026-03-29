@@ -1,0 +1,122 @@
+<%- include('../../partials/admin/header') %>
+<%- include('../../partials/admin/sidebar', { path: '/admin/offers' }) %>
+
+<main class="admin-content">
+  <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+    <h2 class="h3 mb-0">Create New Offer</h2>
+    <a href="/admin/offers" class="btn btn-outline-secondary">Back to Offers</a>
+  </div>
+
+  <div class="card shadow-sm border-0" style="max-width: 600px;">
+    <div class="card-body p-4">
+      <form id="addOfferForm">
+        <div class="mb-3">
+          <label class="form-label fw-bold">Offer Name</label>
+          <input type="text" class="form-control" name="name" required placeholder="e.g. Summer Sale 2024">
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Discount Type</label>
+            <select class="form-select" name="discountType" id="discountType" required>
+              <option value="Percentage">Percentage (%)</option>
+              <option value="Fixed Amount">Fixed Amount (₹)</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold" id="discountValueLabel">Discount Value (%)</label>
+            <input type="number" class="form-control" name="discountValue" id="discountValue" required min="1" placeholder="e.g. 15">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Expiration Date</label>
+          <input type="date" class="form-control" name="expiresAt" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Offer Type</label>
+          <select class="form-select" name="offerType" id="offerType" required>
+            <option value="">Select Type...</option>
+            <option value="Product">Specific Product Offer</option>
+            <option value="Category">Entire Category Offer</option>
+          </select>
+        </div>
+
+        <!-- Target Container (Dynamically injected below) -->
+        <div class="mb-4" id="targetContainer" style="display: none;">
+          <label class="form-label fw-bold" id="targetLabel">Select Target</label>
+          <select class="form-select" name="targetId" id="targetId" required></select>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Publish Offer</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script>
+  // Pass the raw data from EJS to JavaScript nicely
+  const products = <%- JSON.stringify(products || []) %>;
+  const categories = <%- JSON.stringify(categories || []) %>;
+
+  const typeSelect = document.getElementById('offerType');
+  const targetContainer = document.getElementById('targetContainer');
+  const targetSelect = document.getElementById('targetId');
+  const targetLabel = document.getElementById('targetLabel');
+
+  const discountTypeSelect = document.getElementById('discountType');
+  const discountValueLabel = document.getElementById('discountValueLabel');
+  const discountValueInput = document.getElementById('discountValue');
+
+  discountTypeSelect.addEventListener('change', function() {
+    if (this.value === 'Percentage') {
+      discountValueLabel.innerText = "Discount Value (%)";
+      discountValueInput.max = "99";
+    } else {
+      discountValueLabel.innerText = "Discount Value (₹)";
+      discountValueInput.removeAttribute('max');
+    }
+  });
+
+  // Change dropdowns when Type changes!
+  typeSelect.addEventListener('change', function() {
+    targetSelect.innerHTML = '<option value="">Select...</option>';
+    if (this.value === 'Product') {
+      targetLabel.innerText = "Select Product to Discount";
+      products.forEach(p => targetSelect.insertAdjacentHTML('beforeend', `<option value="${p._id}">${p.productName || p.brand + ' ' + p.model}</option>`));
+      targetContainer.style.display = 'block';
+    } else if (this.value === 'Category') {
+      targetLabel.innerText = "Select Category to Discount";
+      categories.forEach(c => targetSelect.insertAdjacentHTML('beforeend', `<option value="${c._id}">${c.name}</option>`));
+      targetContainer.style.display = 'block';
+    } else {
+      targetContainer.style.display = 'none';
+    }
+  });
+
+  // Handle Form Submission
+  document.getElementById('addOfferForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    // Convert expiresAt to proper Date standard
+    data.expiresAt = new Date(data.expiresAt).toISOString();
+
+    const response = await fetch('/admin/offers/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      Swal.fire('Success!', result.message, 'success').then(() => window.location.href = '/admin/offers');
+    } else {
+      Swal.fire('Error', result.message, 'error');
+    }
+  });
+</script>
+
+<%- include('../../partials/admin/footer') %>

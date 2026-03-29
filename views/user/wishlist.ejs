@@ -74,9 +74,30 @@
                                                 <h3><a href="/product/<%= product._id %>">
                                                         <%= product.productName %>
                                                     </a></h3>
+                                                <p class="mb-0 text-muted" style="font-size: 0.85rem;">Size: <span class="fw-bold"><%= product.wishlistSize %></span></p>
                                         </div>
                                         <div class="one-eight text-center">
-                                            <span class="price">₹<%= product.salePrice %></span>
+                                            <span class="price">
+                                                <% 
+                                                    let finalP = product.discountedPrice || product.salePrice;
+                                                    let oldP = (product.hasOffer) ? product.salePrice : product.regularPrice;
+                                                    let discP = 0;
+                                                    if (product.hasOffer) {
+                                                        discP = product.offerDiscount;
+                                                    } else if (product.salePrice < product.regularPrice) {
+                                                        discP = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100);
+                                                    }
+                                                %>
+                                                <% if (finalP < oldP) { %>
+                                                    <span class="text-danger fw-bold">₹<%= finalP %></span>
+                                                    <span class="text-muted" style="text-decoration: line-through; font-size: 0.8em; display: block;">₹<%= oldP %></span>
+                                                    <% if (discP > 0) { %>
+                                                        <span class="badge bg-success text-white" style="font-size: 0.7em;"><%= discP %>% OFF</span>
+                                                    <% } %>
+                                                <% } else { %>
+                                                    ₹<%= finalP %>
+                                                <% } %>
+                                            </span>
                                         </div>
                                         <div class="one-eight text-center">
                                             <% if (product.totalStock> 0 && product.status === 'Available') { %>
@@ -124,6 +145,14 @@
     <script src="/js/jquery.stellar.min.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/wishlist.js"></script>
+    <script>
+    // Force a reload if the page is loaded from the Back-Forward Cache (BFCache)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
 
 </body>
 

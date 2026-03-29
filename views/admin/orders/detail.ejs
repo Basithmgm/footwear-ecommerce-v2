@@ -61,7 +61,7 @@
                                                                         </h6>
                                                                         <small class="text-muted d-block mb-1">
                                                                             Color: <span class="fw-bold"
-                                                                                style="color: <%= item.variantId %>">
+                                                                                style="color: <%= item.variantId || 'inherit' %>;">
                                                                                 <%= item.variantId %>
                                                                             </span> |
                                                                             Size: <%= item.size %>
@@ -186,6 +186,11 @@
                                     <div><span class="badge <%= badgeClass %> fs-6 px-3 py-2">
                                             <%= order.orderStatus %>
                                         </span></div>
+                                    <% if (order.orderStatus === 'Cancelled' && order.cancelReason) { %>
+                                        <div class="mt-2 text-danger small"><strong>Cancellation Reason:</strong> <%= order.cancelReason %></div>
+                                    <% } else if ((order.orderStatus === 'Return Requested' || order.orderStatus === 'Returned') && order.returnReason) { %>
+                                        <div class="mt-2 text-info small"><strong>Return Reason:</strong> <%= order.returnReason %></div>
+                                    <% } %>
                             </div>
 
                             <% if (order.orderStatus !=='Cancelled' && order.orderStatus !=='Returned' &&
@@ -276,10 +281,29 @@
         </main>
 
         <script>
-            document.getElementById('updateStatusForm')?.addEventListener('submit', function (e) {
+            document.getElementById('updateStatusForm')?.addEventListener('submit', async function (e) {
                 e.preventDefault();
 
                 const status = document.getElementById('statusSelect').value;
+
+                let reason = '';
+                if (status === 'Cancelled' || status === 'Returned') {
+                    const { value: inputReason } = await Swal.fire({
+                        title: `Reason for ${status}`,
+                        input: 'text',
+                        inputLabel: `Please provide a reason for marking this order as ${status}`,
+                        inputPlaceholder: 'Enter reason here...',
+                        showCancelButton: true,
+                        inputValidator: (value) => {
+                            if (!value) {
+                                return 'You need to write something!'
+                            }
+                        }
+                    });
+                    
+                    if (!inputReason) return; // User cancelled the prompt
+                    reason = inputReason;
+                }
 
                 Swal.fire({
                     title: 'Update Status?',
@@ -297,7 +321,7 @@
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
-                                body: JSON.stringify({ status })
+                                body: JSON.stringify({ status, reason })
                             });
 
                             const data = await response.json();

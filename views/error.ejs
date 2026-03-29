@@ -101,6 +101,14 @@
                     <%= locals.homeText || 'Return to Home' %>
                 </a>
     </div>
+    <script>
+    // Force a reload if the page is loaded from the Back-Forward Cache (BFCache)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
 </body>
 
 </html>

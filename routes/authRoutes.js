@@ -38,53 +38,101 @@ router.post("/admin/users/unblock/:id", adminAuth, adminController.unblockUser);
 router.get("/signup", guest, noCache, authController.getSignup);
 router.get("/login", guest, noCache, authController.getLogin);
 router.get("/otp", guest, noCache, authController.getOTPPage);
-router.get("/forgot-password", guest, noCache, authController.getForgotPassword);
+router.get(
+  "/forgot-password",
+  guest,
+  noCache,
+  authController.getForgotPassword,
+);
 
 // Profile routes - USE THE CONTROLLER
-router.get('/profile', auth, noCache, profileController.getProfile);
-router.get('/profile/edit', auth, noCache, profileController.getEditProfile);
+router.get("/profile", auth, noCache, profileController.getProfile);
+router.get("/profile/edit", auth, noCache, profileController.getEditProfile);
 
 // ============================================
 // FORM SUBMISSIONS (POST)
 // ============================================
-router.post("/signup", authController.postSignup);
-router.post("/login", authController.postLogin);
-router.post("/verify-otp", authController.postVerifyOTP);
-router.post("/forgot-password", authController.postForgotPassword);
+router.post("/signup", noCache, authController.postSignup);
+router.post("/login", noCache, authController.postLogin);
+router.post("/verify-otp", noCache, authController.postVerifyOTP);
+router.post("/forgot-password", noCache, authController.postForgotPassword);
 router.post("/logout", authController.logout);
 
 const uploadProfile = require("../config/multer-profile");
 
 // Profile update routes - ADD THESE
-router.get("/profile/change-password", auth, profileController.getChangePassword);
-router.get("/profile/verify-email", auth, profileController.getVerifyEmail);
+router.get(
+  "/profile/change-password",
+  auth,
+  noCache,
+  profileController.getChangePassword,
+);
+router.get(
+  "/profile/verify-email",
+  auth,
+  noCache,
+  profileController.getVerifyEmail,
+);
 
 // Handle file upload
 // Wrapper to handle upload errors gracefully
 const handleProfileUpload = (req, res, next) => {
-    const upload = uploadProfile.single('profileImage');
-    upload(req, res, function (err) {
-        if (err) {
-            console.error("Profile upload error:", err);
-            // Multer errors (limits, file type) or Cloudinary errors
-            return res.redirect('/profile/edit?error=' + encodeURIComponent(err.message));
-        }
-        next();
-    });
+  const upload = uploadProfile.single("profileImage");
+  upload(req, res, function (err) {
+    if (err) {
+      console.error("Profile upload error:", err);
+      // Multer errors (limits, file type) or Cloudinary errors
+      return res.redirect(
+        "/profile/edit?error=" + encodeURIComponent(err.message),
+      );
+    }
+    next();
+  });
 };
 
-router.post("/profile/update", auth, handleProfileUpload, profileController.updateProfile);
+router.post(
+  "/profile/update",
+  auth,
+  handleProfileUpload,
+  profileController.updateProfile,
+);
 router.post("/profile/verify-email", auth, profileController.verifyEmailOTP);
-router.post("/profile/change-password", auth, profileController.changeProfilePassword);
+router.post(
+  "/profile/change-password",
+  auth,
+  profileController.changeProfilePassword,
+);
 
 // Address Management - ADD THESE
-router.get("/profile/address/add", auth, profileController.getAddAddress);
+router.get(
+  "/profile/address/add",
+  auth,
+  noCache,
+  profileController.getAddAddress,
+);
 router.post("/profile/address/add", auth, profileController.postAddAddress);
 
-router.get("/profile/address/edit/:id", auth, profileController.getEditAddress);
-router.post("/profile/address/edit/:id", auth, profileController.postEditAddress);
+router.get(
+  "/profile/address/edit/:id",
+  auth,
+  noCache,
+  profileController.getEditAddress,
+);
+router.post(
+  "/profile/address/edit/:id",
+  auth,
+  profileController.postEditAddress,
+);
 
-router.post("/profile/address/delete/:id", auth, profileController.deleteAddress);
-router.post("/profile/address/set-default/:id", auth, profileController.setDefaultAddress);
+router.post(
+  "/profile/address/delete/:id",
+  auth,
+  profileController.deleteAddress,
+);
+router.post(
+  "/profile/address/set-default/:id",
+  auth,
+  profileController.setDefaultAddress,
+);
 
 module.exports = router;

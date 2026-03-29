@@ -1,0 +1,11 @@
+[dotenv@17.2.3] injecting env (16) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Sports cat ID: new ObjectId('6976438bda07065284cfce4d')
+Subcats of Sports: [
+  'Running',
+  'Training / Gym',
+  'Football/Soccer Cleats',
+  'Basketball',
+  'Tennis',
+  'Cricket/Spikes'
+]
+Products in subcats of Sports: 4

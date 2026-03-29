@@ -41,9 +41,24 @@ const userSchema = new mongoose.Schema({
   last_login_at: {
     type: Date
   },
-  wishlist: [{
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  referredBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product'
+    ref: 'User'
+  },
+  wishlist: [{
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product'
+    },
+    size: {
+      type: String,
+      required: true
+    }
   }]
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

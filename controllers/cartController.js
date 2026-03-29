@@ -1,6 +1,7 @@
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const Coupon = require("../models/Coupon");
 
 const getCart = async (req, res) => {
   try {
@@ -69,12 +70,40 @@ const getCart = async (req, res) => {
       });
     }
 
+    const activeCoupons = await Coupon.find({
+      isActive: true,
+      expiresAt: { $gt: new Date() },
+    });
+
+    let appliedCoupon = req.session.appliedCoupon || null;
+    let couponDiscountAmount = 0;
+
+    if (appliedCoupon) {
+      if (subtotal >= appliedCoupon.minPurchaseAmount) {
+        if (appliedCoupon.discountType === 'Percentage') {
+          couponDiscountAmount = (subtotal * appliedCoupon.discountValue) / 100;
+        } else {
+          couponDiscountAmount = appliedCoupon.discountValue;
+        }
+      } else {
+        req.session.appliedCoupon = null;
+        appliedCoupon = null;
+      }
+    }
+
+    let finalTotal = subtotal - couponDiscountAmount;
+    if (finalTotal < 0) finalTotal = 0;
+
     res.render("user/cart", {
       cartItems,
       subtotal,
+      finalTotal,
       originalTotal,
       totalDiscount,
-      user: req.session.user,
+      activeCoupons,
+      appliedCoupon,
+      couponDiscountAmount,
+      user: req.user,
       pageTitle: "My Cart",
     });
   } catch (error) {
@@ -84,7 +113,7 @@ const getCart = async (req, res) => {
       subtotal: 0,
       originalTotal: 0,
       totalDiscount: 0,
-      user: req.session.user,
+      user: req.user,
       pageTitle: "My Cart",
       error: "Failed to load cart",
     });

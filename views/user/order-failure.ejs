@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= pageTitle %> - Footwear</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <link rel="stylesheet" href="/css/animate.css" />
+    <link rel="stylesheet" href="/css/icomoon.css" />
+    <link rel="stylesheet" href="/css/ionicons.min.css" />
+    <link rel="stylesheet" href="/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+  </head>
+
+  <body>
+    <div class="colorlib-loader"></div>
+    <div id="page">
+      <%- include('../partials/navbar-offer-search') %>
+
+      <div class="colorlib-product">
+        <div class="container">
+          <div class="row row-pb-lg justify-content-center">
+            <div class="col-md-10 text-center">
+              <div class="p-5" style="background: #fdf2f2; border-radius: 10px; border: 1px solid #f8d7da;">
+                <span class="icon mb-4 d-block">
+                  <i class="icon-cross-circle display-3 text-danger"></i>
+                </span>
+                <h2 class="mb-4 text-danger">Payment Failed</h2>
+                <p class="lead mb-5">Something went wrong while processing your payment.</p>
+
+                <div class="row justify-content-center mb-5">
+                  <div
+                    class="col-md-8 text-left bg-white p-4 rounded shadow-sm border"
+                  >
+                    <p class="mb-2"><strong>Possible Reasons:</strong></p>
+                    <ul class="text-muted small">
+                      <li>Transaction was cancelled by the user.</li>
+                      <li>Insufficient funds in your account.</li>
+                      <li>Payment was declined by your bank or Razorpay.</li>
+                      <li>Network timeout or technical glitch.</li>
+                    </ul>
+                    <p class="mt-4 mb-0 text-center">
+                      <strong class="text-dark">Don't worry!</strong> Your cart items are still safe.
+                    </p>
+                  </div>
+                </div>
+
+                <p>
+                  <a href="/checkout" class="btn btn-primary px-4 py-2 mr-2">Retry Payment</a>
+                  <a href="/shop" class="btn btn-outline-secondary px-4 py-2">Continue Shopping</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%- include('../partials/footer') %>
+    </div>
+
+    <div class="gototop js-top">
+      <a href="#" class="js-gotop"><i class="ion-ios-arrow-up"></i></a>
+    </div>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery.easing.1.3.js"></script>
+    <script src="/js/jquery.waypoints.min.js"></script>
+    <script src="/js/jquery.flexslider-min.js"></script>
+    <script src="/js/owl.carousel.min.js"></script>
+    <script src="/js/jquery.magnific-popup.min.js"></script>
+    <script src="/js/magnific-popup-options.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

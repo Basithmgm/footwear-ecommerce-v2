@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const OTP = require('../models/OTP');
 const Address = require('../models/Address');
+const ReferralOffer = require('../models/ReferralOffer');
 const bcrypt = require('bcryptjs');
 const cloudinary = require('../config/cloudinary');
 
@@ -15,16 +16,34 @@ exports.getProfile = async (req, res) => {
     // Fetch addresses from separate collection
     const addresses = await Address.find({ user_id: user._id });
 
-    // Attach addresses to user object for the view to use (preserving existing view logic if possible)
-    // Or pass them separately. Let's pass separately or mocked onto user for minimal view changes if user.addresses was used.
-    // View likely uses `user.addresses`. Let's create a view object.
+    // Auto-generate referral code for existing users if missing
+    if (!user.referralCode && user.email) {
+      const emailPrefix = user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 5).toUpperCase();
+      let newReferralCode = emailPrefix;
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      for (let i = 0; i < 4; i++) {
+        newReferralCode += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      while (await User.findOne({ referralCode: newReferralCode })) {
+        newReferralCode = emailPrefix;
+        for (let i = 0; i < 4; i++) {
+          newReferralCode += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+      }
+      user.referralCode = newReferralCode;
+      await user.save();
+    }
+
     const userView = user.toObject();
     userView.addresses = addresses;
+
+    const referralOffer = await ReferralOffer.findOne();
 
     console.log("ProfileController: Rendering for", user.email);
 
     res.render('profile/display', {
       user: userView,
+      referralOffer,
       success: req.query.success,
       activeMenu: 'profile'
     });

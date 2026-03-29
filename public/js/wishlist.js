@@ -1,12 +1,15 @@
 async function toggleWishlist(productId, btnElement, options = {}) {
-    console.log('toggleWishlist called for product:', productId); // Debug log
+    console.log('toggleWishlist called for product:', productId, 'size:', options.size);
     try {
         const response = await fetch('/wishlist/toggle', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ productId })
+            body: JSON.stringify({ 
+                productId,
+                size: options.size // Now passing size
+            })
         });
 
         console.log('Response status:', response.status); // Debug log
@@ -24,13 +27,26 @@ async function toggleWishlist(productId, btnElement, options = {}) {
             if (btnElement) {
                 const icon = btnElement.querySelector('i');
                 if (data.added) {
-                    btnElement.classList.add('btn-wishlist-active');
+                    btnElement.classList.contains('btn-wishlist-custom') ? 
+                        btnElement.classList.add('btn-wishlist-active') : 
+                        icon.style.color = 'red';
+                    
+                    if (!btnElement.classList.contains('btn-wishlist-custom')) {
+                        icon.className = 'icon-heart';
+                    }
+
                     icon.classList.add('heart-pulse');
                     setTimeout(() => {
                         icon.classList.remove('heart-pulse');
                     }, 400);
                 } else {
-                    btnElement.classList.remove('btn-wishlist-active');
+                    btnElement.classList.contains('btn-wishlist-custom') ? 
+                        btnElement.classList.remove('btn-wishlist-active') : 
+                        icon.style.color = '';
+                    
+                    if (!btnElement.classList.contains('btn-wishlist-custom')) {
+                        icon.className = 'icon-heart-o';
+                    }
                 }
             }
 
@@ -62,10 +78,75 @@ async function toggleWishlist(productId, btnElement, options = {}) {
             toast: true,
             position: 'top-end',
             icon: 'error',
-            title: 'An error occurred while updating wishlist',
+            title: 'An error occurred',
             showConfirmButton: false,
             timer: 2000
         });
+    }
+}
+
+// Function for Shop Page (and others with product grid)
+async function wishlistWithSizeSelection(btn) {
+    const icon = btn.querySelector('i');
+    
+    // If already in wishlist, we remove it immediately
+    if (icon.classList.contains('icon-heart') || btn.classList.contains('btn-wishlist-active')) {
+        const productJson = JSON.parse(btn.getAttribute('data-product-json'));
+        toggleWishlist(productJson._id, btn, { position: 'center' });
+        return;
+    }
+
+    // Otherwise, we ask for size
+    try {
+        const product = JSON.parse(btn.getAttribute('data-product-json'));
+        
+        // Extract unique active sizes
+        let allSizes = [];
+        // Handle both cases: variants as an array (Standard) or single object (Unwound)
+        const variantsArr = Array.isArray(product.variants) ? product.variants : [product.variants];
+        
+        variantsArr.forEach(v => {
+            if (v && v.sizes) {
+                v.sizes.forEach(s => {
+                    if (!s.isBlocked && s.status === 'Active' && s.quantity > 0) {
+                        if (!allSizes.includes(s.size)) allSizes.push(s.size);
+                    }
+                });
+            }
+        });
+        allSizes.sort((a,b) => a-b);
+
+        if (allSizes.length === 0) {
+            Swal.fire('Out of Stock', 'This product has no available sizes.', 'info');
+            return;
+        }
+
+        // Create Size Buttons HTML
+        let sizeHtml = '<div class="d-flex flex-wrap justify-content-center gap-2 mt-3">';
+        allSizes.forEach(size => {
+            sizeHtml += `<button type="button" class="btn btn-outline-primary m-1 swal-size-btn" data-size="${size}">${size}</button>`;
+        });
+        sizeHtml += '</div>';
+
+        Swal.fire({
+            title: 'Select Size',
+            html: sizeHtml,
+            showConfirmButton: false,
+            showCloseButton: true,
+            didOpen: () => {
+                const buttons = Swal.getHtmlContainer().querySelectorAll('.swal-size-btn');
+                buttons.forEach(b => {
+                    b.addEventListener('click', () => {
+                        const selectedSize = b.getAttribute('data-size');
+                        Swal.close();
+                        toggleWishlist(product._id, btn, { size: selectedSize, position: 'center' });
+                    });
+                });
+            }
+        });
+
+    } catch (e) {
+        console.error("Error in size selection:", e);
     }
 }
 
@@ -105,11 +186,22 @@ document.addEventListener('DOMContentLoaded', function (e) {
     if (wishlistBtn) {
         wishlistBtn.addEventListener('click', function (e) {
             e.preventDefault();
+
+            // Enforce Size Selection
+            const activeSize = document.querySelector('.size-box.active');
+            if (!activeSize) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Please select product size',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                return;
+            }
+
             const productId = this.getAttribute('data-product-id');
-            console.log('Wishlist detail button clicked for:', productId);
-            toggleWishlist(productId, this, {
-                position: 'center'
-            });
+            const sizeValue = activeSize.innerText.trim();
+            toggleWishlist(productId, this, { size: sizeValue, position: 'center' });
         });
     }
 

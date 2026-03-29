@@ -1,0 +1,98 @@
+<%- include('../../partials/admin/header.ejs') %>
+<%- include('../../partials/admin/sidebar.ejs') %>
+
+<main class="admin-content">
+  <section class="content-main">
+    <div class="content-header">
+      <div>
+        <h2 class="content-title card-title">Add New Coupon</h2>
+      </div>
+    </div>
+
+
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <form action="/admin/coupons/add" method="POST" id="addCouponForm">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="code" class="form-label">Coupon Code <span class="text-danger">*</span></label>
+              <input type="text" placeholder="e.g. SUMMER15" class="form-control" id="code" name="code" value="<%= oldInput.code || '' %>" required style="text-transform: uppercase;">
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="discountType" class="form-label">Discount Type <span class="text-danger">*</span></label>
+              <select class="form-select" id="discountType" name="discountType" required>
+                <option value="Percentage" <%= oldInput.discountType === 'Percentage' ? 'selected' : '' %>>Percentage (%)</option>
+                <option value="Fixed Amount" <%= oldInput.discountType === 'Fixed Amount' ? 'selected' : '' %>>Fixed Amount (₹)</option>
+              </select>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="discountValue" class="form-label">Discount Value <span class="text-danger">*</span></label>
+              <input type="number" placeholder="e.g. 15" class="form-control" id="discountValue" name="discountValue" value="<%= oldInput.discountValue || '' %>" required min="1">
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="minPurchaseAmount" class="form-label">Minimum Purchase Amount <span class="text-danger">*</span></label>
+              <input type="number" placeholder="e.g. 1000" class="form-control" id="minPurchaseAmount" name="minPurchaseAmount" value="<%= oldInput.minPurchaseAmount || 0 %>" min="0" required>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="expiresAt" class="form-label">Expiration Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="expiresAt" name="expiresAt" value="<%= oldInput.expiresAt || '' %>" required>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="usageLimit" class="form-label">Global Usage Limit (Optional)</label>
+              <input type="number" placeholder="Leave blank for unlimited" class="form-control" id="usageLimit" name="usageLimit" value="<%= oldInput.usageLimit || '' %>" min="1">
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary px-5">Publish Coupon</button>
+            <a href="/admin/coupons" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+  <%- include('../../partials/admin/footer.ejs') %>
+  
+  <link rel="stylesheet" href="/css/sweetalert2.min.css">
+  <script src="/js/sweetalert2.all.min.js"></script>
+  <script>
+    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+      Swal.fire('Error', '<%= errorMessage %>', 'error');
+    <% } %>
+    <% if (typeof successMessage !== 'undefined' && successMessage) { %>
+      Swal.fire('Success', '<%= successMessage %>', 'success');
+    <% } %>
+  </script>
+  <script>
+    // Validation Before Submit
+    document.getElementById('addCouponForm').addEventListener('submit', function(e) {
+      const discountType = document.getElementById('discountType').value;
+      const discountValue = Number(document.getElementById('discountValue').value);
+      const expiresAt = new Date(document.getElementById('expiresAt').value);
+
+      if (discountValue <= 0) {
+        e.preventDefault();
+        Swal.fire('Invalid Input', 'Discount value must be greater than 0.', 'error');
+        return;
+      }
+
+      if (discountType === 'Percentage' && discountValue > 100) {
+        e.preventDefault();
+        Swal.fire('Invalid Input', 'Percentage discount cannot exceed 100%.', 'error');
+        return;
+      }
+
+      if (expiresAt < new Date()) {
+        e.preventDefault();
+        Swal.fire('Invalid Date', 'Expiration date cannot be in the past.', 'error');
+        return;
+      }
+    });
+  </script>
+</main>

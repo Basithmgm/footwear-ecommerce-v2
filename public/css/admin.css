@@ -98,8 +98,8 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: 0.05em;
     color: var(--brand-color);
     text-align: center;
-    margin-bottom: 3rem;
-    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 

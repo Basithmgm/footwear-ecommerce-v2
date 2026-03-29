@@ -88,11 +88,14 @@
                                                     <td>
                                                         <a href="/orders/<%= order._id %>"
                                                             class="btn btn-primary btn-sm mb-1">View Details</a>
+                                                        <% if (order.paymentStatus === 'Pending' && order.paymentMethod === 'Razorpay' && order.orderStatus !== 'Cancelled') { %>
+                                                            <button onclick="retryPayment('<%= order._id %>')" class="btn btn-warning btn-sm mb-1">Retry Payment</button>
+                                                        <% } %>
                                                         <% if (order.orderStatus !=='Cancelled' ) { %>
                                                             <a href="/orders/invoice/<%= order._id %>"
                                                                 class="btn btn-outline-secondary btn-sm mb-1"
                                                                 target="_blank">Download Invoice</a>
-                                                            <% } %>
+                                                        <% } %>
                                                     </td>
                                                 </tr>
                                                 <% }) %>
@@ -153,7 +156,80 @@
     <script src="/js/owl.carousel.min.js"></script>
     <script src="/js/jquery.magnific-popup.min.js"></script>
     <script src="/js/magnific-popup-options.js"></script>
+    <script src="/js/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="/css/sweetalert2.min.css">
+    
+    <!-- Razorpay SDK for Retry -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
     <script src="/js/main.js"></script>
+    <script>
+        async function retryPayment(orderId) {
+            try {
+                const response = await fetch('/checkout/razorpay/retry-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const options = {
+                        key: data.key_id,
+                        amount: data.order.amount,
+                        currency: "INR",
+                        name: "Footwear",
+                        description: "Payment for your order",
+                        order_id: data.order.id,
+                        handler: async function (response) {
+                            const verifyRes = await fetch('/checkout/razorpay/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    orderId: orderId
+                                })
+                            });
+                            const verifyData = await verifyRes.json();
+                            if (verifyData.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Payment Successful',
+                                    text: 'Your payment has been verified.',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => location.reload());
+                            } else {
+                                Swal.fire('Error', verifyData.message, 'error');
+                            }
+                        },
+                        prefill: {
+                            name: "<%= user?.full_name || '' %>",
+                            email: "<%= user?.email || '' %>",
+                        },
+                        theme: { color: "#88c8bc" }
+                    };
+                    const rzp1 = new Razorpay(options);
+                    rzp1.open();
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Failed to initiate retry payment', 'error');
+            }
+        }
+    </script>
+    <script>
+    // Force a reload if the page is loaded from the Back-Forward Cache (BFCache)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
 </body>
 
 </html>
