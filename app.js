@@ -3,6 +3,7 @@ const express = require("express");
 require("dotenv").config();
 
 const sessionMiddleware = require("express-session");
+const passport = require("./config/passport");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 
@@ -41,7 +42,7 @@ app.use(
         "'self'",
         "'unsafe-inline'",
         "https://fonts.googleapis.com", // Google Fonts
-        "https://cdn.jsdelivr.net",     // Bootstrap, etc.
+        "https://cdn.jsdelivr.net", // Bootstrap, etc.
         "https://cdnjs.cloudflare.com", // FontAwesome
       ],
       fontSrc: [
@@ -50,12 +51,7 @@ app.use(
         "https://fonts.gstatic.com",
         "https://cdnjs.cloudflare.com",
       ],
-      imgSrc: [
-        "'self'",
-        "data:",
-        "blob:",
-        "https://res.cloudinary.com",
-      ],
+      imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
       connectSrc: [
         "'self'",
         "https://cdn.jsdelivr.net",
@@ -63,7 +59,11 @@ app.use(
         "https://api.razorpay.com",
         "https://lumberjack-cx.razorpay.com",
       ],
-      frameSrc: ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com"],
+      frameSrc: [
+        "'self'",
+        "https://api.razorpay.com",
+        "https://checkout.razorpay.com",
+      ],
     },
   }),
 );
@@ -84,10 +84,13 @@ app.use(
     }),
     cookie: {
       secure: false, // set true only if using HTTPS
-      // maxAge: null // Session cookie (expires on browser close) by default
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours default persistence
     },
   }),
 );
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // ============================================
 // Make session + flash successMessage available to views
@@ -133,6 +136,32 @@ app.use(async (req, res, next) => {
       req.user = await User.findById(req.session.userId)
         .populate("role_id")
         .select("-password");
+      if (req.user && req.user.status === "Blocked") {
+        // If user is blocked, check if they are an admin
+        const isAdmin = req.user.role_id && req.user.role_id.role_name === "admin";
+        
+        if (!isAdmin) {
+          // If NOT an admin, destroy session safely (Selective logout)
+          console.log(`🚫 BLOCKED USER DETECTED: ${req.user.email} (ID: ${req.session.userId}). Clearing session.`);
+          
+          if (req.session.adminId || req.session.isAdmin) {
+            // IF an admin is also present in the same browser session, ONLY clear the user portion SILENTLY
+            delete req.session.userId;
+            return req.session.save((err) => {
+              if (err) console.error("Session save error on block (silent):", err);
+              // Do NOT redirect, let the admin request proceed to its destination (e.g., /admin/users)
+              return next();
+            });
+          } else {
+            // NORMAL FLOW: If no admin, destroy whole session and redirect to login
+            return req.session.destroy((err) => {
+              if (err) console.error("Session destroy error on block:", err);
+              res.clearCookie("connect.sid"); // Ensure the cookie is cleared
+              return res.redirect("/login?error=blocked");
+            });
+          }
+        }
+      }
       res.locals.user = req.user; // Make available in all views
     } catch (err) {
       console.error("Error fetching user:", err);
@@ -163,17 +192,25 @@ app.use(async (req, res, next) => {
   try {
     // 1. Fetch Active Banners (Wrapped)
     try {
-      const activeBanners = await Banner.find({ isActive: true }).sort({ order: 1 });
+      const activeBanners = await Banner.find({ isActive: true }).sort({
+        order: 1,
+      });
       res.locals.activeBanners = activeBanners || [];
     } catch (e) {
       console.error("Banner fetch fail:", e);
       res.locals.activeBanners = [];
     }
 
-    // 2. Fetch Banner settings 
+    // 2. Fetch Banner settings
     try {
       const settings = await BannerSetting.find({
-        key: { $in: ["bannerScrollSpeed", "bannerBackgroundColor", "bannerTextColor"] },
+        key: {
+          $in: [
+            "bannerScrollSpeed",
+            "bannerBackgroundColor",
+            "bannerTextColor",
+          ],
+        },
       });
 
       const getSetting = (k, def) => {
@@ -197,23 +234,23 @@ app.use(async (req, res, next) => {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const sessionId = req.sessionID || "guest";
-          
+
           // Step 1: Add session to the set (unique)
           const updateResult = await Analytics.findOneAndUpdate(
             { date: today, visitedSessions: { $ne: sessionId } },
-            { 
+            {
               $addToSet: { visitedSessions: sessionId },
-              $inc: { uniqueVisitors: 1 }
+              $inc: { uniqueVisitors: 1 },
             },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
+            { upsert: true, new: true, setDefaultsOnInsert: true },
           );
         } catch (err) {
           // Silent log
-          if (err.code !== 11000) console.error("Analytics Error (Silent):", err.message);
+          if (err.code !== 11000)
+            console.error("Analytics Error (Silent):", err.message);
         }
       })();
     }
-
   } catch (globalErr) {
     console.error("Critical Global Middleware Error (Handled):", globalErr);
   }
@@ -331,12 +368,17 @@ app.get("/", noCache, async (req, res) => {
 
       // Helper to traverse up the category tree and find the max offer
       const getCategoryOffer = (catId) => {
-        let currentCat = activeCategories.find((c) => c._id.toString() === catId.toString());
+        let currentCat = activeCategories.find(
+          (c) => c._id.toString() === catId.toString(),
+        );
         let maxOffer = 0;
         while (currentCat) {
-          if (currentCat.offerPercentage > maxOffer) maxOffer = currentCat.offerPercentage;
+          if (currentCat.offerPercentage > maxOffer)
+            maxOffer = currentCat.offerPercentage;
           if (currentCat.parentCategory) {
-            currentCat = activeCategories.find((c) => c._id.toString() === currentCat.parentCategory.toString());
+            currentCat = activeCategories.find(
+              (c) => c._id.toString() === currentCat.parentCategory.toString(),
+            );
           } else {
             break;
           }
@@ -344,7 +386,9 @@ app.get("/", noCache, async (req, res) => {
         return maxOffer;
       };
 
-      const categoryOffer = vItem.categoryDoc ? getCategoryOffer(vItem.categoryDoc._id) : 0;
+      const categoryOffer = vItem.categoryDoc
+        ? getCategoryOffer(vItem.categoryDoc._id)
+        : 0;
       const effectiveDiscount = Math.max(productOffer, categoryOffer);
 
       const pObj = {
@@ -352,10 +396,12 @@ app.get("/", noCache, async (req, res) => {
         category: vItem.categoryDoc,
       };
 
-      if (effectiveDiscount > 0) {
+      if (effectiveDiscount > 0 && effectiveDiscount <= 50) {
         pObj.hasOffer = true;
         pObj.offerDiscount = effectiveDiscount;
-        pObj.discountedPrice = Math.round(pObj.salePrice - (pObj.salePrice * effectiveDiscount) / 100);
+        pObj.discountedPrice = Math.round(
+          pObj.salePrice - (pObj.salePrice * effectiveDiscount) / 100,
+        );
       } else {
         pObj.hasOffer = false;
         pObj.discountedPrice = pObj.salePrice;

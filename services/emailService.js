@@ -46,4 +46,39 @@ async function sendOTPEmail(email, otp) {
   }
 }
 
-module.exports = { sendOTPEmail };
+async function sendContactEmail(data) {
+  const { fname, lname, email, subject, message } = data;
+  const adminEmail = "basithkmgm@gmail.com";
+
+  if (isDev) {
+    console.log(`📧 [DEV MODE] Contact form message for ${adminEmail}:`);
+    console.log(`From: ${fname} ${lname} <${email}>`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Message: ${message}`);
+    return;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Footwear Contact" <${process.env.EMAIL_USER}>`,
+      to: adminEmail,
+      replyTo: email,
+      subject: `Contact Form: ${subject}`,
+      html: `
+        <h3>New Contact Form Message</h3>
+        <p><strong>Name:</strong> ${fname} ${lname}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message.replace(/\n/g, "<br>")}</p>
+      `,
+    });
+
+    console.log("✅ Contact email sent to admin:", adminEmail);
+  } catch (err) {
+    console.error("❌ Email send failed:", err);
+    throw new Error("Failed to send contact email");
+  }
+}
+
+module.exports = { sendOTPEmail, sendContactEmail };

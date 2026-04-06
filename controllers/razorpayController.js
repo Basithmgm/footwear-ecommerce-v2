@@ -17,25 +17,50 @@ const createOrder = async (req, res) => {
     const userId = req.session.userId || req.user?._id;
     const { addressId } = req.body;
 
-    if (!addressId) {
-      return res.status(400).json({ success: false, message: "Please select an address" });
-    }
-
-    const cart = await Cart.findOne({ userId }).populate("items.productId");
-    if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ success: false, message: "Cart is empty" });
-    }
-
     const address = await Address.findById(addressId);
     if (!address) {
       return res.status(400).json({ success: false, message: "Invalid address" });
     }
 
+    // ISOLATION: Priority Filter
+    const virtualItem = req.session.buyNowItem;
+    const buyNowCartItem = req.session.buyNowItemId;
+    let cart = null;
+    let filteredCartItems = [];
     let subtotal = 0;
+
+    if (virtualItem) {
+        // Virtual checkout: Mocking a cart item structure
+        filteredCartItems = [{
+            productId: { _id: virtualItem.productId },
+            variantId: virtualItem.variantId,
+            size: virtualItem.size,
+            quantity: virtualItem.quantity,
+            price: virtualItem.price,
+            productName: virtualItem.productName,
+            image: virtualItem.image
+        }];
+    } else {
+        cart = await Cart.findOne({ userId }).populate("items.productId");
+        if (!cart || cart.items.length === 0) return res.status(400).json({ success: false, message: "Cart empty" });
+
+        if (buyNowCartItem) {
+            filteredCartItems = cart.items.filter(item => 
+                item.productId && 
+                item.productId._id.toString() === buyNowCartItem.productId &&
+                item.variantId === buyNowCartItem.variantId &&
+                item.size.toString() === buyNowCartItem.size.toString()
+            );
+        } else {
+            // Standard: Use all items in cart
+            filteredCartItems = cart.items;
+        }
+    }
+
     const orderItems = [];
 
     // Validations & Stock Reservation
-    for (const item of cart.items) {
+    for (const item of filteredCartItems) {
       const product = await Product.findById(item.productId._id);
       if (!product || product.isDeleted || product.isBlocked) {
         return res.status(400).json({ success: false, message: `Product ${item.productName} is unavailable` });
@@ -53,7 +78,8 @@ const createOrder = async (req, res) => {
       sizeObj.quantity -= item.quantity;
       await product.save();
 
-      const itemTotal = item.price * item.quantity;
+      const price = item.price; // Use the price from the filtered item (which should have snapshots)
+      const itemTotal = price * item.quantity;
       subtotal += itemTotal;
 
       orderItems.push({
@@ -62,9 +88,9 @@ const createOrder = async (req, res) => {
         variantId: item.variantId,
         size: item.size,
         quantity: item.quantity,
-        price: item.price,
+        price: price,
         itemTotal,
-        finalPricePaid: item.price * item.quantity,
+        finalPricePaid: price * item.quantity,
         image: item.image || (variant.variantImages && variant.variantImages[0]) || "",
         itemStatus: "Ordered"
       });
@@ -78,6 +104,22 @@ const createOrder = async (req, res) => {
         couponDiscountAmount = coupon.discountType === 'Percentage' 
           ? (subtotal * coupon.discountValue) / 100 
           : coupon.discountValue;
+      }
+    }
+    
+    // Proportionally distribute coupon discount across items so returns reflect the actual price paid
+    if (couponDiscountAmount > 0 && subtotal > 0 && orderItems.length > 0) {
+      let allocatedDiscount = 0;
+      for (let i = 0; i < orderItems.length; i++) {
+        const item = orderItems[i];
+        if (i === orderItems.length - 1) {
+          // Last item absorbs any rounding difference to ensure total discount matches exactly
+          item.finalPricePaid = Math.max(0, item.itemTotal - (couponDiscountAmount - allocatedDiscount));
+        } else {
+          const itemProportionalDiscount = Math.round((item.itemTotal / subtotal) * couponDiscountAmount);
+          item.finalPricePaid = Math.max(0, item.itemTotal - itemProportionalDiscount);
+          allocatedDiscount += itemProportionalDiscount;
+        }
       }
     }
 
@@ -115,6 +157,7 @@ const createOrder = async (req, res) => {
     });
 
     await newOrder.save();
+    req.session.pendingOrderId = newOrder._id; // Store for stock recovery on failure
 
     res.json({ 
       success: true, 
@@ -132,31 +175,51 @@ const createOrder = async (req, res) => {
 const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
-    const userId = req.session.userId || req.user?._id;
+    const userId = req.session.userId || (req.user ? req.user._id : null);
 
     const hmac = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
     hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
     const generatedSignature = hmac.digest("hex");
 
+    console.log("--- Razorpay Signature Verification Started ---");
+    console.log("Order ID Context:", orderId);
+    console.log("Received Signature:", razorpay_signature);
+    console.log("Generated Signature:", generatedSignature);
+
     if (generatedSignature !== razorpay_signature) {
+      console.error("❌ Razorpay Signature Mismatch! Verification Failed.");
       return res.status(400).json({ success: false, message: "Payment verification failed" });
     }
+
+    console.log("✅ Razorpay Signature Matched. Updating order records...");
 
     // Find and Update existing order
     const order = await Order.findById(orderId);
     if (!order) {
+      console.error("❌ Order not found in DB:", orderId);
       return res.status(404).json({ success: false, message: "Order records not found" });
     }
 
-    order.paymentStatus = "Completed";
-    order.orderStatus = "Ordered";
+    // Update order status
+    order.paymentStatus = "Paid";
+    order.orderStatus = "Ordered"; // Success status
     await order.save();
+    console.log("✅ Order Status Updated to 'Ordered' and 'Paid'");
 
-    // Clear Cart
+    // SELECTIVE REMOVAL: Only remove successfully purchased items from the DB cart
     const cart = await Cart.findOne({ userId });
     if (cart) {
-      cart.items = [];
-      await cart.save();
+        cart.items = cart.items.filter(cartItem => {
+            const wasPurchased = order.items.some(oItem => 
+                oItem.productId && cartItem.productId && 
+                oItem.productId.toString() === cartItem.productId.toString() &&
+                oItem.variantId === cartItem.variantId &&
+                oItem.size && cartItem.size &&
+                oItem.size.toString() === cartItem.size.toString()
+            );
+            return !wasPurchased;
+        });
+        await cart.save();
     }
 
     // Finalize coupon logic if exists
@@ -167,8 +230,12 @@ const verifyPayment = async (req, res) => {
         dbCoupon.usedBy.push(userId);
         await dbCoupon.save();
       }
-      req.session.appliedCoupon = null;
     }
+
+    // Clear session flags and cleanup
+    delete req.session.buyNowItemId;
+    delete req.session.buyNowItem;
+    req.session.appliedCoupon = null;
 
     res.json({ success: true, orderId: order._id });
   } catch (err) {

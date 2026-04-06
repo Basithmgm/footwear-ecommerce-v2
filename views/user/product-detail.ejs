@@ -567,14 +567,15 @@
             const $mainLink = $('#main-image-link');
             const $thumbContainer = $('#thumbnail-container');
 
-            if (productData.variants && productData.variants.length > 0) {
-                // Group duplicate colors if any (though backend should have unique variants generally, schema allows array)
-                // But usually variants array is distinct by color or combo. Assuming standard structure.
+            // Parse URL parameters for pre-selection (e.g., from Cart)
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramVariant = urlParams.get('variant');
+            const paramSize = urlParams.get('size');
 
+            if (productData.variants && productData.variants.length > 0) {
                 productData.variants.forEach((v, index) => {
-                    // Check if variant has any active sizes
                     const hasActiveSize = v.sizes.some(s => !s.isBlocked && s.status === 'Active');
-                    if (!hasActiveSize) return; // Skip invalid variants
+                    if (!hasActiveSize) return;
 
                     const $thumb = $(`<img src="${v.colorImage}" class="variant-thumb" data-idx="${index}" title="${v.color}">`);
                     $thumb.click(function () {
@@ -583,15 +584,23 @@
                     $colorContainer.append($thumb);
                 });
 
-                // Auto-select first valid variant
-                const firstValidIdx = productData.variants.findIndex(v => v.sizes.some(s => !s.isBlocked && s.status === 'Active'));
-                if (firstValidIdx !== -1) {
-                    selectVariant(firstValidIdx);
+                // Auto-select logic: Priority to URL params, then first valid
+                let selectedIdx = -1;
+                if (paramVariant) {
+                    selectedIdx = productData.variants.findIndex(v => v.color === paramVariant);
+                }
+                
+                if (selectedIdx === -1) {
+                    selectedIdx = productData.variants.findIndex(v => v.sizes.some(s => !s.isBlocked && s.status === 'Active'));
+                }
+
+                if (selectedIdx !== -1) {
+                    selectVariant(selectedIdx, paramSize);
                 }
             }
 
             // --- 3. Variant Selection Logic ---
-            function selectVariant(idx) {
+            function selectVariant(idx, preSelectedSize = null) {
                 currentVariant = productData.variants[idx];
                 selectedColor = currentVariant.color;
                 selectedSize = null; // Reset size on color change
@@ -604,13 +613,14 @@
                 // Update Images
                 updateGallery(currentVariant.variantImages);
 
-                // Render Sizes
-                renderSizes(currentVariant.sizes);
-
-                // Reset Price/Buttons
+                // Reset UI Price/Buttons
                 $('#reg-price').text('');
                 $('#sale-price').text('Select Size');
                 $('#stock-warning').hide();
+                $('#discount-badge').hide();
+
+                // Render Sizes
+                renderSizes(currentVariant.sizes, preSelectedSize);
             }
 
             function updateGallery(images) {
@@ -642,12 +652,17 @@
                 });
             }
 
-            function renderSizes(sizes) {
+            function renderSizes(sizes, preSelectedSize = null) {
                 $sizeContainer.empty();
                 sizes.forEach((s, sIdx) => {
                     if (s.isBlocked || s.status !== 'Active') return; // Skip invalid
 
-                    const $box = $(`<div class="size-box">${s.size}</div>`);
+                    const isPreSelected = preSelectedSize && s.size.toString() === preSelectedSize.toString();
+                    const $box = $(`<div class="size-box ${isPreSelected ? 'active' : ''}">${s.size}</div>`);
+
+                    if (isPreSelected && s.quantity > 0) {
+                        selectSize(s);
+                    }
 
                     // Out of stock logic
                     if (s.quantity <= 0) {
@@ -751,7 +766,8 @@
                     variantColor: selectedColor,
                     size: selectedSize.size,
                     quantity: $('#quantity').val(),
-                    price: selectedSize.salePrice
+                    price: selectedSize.discountedPrice || selectedSize.salePrice,
+                    isBuyNow: true
                 };
 
                 try {
@@ -805,7 +821,7 @@
                     variantColor: selectedColor,
                     size: selectedSize.size,
                     quantity: $('#quantity').val(),
-                    price: selectedSize.salePrice
+                    price: selectedSize.discountedPrice || selectedSize.salePrice
                 };
 
                 try {

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const passport = require("passport");
 const authController = require("../controllers/authController");
 const profileController = require("../controllers/profileController");
 const adminController = require("../controllers/adminController");
@@ -43,6 +44,17 @@ router.get(
   guest,
   noCache,
   authController.getForgotPassword,
+);
+
+// Google Auth Routes
+router.get("/auth/google", passport.authenticate("google", { 
+  scope: ["profile", "email", "https://www.googleapis.com/auth/user.phonenumbers.read"],
+  prompt: "select_account"
+}));
+router.get(
+  "/auth/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  authController.googleCallback
 );
 
 // Profile routes - USE THE CONTROLLER

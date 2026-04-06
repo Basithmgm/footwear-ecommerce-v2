@@ -203,6 +203,9 @@
                                                     </div>
                                                     <div class="small text-muted mt-1">
                                                         On minimum purchase of ₹<%= coupon.minPurchaseAmount %>
+                                                        <% if (coupon.discountType === 'Percentage' && coupon.maxDiscountAmount) { %>
+                                                            <br><span class="text-info font-weight-bold">Max Discount: ₹<%= coupon.maxDiscountAmount %></span>
+                                                        <% } %>
                                                     </div>
                                                 </div>
                                             <% }) %>
@@ -256,6 +259,9 @@
                                                     </div>
                                                     <div class="small text-muted">Size: <%= item.size %> | Qty: <%=
                                                                 item.quantity %>
+                                                                <% if (item.discountPercentage > 0) { %>
+                                                                    <span class="badge badge-success px-1 ml-1" style="font-size: 0.7em;"><%= item.discountPercentage %>% OFF</span>
+                                                                <% } %>
                                                     </div>
                                                     <% if(item.stockStatus !=='Available' ) { %>
                                                         <div class="text-danger small font-weight-bold">
@@ -426,6 +432,8 @@
             });
 
             async function startRazorpay(addressId) {
+                // Reset the capture flag for new attempt
+                window.rzpPaymentCaptured = false; 
                 try {
                     const response = await fetch('/checkout/razorpay/create-order', {
                         method: 'POST',
@@ -443,6 +451,8 @@
                             description: "Payment for your order",
                             order_id: data.order.id,
                             handler: async function (response) {
+                                // Safeguard: Mark payment as captured so ondismiss doesn't trigger failure redirect
+                                window.rzpPaymentCaptured = true; 
                                 try {
                                     const verifyRes = await fetch('/checkout/razorpay/verify-payment', {
                                         method: 'POST',
@@ -458,26 +468,23 @@
                                     if (verifyData.success) {
                                         window.location.href = `/checkout/success/${verifyData.orderId}`;
                                     } else {
-                                        Swal.fire('Error', verifyData.message, 'error').then(() => {
-                                            window.location.href = '/orders'; // Redirect to orders since order is saved as Pending
-                                        });
+                                        window.location.href = '/checkout/failure';
                                     }
                                 } catch (err) {
-                                    Swal.fire('Error', 'Payment verification failed', 'error').then(() => {
-                                        window.location.href = '/orders';
-                                    });
+                                    window.location.href = '/checkout/failure';
                                 }
                             },
                             "modal": {
-                                "ondismiss": function(){
-                                    Swal.fire({
-                                        title: 'Payment Interrupted',
-                                        text: "Your order has been saved as 'Payment Pending'. You can complete the payment later from your order history.",
-                                        icon: 'info',
-                                        confirmButtonText: 'Go to My Orders'
-                                    }).then(() => {
-                                        window.location.href = '/orders';
-                                    });
+                                "ondismiss": async function(){
+                                    // If payment was already captured by the handler, don't redirect to failure
+                                    if (window.rzpPaymentCaptured) return;
+                                    
+                                    try {
+                                        await fetch('/checkout/payment-failed', { method: 'POST' });
+                                    } catch (err) {
+                                        console.error("Failed to notify server of payment failure:", err);
+                                    }
+                                    window.location.href = '/checkout/failure';
                                 }
                             },
                             prefill: {

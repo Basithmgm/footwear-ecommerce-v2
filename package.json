@@ -33,11 +33,18 @@
     "mongoose": "^9.1.2",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "^8.0.4",
     "nodemon": "^3.1.11",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "razorpay": "^2.9.6",
     "resend": "^6.6.0",
     "sweetalert2": "^11.26.17"
+  },
+  "overrides": {
+    "multer-storage-cloudinary": {
+      "cloudinary": "$cloudinary"
+    }
   },
   "devDependencies": {
     "bn.js": "^5.2.3",

@@ -31,6 +31,8 @@
                                 </option>
                                 <option value="Returned" <%=statusFilter==='Returned' ? 'selected' : '' %>>Returned
                                 </option>
+                                <option value="Return Requested" <%=statusFilter==='Return Requested' ? 'selected' : '' %>>Return Requested
+                                </option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -59,7 +61,24 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <% if (orders.length> 0) { %>
+                                <% if (statusFilter === 'Return Requested' && returnItems && returnItems.length > 0) { %>
+                                    <% returnItems.forEach(item => { %>
+                                        <tr>
+                                            <td><small class="text-muted">#<%= item._id.toString().slice(-6).toUpperCase() %></small></td>
+                                            <td><%= new Date(item.orderDate).toLocaleDateString() %></td>
+                                            <td>
+                                                <div class="fw-bold"><%= item.customer %></div>
+                                                <small class="text-muted"><%= item.productName %> (x<%= item.quantity %>)</small>
+                                            </td>
+                                            <td>₹<%= item.total.toFixed(2) %></td>
+                                            <td><span class="badge bg-secondary"><%= item.paymentMethod %></span></td>
+                                            <td><span class="badge bg-warning"><%= item.itemStatus %></span></td>
+                                            <td>
+                                                <a href="/admin/orders/<%= item._id %>" class="btn btn-sm btn-outline-primary">View/Process</a>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else if (orders.length > 0) { %>
                                     <% orders.forEach(order=> { %>
                                         <tr>
                                             <td><small class="text-muted">#<%=
@@ -96,7 +115,8 @@
                                                                         badgeClass='bg-danger text-white' ; %>
                                                                         <% if (order.orderStatus==='Returned' )
                                                                             badgeClass='bg-dark text-white' ; %>
-
+                                                                            <% if (order.orderStatus==='Return Requested' )
+                                                                                badgeClass='bg-info text-white' ; %>
                                                                             <span class="badge <%= badgeClass %>">
                                                                                 <%= order.orderStatus %>
                                                                             </span>
@@ -107,12 +127,12 @@
                                             </td>
                                         </tr>
                                         <% }) %>
-                                            <% } else { %>
-                                                <tr>
-                                                    <td colspan="7" class="text-center py-5 text-muted">No orders found.
-                                                    </td>
-                                                </tr>
-                                                <% } %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5 text-muted">No orders found.
+                                        </td>
+                                    </tr>
+                                <% } %>
                             </tbody>
                         </table>
                     </div>

@@ -203,7 +203,7 @@
         <input type="hidden" name="otp" id="otpHidden" />
 
         <div class="otp-info-row">
-          <div class="otp-timer" id="otpTimer">OTP expires in 05:00</div>
+          <div class="otp-timer" id="otpTimer">OTP expires in 01:00</div>
           <a href="/signup" class="otp-resend disabled" id="resendLink" aria-disabled="true">Resend OTP</a>
         </div>
 
@@ -240,6 +240,25 @@
         input.addEventListener('keydown', function (e) {
           if (e.key === 'Backspace' && !input.value && index > 0) {
             inputs[index - 1].focus();
+          }
+        });
+
+        // Add paste support
+        input.addEventListener('paste', function (e) {
+          const data = e.clipboardData.getData('text');
+          const digits = data.replace(/\D/g, '').split('');
+
+          if (digits.length > 0) {
+            digits.forEach((digit, i) => {
+              if (index + i < inputs.length) {
+                inputs[index + i].value = digit;
+              }
+            });
+
+            // Focus appropriate field
+            const focusIndex = Math.min(index + digits.length - 1, inputs.length - 1);
+            inputs[focusIndex].focus();
+            e.preventDefault();
           }
         });
       });
@@ -325,7 +344,7 @@
     (function () {
       const timerElement = document.getElementById('otpTimer');
       const resendLink = document.getElementById('resendLink');
-      let remaining = 5 * 60; // seconds
+      let remaining = 1 * 60; // seconds
 
       function updateTimer() {
         const minutes = String(Math.floor(remaining / 60)).padStart(2, '0');

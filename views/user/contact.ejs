@@ -58,32 +58,36 @@
           <div class="col-md-6">
             <div class="contact-wrap">
               <h3>Get In Touch</h3>
-              <form action="#" class="contact-form">
+              <form id="contactForm" class="contact-form">
                 <div class="row">
                   <div class="col-md-6">
                     <div class="form-group">
-                      <label for="fname">First Name</label>
-                      <input type="text" id="fname" class="form-control" placeholder="Your firstname">
+                      <label for="fname">First Name <span class="text-danger">*</span></label>
+                      <input type="text" id="fname" name="fname" class="form-control" placeholder="Your firstname">
+                      <small class="error-msg text-danger" id="fname-error"></small>
                     </div>
                   </div>
                   <div class="col-md-6">
                     <div class="form-group">
                       <label for="lname">Last Name</label>
-                      <input type="text" id="lname" class="form-control" placeholder="Your lastname">
+                      <input type="text" id="lname" name="lname" class="form-control" placeholder="Your lastname">
+                      <small class="error-msg text-danger" id="lname-error"></small>
                     </div>
                   </div>
                   <div class="w-100"></div>
                   <div class="col-sm-12">
                     <div class="form-group">
-                      <label for="email">Email</label>
-                      <input type="text" id="email" class="form-control" placeholder="Your email address">
+                      <label for="email">Email <span class="text-danger">*</span></label>
+                      <input type="text" id="email" name="email" class="form-control" placeholder="Your email address">
+                      <small class="error-msg text-danger" id="email-error"></small>
                     </div>
                   </div>
                   <div class="w-100"></div>
                   <div class="col-sm-12">
                     <div class="form-group">
                       <label for="subject">Subject</label>
-                      <input type="text" id="subject" class="form-control" placeholder="Your subject of this message">
+                      <input type="text" id="subject" name="subject" class="form-control" placeholder="Your subject of this message">
+                      <small class="error-msg text-danger" id="subject-error"></small>
                     </div>
                   </div>
                   <div class="w-100"></div>
@@ -91,12 +95,13 @@
                     <div class="form-group">
                       <label for="message">Message</label>
                       <textarea name="message" id="message" cols="30" rows="10" class="form-control" placeholder="Say something about us"></textarea>
+                      <small class="error-msg text-danger" id="message-error"></small>
                     </div>
                   </div>
                   <div class="w-100"></div>
                   <div class="col-sm-12">
                     <div class="form-group">
-                      <input type="button" value="Send Message" class="btn btn-primary" onclick="Swal.fire('Sent!', 'Your message was sent.', 'success')">
+                      <button type="submit" id="submitBtn" class="btn btn-primary">Send Message</button>
                     </div>
                   </div>
                 </div>
@@ -128,6 +133,84 @@
   <script src="/js/jquery.stellar.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="/js/main.js"></script>
+
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      const submitBtn = document.getElementById('submitBtn');
+
+      // Clear previous errors
+      document.querySelectorAll('.error-msg').forEach(el => el.textContent = '');
+      let hasError = false;
+
+      // Simple client-side validation
+      if (!data.fname.trim()) {
+        document.getElementById('fname-error').textContent = 'First name is required.';
+        hasError = true;
+      } else if (data.fname.trim().length < 2) {
+        document.getElementById('fname-error').textContent = 'Minimum 2 characters.';
+        hasError = true;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!data.email.trim()) {
+        document.getElementById('email-error').textContent = 'Email is required.';
+        hasError = true;
+      } else if (!emailRegex.test(data.email)) {
+        document.getElementById('email-error').textContent = 'Enter a valid email.';
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      // Disable button
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+
+      try {
+        const response = await fetch('/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: result.message,
+            timer: 3000,
+            showConfirmButton: false
+          });
+          form.reset();
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: result.message || 'Something went wrong!'
+          });
+        }
+      } catch (error) {
+        console.error('Submission error:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Network error or server unavailable.'
+        });
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Message';
+      }
+    });
+  </script>
 </body>
 
 </html>

@@ -13,6 +13,63 @@
     <link rel="stylesheet" href="/css/bootstrap.min.css" />
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="/css/custom.css" />
+    <style>
+      .success-gradient {
+        background: linear-gradient(135deg, #88c8bc 0%, #4ea898 100%);
+        color: white;
+        padding: 60px 20px;
+        border-radius: 15px 15px 0 0;
+      }
+      .order-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        margin-top: -40px;
+        background: white;
+        overflow: hidden;
+      }
+      .btn-premium {
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+      .btn-premium-primary {
+        background: #88c8bc;
+        border: none;
+        color: white;
+      }
+      .btn-premium-primary:hover {
+        background: #6fb0a5;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(136, 200, 188, 0.4);
+        color: white;
+      }
+      .btn-premium-outline {
+        border: 2px solid #88c8bc;
+        color: #88c8bc;
+        background: transparent;
+      }
+      .btn-premium-outline:hover {
+        background: #88c8bc;
+        color: white;
+        transform: translateY(-2px);
+      }
+      .item-row {
+        padding: 15px 0;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .item-row:last-child {
+        border-bottom: none;
+      }
+      .status-badge {
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      .opacity-75 { opacity: 0.75; }
+    </style>
   </head>
 
   <body>
@@ -20,46 +77,103 @@
     <div id="page">
       <%- include('../partials/navbar-offer-search') %>
 
-      <div class="colorlib-product">
+      <div class="colorlib-product mb-5">
         <div class="container">
-          <div class="row row-pb-lg justify-content-center">
-            <div class="col-md-10 text-center">
-              <div class="p-5" style="background: #f8f9fa; border-radius: 10px">
-                <span class="icon mb-4 d-block">
-                  <i class="icon-check-circle display-3 text-success"></i>
-                </span>
-                <h2 class="mb-4">Thank You!</h2>
-                <p class="lead mb-5">Your order was placed successfully.</p>
+          <div class="row justify-content-center">
+            <div class="col-md-10">
+              <div class="order-card mb-5">
+                <div class="success-gradient text-center">
+                  <div class="icon mb-3 animate-bounce">
+                    <i class="ion-ios-checkmark-circle-outline display-1"></i>
+                  </div>
+                  <h1 class="text-white mb-2 font-weight-bold">Order Confirmed!</h1>
+                  <p class="lead mb-0">Thank you for your purchase, <%= user?.full_name || 'Customer' %>.</p>
+                  <p class="small opacity-75 mt-2">Order ID: #<%= order._id.toString().toUpperCase() %></p>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                  <div class="row mb-5">
+                    <div class="col-md-6 mb-4 mb-md-0">
+                      <h5 class="font-weight-bold mb-3" style="color: #4ea898;">Shipping Details</h5>
+                      <p class="text-dark font-weight-bold mb-1"><%= order.shippingAddress.full_name %></p>
+                      <p class="text-muted mb-1"><%= order.shippingAddress.full_address %></p>
+                      <p class="text-muted mb-1"><%= order.shippingAddress.city %>, <%= order.shippingAddress.state %> <%= order.shippingAddress.zip_code %></p>
+                      <p class="text-muted mb-0">Phone: <%= order.shippingAddress.phone_number %></p>
+                    </div>
+                    <div class="col-md-6 text-md-right">
+                      <h5 class="font-weight-bold mb-3" style="color: #4ea898;">Order Information</h5>
+                      <p class="text-muted mb-1">Date: <%= new Date(order.orderedDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) %></p>
+                      <p class="text-muted mb-1">Payment Method: <span class="text-dark font-weight-bold"><%= order.paymentMethod %></span></p>
+                      <p class="text-muted mb-0">Status: <span class="status-badge badge-success text-white"><%= order.orderStatus %></span></p>
+                    </div>
+                  </div>
 
-                <div class="row justify-content-center mb-5">
-                  <div
-                    class="col-md-8 text-left bg-white p-4 rounded shadow-sm"
-                  >
-                    <p>
-                      <strong>Order ID:</strong>
-                      <%= order._id %>
-                    </p>
-                    <p>
-                      <strong>Total Amount:</strong> ₹<%= order.totalAmount %>
-                    </p>
-                    <p>
-                      <strong>Payment Method:</strong>
-                      <%= order.paymentMethod %>
-                    </p>
-                    <p class="mb-0">
-                      You will receive an email confirmation shortly.
-                    </p>
+                  <div class="order-summary mb-5">
+                    <h5 class="font-weight-bold mb-4" style="color: #4ea898;">Items Summary</h5>
+                    <% order.items.forEach(item => { %>
+                      <div class="item-row d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                          <div class="img-thumbnail border-0 mr-3 shadow-sm" style="width: 80px; height: 80px; background: #f8f9fa; border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            <img src="<%= item.image %>" alt="<%= item.productName %>" style="max-width: 100%; max-height: 100%; object-fit: cover;">
+                          </div>
+                          <div>
+                            <h6 class="mb-0 font-weight-bold"><%= item.productName %></h6>
+                            <p class="small text-muted mb-0">Size: <%= item.size %> | Qty: <%= item.quantity %></p>
+                          </div>
+                        </div>
+                        <div class="text-right">
+                          <span class="font-weight-bold text-dark" style="font-size: 1.1rem;">₹<%= item.finalPricePaid %></span>
+                        </div>
+                      </div>
+                    <% }) %>
+                  </div>
+
+                  <div class="row justify-content-end">
+                    <div class="col-md-5">
+                      <div class="bg-light p-4 rounded-lg">
+                        <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Subtotal</span>
+                          <span class="text-dark">₹<%= (order.totalAmount + (order.discount || 0)).toFixed(2) %></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Discount</span>
+                          <span class="text-success font-weight-bold">- ₹<%= (order.discount || 0).toFixed(2) %></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Shipping Fee</span>
+                          <span class="text-dark font-weight-bold">Free</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                          <h5 class="font-weight-bold mb-0">Total Amount</h5>
+                          <h4 class="font-weight-bold mb-0" style="color: #4ea898;">₹<%= order.totalAmount.toFixed(2) %></h4>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-5 pt-4 text-center border-top">
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                      <a href="/shop" class="btn btn-premium btn-premium-primary mx-2 mb-3">
+                        <i class="icon-shopping-cart mr-1"></i> Continue Shopping
+                      </a>
+                      <a href="/orders/<%= order._id %>" class="btn btn-premium btn-premium-outline mx-2 mb-3">
+                        <i class="icon-eye mr-1"></i> View Order Details
+                      </a>
+                      <a href="/orders/invoice/<%= order._id %>" target="_blank" class="btn btn-premium btn-premium-outline mx-2 mb-3">
+                        <i class="icon-file-text mr-1"></i> Download Invoice
+                      </a>
+                    </div>
                   </div>
                 </div>
-
-                <p>
-                  <a href="/shop" class="btn btn-primary">Continue Shopping</a>
-                  <a
-                    href="/orders/<%= order._id %>"
-                    class="btn btn-outline-primary"
-                    >View Order Details</a
-                  >
-                </p>
+              </div>
+              
+              <div class="text-center">
+                <p class="text-muted">A confirmation email has been sent to your registered email address.</p>
+                <div class="mt-4">
+                  <p class="small text-muted mb-0">Need any assistance? We're here to help!</p>
+                  <a href="/contact" class="text-primary font-weight-bold">Contact Support Team</a>
+                </div>
               </div>
             </div>
           </div>

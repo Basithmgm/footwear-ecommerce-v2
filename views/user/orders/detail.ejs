@@ -171,7 +171,7 @@
                                     <div class="mb-3">
                                         <span class="badge p-2 w-100 
                                         <%= order.orderStatus === 'Delivered' ? 'badge-success' : 
-                                           order.orderStatus === 'Cancelled' ? 'badge-danger' : 
+                                           order.orderStatus === 'Cancelled' || order.orderStatus === 'Payment Failed' ? 'badge-danger' : 
                                            'badge-info' %>">
                                             Status: <%= order.orderStatus %>
                                         </span>
@@ -184,7 +184,7 @@
                                         <% } %>
                                     </div>
                                     <div class="mt-4">
-                                        <% if (order.paymentStatus === 'Pending' && order.paymentMethod === 'Razorpay' && order.orderStatus !== 'Cancelled') { %>
+                                        <% if (order.canRetry) { %>
                                             <button onclick="retryPayment('<%= order._id %>')" class="btn btn-primary btn-block mb-2">Retry Payment</button>
                                         <% } %>
 
@@ -429,9 +429,7 @@
                             });
                             const verifyData = await verifyRes.json();
                             if (verifyData.success) {
-                                Swal.fire('Success', 'Payment completed successfully!', 'success').then(() => {
-                                    location.reload();
-                                });
+                                window.location.href = `/checkout/success/${orderId}`;
                             } else {
                                 Swal.fire('Error', verifyData.message, 'error');
                             }

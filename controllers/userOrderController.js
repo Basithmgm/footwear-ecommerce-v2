@@ -39,10 +39,34 @@ exports.getMyOrders = async (req, res) => {
     }
 
     const totalOrders = await Order.countDocuments(query);
-    const orders = await Order.find(query)
+    const ordersRaw = await Order.find(query)
       .sort({ orderedDate: -1 })
       .skip(skip)
       .limit(limit);
+
+    // DEDUPLICATION: Only the latest pending attempt for the same item set shows "Retry"
+    const seenPendingItemSets = new Set();
+    const orders = ordersRaw.map(order => {
+      const orderObj = order.toObject();
+      let canRetry = (order.paymentStatus === 'Pending' || order.paymentStatus === 'Failed') && 
+                     order.paymentMethod === 'Razorpay' && 
+                     (order.orderStatus === 'Payment Pending' || order.orderStatus === 'Payment Failed');
+      
+      if (canRetry) {
+        // Create unique key for the item set (sorted for consistency)
+        const itemSetKey = order.items.map(item => 
+          `${item.productId}-${item.variantId}-${item.size}-${item.quantity}`
+        ).sort().join('|');
+
+        if (seenPendingItemSets.has(itemSetKey)) {
+          canRetry = false; // Disable if a newer pending one exists for the same intent
+        } else {
+          seenPendingItemSets.add(itemSetKey);
+        }
+      }
+      orderObj.canRetry = canRetry;
+      return orderObj;
+    });
 
     const totalPages = Math.ceil(totalOrders / limit);
 
@@ -67,13 +91,44 @@ exports.getOrderDetails = async (req, res) => {
     const orderId = req.params.id;
     const userId = req.user._id;
 
-    const order = await Order.findOne({ _id: orderId, userId }).populate(
+    const orderRaw = await Order.findOne({ _id: orderId, userId }).populate(
       "items.productId",
     );
 
-    if (!order) {
+    if (!orderRaw) {
       return res.status(404).render("error", { message: "Order not found" });
     }
+
+    const order = orderRaw.toObject();
+    
+    // Check if this is the most recent pending order for these items
+    let canRetry = (order.paymentStatus === 'Pending' || order.paymentStatus === 'Failed') && 
+                   order.paymentMethod === 'Razorpay' && 
+                   (order.orderStatus === 'Payment Pending' || order.orderStatus === 'Payment Failed');
+    if (canRetry) {
+      const itemSetKey = order.items.map(item => 
+        `${item.productId._id || item.productId}-${item.variantId}-${item.size}-${item.quantity}`
+      ).sort().join('|');
+
+      const newerOrder = await Order.findOne({
+        userId,
+        paymentStatus: 'Pending',
+        orderedDate: { $gt: order.orderedDate },
+        items: { $size: order.items.length } // Simple heuristic filter
+      });
+
+      if (newerOrder) {
+        // Double check item set of newer order
+        const newerItemKey = newerOrder.items.map(item => 
+          `${item.productId}-${item.variantId}-${item.size}-${item.quantity}`
+        ).sort().join('|');
+        
+        if (newerItemKey === itemSetKey) {
+            canRetry = false;
+        }
+      }
+    }
+    order.canRetry = canRetry;
 
     res.render("user/orders/detail", {
       pageTitle: "Order Details",
@@ -192,29 +247,6 @@ exports.returnOrder = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Order is not eligible for return" });
-    }
-
-    // Increment Stock on Return
-    for (const item of order.items) {
-      const product = await Product.findById(item.productId);
-      if (product) {
-        const variant = product.variants.find(
-          (v) => v.color === item.variantId,
-        );
-        if (variant) {
-          const sizeObj = variant.sizes.find((s) => s.size == item.size);
-          if (sizeObj) {
-            sizeObj.quantity += item.quantity;
-          }
-        }
-
-        // Recalculate totalStock
-        product.totalStock = product.variants.reduce((acc, v) => {
-          return acc + v.sizes.reduce((sum, s) => sum + s.quantity, 0);
-        }, 0);
-
-        await product.save();
-      }
     }
 
     // We mark as Return Requested so admin can approve/reject
@@ -372,25 +404,6 @@ exports.returnOrderItem = async (req, res) => {
         success: false,
         message: `Item is already ${item.itemStatus}`,
       });
-    }
-
-    // Increment Stock for individual item return
-    const product = await Product.findById(item.productId);
-    if (product) {
-      const variant = product.variants.find((v) => v.color === item.variantId);
-      if (variant) {
-        const sizeObj = variant.sizes.find((s) => s.size == item.size);
-        if (sizeObj) {
-          sizeObj.quantity += item.quantity;
-        }
-      }
-
-      // Recalculate totalStock
-      product.totalStock = product.variants.reduce((acc, v) => {
-        return acc + v.sizes.reduce((sum, s) => sum + s.quantity, 0);
-      }, 0);
-
-      await product.save();
     }
 
     item.itemStatus = "Return Requested";

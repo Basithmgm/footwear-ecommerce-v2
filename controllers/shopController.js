@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const Category = require("../models/Category");
+const Offer = require("../models/Offer");
+const { sendContactEmail } = require("../services/emailService");
 
 const getShop = async (req, res) => {
   try {
@@ -51,16 +53,208 @@ const getShop = async (req, res) => {
       );
     }
 
-    // 2. Base Aggregation Pipeline
-    let pipeline = [
+    // 2. Build matchQuery for basic filters
+    let selectedCategoryName = "";
+    const matchQuery = {
+      isDeleted: false,
+      isBlocked: false,
+      status: { $in: ["Available", "Out of Stock"] },
+      category: { $in: activeCategoryIds },
+    };
+
+    if (category) {
+      const activeCat = activeCategoriesList.find(c => c._id.toString() === category.toString());
+      if (activeCat) {
+        matchQuery.category = activeCat._id;
+        selectedCategoryName = activeCat.name;
+      }
+    }
+
+    // DELETED: matchQuery.gender = genderFilter; 
+    // Gender restriction is already handled by activeCategoryIds filter above.
+
+
+    if (brand) {
+      const brandList = Array.isArray(brand) ? brand : [brand];
+      matchQuery.brand = { $in: brandList };
+    }
+
+    if (color) {
+      const colorList = Array.isArray(color) ? color : [color];
+      matchQuery["variants.color"] = { $in: colorList.map((c) => new RegExp(c, "i")) };
+    }
+
+    if (search) {
+      const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const searchRegex = new RegExp(safeSearch, "i");
+      const matchedCatIds = activeCategoriesList
+        .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+        .map((c) => c._id);
+      matchQuery.$or = [
+        { productName: searchRegex },
+        { description: searchRegex },
+        { brand: searchRegex },
+        { model: searchRegex },
+        { category: { $in: matchedCatIds } },
+        { "variants.color": searchRegex },
+      ];
+    }
+
+    // 3. Define Offer Calculation Stages (to be shared)
+    // 3. Define Offer Calculation Stages (Dynamic Lookup)
+    const now = new Date();
+    const offerCalculationStages = [
       {
-        $match: {
-          isDeleted: false,
-          isBlocked: false,
-          status: { $in: ["Available", "Out of Stock"] },
-          category: { $in: activeCategoryIds },
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "cat0",
         },
       },
+      { $unwind: { path: "$cat0", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "cat0.parentCategory",
+          foreignField: "_id",
+          as: "cat1",
+        },
+      },
+      { $unwind: { path: "$cat1", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "cat1.parentCategory",
+          foreignField: "_id",
+          as: "cat2",
+        },
+      },
+      { $unwind: { path: "$cat2", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "offers",
+          let: { pId: "$_id", c0Id: "$cat0._id", c1Id: "$cat1._id", c2Id: "$cat2._id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$isActive", true] },
+                    { $gt: ["$expiresAt", now] },
+                    {
+                      $or: [
+                        { $and: [
+                            { $eq: ["$targetModel", "Product"] },
+                            { $eq: ["$targetId", "$$pId"] }
+                        ]},
+                        { $and: [
+                            { $eq: ["$targetModel", "Category"] },
+                            { $in: ["$targetId", ["$$c0Id", "$$c1Id", "$$c2Id"]] }
+                        ]}
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "matchedOffers"
+        }
+      },
+      {
+        $addFields: {
+          maxDiscount: {
+            $reduce: {
+              input: "$matchedOffers",
+              initialValue: 0,
+              in: {
+                $let: {
+                  vars: {
+                    currentDisc: {
+                      $cond: [
+                        { $eq: ["$$this.discountType", "Percentage"] },
+                        { $multiply: ["$salePrice", { $divide: ["$$this.discountValue", 100] }] },
+                        "$$this.discountValue"
+                      ]
+                    }
+                  },
+                  in: { $max: ["$$value", "$$currentDisc"] }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          bestOffer: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: "$matchedOffers",
+                  as: "off",
+                  cond: {
+                    $eq: [
+                      {
+                        $cond: [
+                          { $eq: ["$$off.discountType", "Percentage"] },
+                          { $multiply: ["$salePrice", { $divide: ["$$off.discountValue", 100] }] },
+                          "$$off.discountValue"
+                        ]
+                      },
+                      "$maxDiscount"
+                    ]
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }
+      },
+      {
+        $addFields: {
+          bestOfferValue: { $ifNull: ["$bestOffer.discountValue", 0] },
+          bestOfferType: { $ifNull: ["$bestOffer.discountType", "Percentage"] }
+        }
+      },
+      {
+        $addFields: {
+          validDiscount: {
+            $cond: [
+              { $gt: ["$maxDiscount", { $multiply: ["$salePrice", 0.5] }] },
+              0, // Reject if > 50%
+              "$maxDiscount",
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          hasOffer: { 
+            $or: [
+              { $gt: ["$validDiscount", 0] },
+              { $gt: ["$regularPrice", "$salePrice"] }
+            ]
+          },
+          effectivePrice: { $subtract: ["$salePrice", "$validDiscount"] },
+        },
+      },
+    ];
+
+
+    const priceMatchStage = [];
+    if (minPrice || maxPrice) {
+      const priceQuery = { effectivePrice: {} };
+      if (minPrice) priceQuery.effectivePrice.$gte = Number(minPrice);
+      if (maxPrice) priceQuery.effectivePrice.$lte = Number(maxPrice);
+      priceMatchStage.push({ $match: priceQuery });
+    }
+
+    // 4. Count Pipeline (Now includes offer calculation for correct price filtering)
+    const countPipeline = [
+      { $match: matchQuery },
       { $unwind: "$variants" },
       {
         $match: {
@@ -69,91 +263,50 @@ const getShop = async (req, res) => {
           },
         },
       },
+      ...offerCalculationStages,
+      ...priceMatchStage,
+      { $count: "total" },
     ];
 
-    // ... (rest of search/filter pipeline)
-
-    // 3. Search (Update pipeline)
-    if (search) {
-      // Escape regex special characters to prevent errors
-      const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const searchRegex = new RegExp(safeSearch, "i");
-
-      const matchedCats = activeCategoriesList.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()),
-      );
-      const matchedCatIds = matchedCats.map((c) => c._id);
-
-      pipeline.push({
-        $match: {
-          $or: [
-            { productName: searchRegex },
-            { description: searchRegex },
-            { brand: searchRegex },
-            { model: searchRegex },
-            { category: { $in: matchedCatIds } },
-            { "variants.color": searchRegex },
-          ],
-        },
-      });
-    }
-
-    // 4. Filters (Update pipeline)
-    let selectedCategoryName = null;
-    if (category) {
-      const catId = new mongoose.Types.ObjectId(category);
-      pipeline.push({ $match: { category: catId } });
-      const foundCategory = activeCategoriesList.find(
-        (c) => c._id.toString() === category,
-      );
-      if (foundCategory) {
-        selectedCategoryName = foundCategory.name;
-      }
-    }
-
-    if (brand) {
-      const brandList = Array.isArray(brand) ? brand : [brand];
-      pipeline.push({ $match: { brand: { $in: brandList } } });
-    }
-
-    if (color) {
-      const colorList = Array.isArray(color) ? color : [color];
-      pipeline.push({
-        $match: {
-          "variants.color": {
-            $in: colorList.map((c) => new RegExp(c, "i")),
-          },
-        },
-      });
-    }
-
-    if (minPrice || maxPrice) {
-      const priceQuery = {};
-      if (minPrice) priceQuery.$gte = Number(minPrice);
-      if (maxPrice) priceQuery.$lte = Number(maxPrice);
-      pipeline.push({ $match: { salePrice: priceQuery } });
-    }
-
-    // 5. Total Count for Pagination
-    const countPipeline = [...pipeline, { $count: "total" }];
     const countResult = await Product.aggregate(countPipeline);
     const totalProducts = countResult.length > 0 ? countResult[0].total : 0;
     const totalPages = Math.ceil(totalProducts / limit);
+
+    // 5. Main Fetch Pipeline
+    let pipeline = [
+      { $match: matchQuery },
+      { $unwind: "$variants" },
+      {
+        $match: {
+          "variants.sizes": {
+            $elemMatch: { status: "Active", isBlocked: false },
+          },
+        },
+      },
+      ...offerCalculationStages,
+      ...priceMatchStage,
+    ];
 
     // 6. Sort
     let sortOption = { createdAt: -1 };
     switch (sort) {
       case "priceLowHigh":
-        sortOption = { salePrice: 1 };
+        sortOption = { effectivePrice: 1 };
         break;
       case "priceHighLow":
-        sortOption = { salePrice: -1 };
+        sortOption = { effectivePrice: -1 };
         break;
       case "az":
         sortOption = { productName: 1 };
         break;
       case "za":
         sortOption = { productName: -1 };
+        break;
+      case "categoryAZ":
+        sortOption = { "cat0.name": 1 };
+        break;
+      case "categoryZA":
+        sortOption = { "cat0.name": -1 };
         break;
       case "newest":
         sortOption = { createdAt: -1 };
@@ -165,18 +318,8 @@ const getShop = async (req, res) => {
     pipeline.push({ $skip: skip });
     pipeline.push({ $limit: limit });
 
-    // 8. Final Fetch with Category Join
-    pipeline.push({
-      $lookup: {
-        from: "categories",
-        localField: "category",
-        foreignField: "_id",
-        as: "categoryDoc",
-      },
-    });
-    pipeline.push({ $unwind: "$categoryDoc" });
-
     const variantItems = await Product.aggregate(pipeline);
+
 
     // 9. Process sidebar options (Distinct)
     const brands = await Product.distinct("brand", {
@@ -192,76 +335,20 @@ const getShop = async (req, res) => {
     });
 
     // 10. OFFER MATH & FORMATTING
-    const getCategoryOffer = (catId) => {
-      let currentCat = activeCategoriesList.find(
-        (c) => c._id.toString() === catId.toString(),
-      );
-      let bestOffer = { type: "Percentage", value: 0 };
-      
-      while (currentCat) {
-        // Compare based on hypothetical discount on a standard 1000 unit price to find "Better"
-        const currentVal = currentCat.offerValue || 0;
-        const currentType = currentCat.offerType || "Percentage";
-        
-        const bestEquivalent = bestOffer.type === "Percentage" ? bestOffer.value * 10 : bestOffer.value;
-        const currentEquivalent = currentType === "Percentage" ? currentVal * 10 : currentVal;
-
-        if (currentEquivalent > bestEquivalent) {
-          bestOffer = { type: currentType, value: currentVal };
-        }
-
-        if (currentCat.parentCategory) {
-          currentCat = activeCategoriesList.find(
-            (c) => c._id.toString() === currentCat.parentCategory.toString(),
-          );
-        } else {
-          break;
-        }
-      }
-      return bestOffer;
-    };
-
+    // 10. Process Results
     const parsedProducts = variantItems.map((vItem) => {
-      const pOffer = { type: vItem.offerType || "Percentage", value: vItem.offerValue || 0 };
-      const cOffer = vItem.categoryDoc ? getCategoryOffer(vItem.categoryDoc._id) : { type: "Percentage", value: 0 };
-      
-      // Calculate hypothetical prices to find the best one
-      const getPrice = (price, offer) => {
-        if (offer.type === "Percentage") {
-          return price - (price * (offer.value / 100));
-        } else {
-          return Math.max(0, price - offer.value);
-        }
-      };
-
-      const pPrice = getPrice(vItem.salePrice, pOffer);
-      const cPrice = getPrice(vItem.salePrice, cOffer);
-
-      const pObj = {
+      return {
         ...vItem,
-        category: vItem.categoryDoc,
+        category: vItem.cat0,
+        hasOffer: vItem.validDiscount > 0,
+        discountedPrice: Math.round(vItem.effectivePrice),
+        offerType: vItem.bestOfferType,
+        offerValue: vItem.bestOfferValue,
+        offerDiscount: vItem.validDiscount > 0 ? Math.round((vItem.validDiscount / vItem.salePrice) * 100) : 0,
+        status: (vItem.variants.sizes || []).some(s => s.status === "Active" && s.quantity > 0) ? "Available" : "Out of Stock"
       };
-
-      if (pPrice < vItem.salePrice || cPrice < vItem.salePrice) {
-        pObj.hasOffer = true;
-        pObj.discountedPrice = Math.round(Math.min(pPrice, cPrice));
-        
-        // For UI display, determine effective percentage or flat amount
-        if (pPrice <= cPrice) {
-          pObj.offerType = pOffer.type;
-          pObj.offerValue = pOffer.value;
-          pObj.offerDiscount = pOffer.type === "Percentage" ? pOffer.value : Math.round(((vItem.salePrice - pPrice) / vItem.salePrice) * 100);
-        } else {
-          pObj.offerType = cOffer.type;
-          pObj.offerValue = cOffer.value;
-          pObj.offerDiscount = cOffer.type === "Percentage" ? cOffer.value : Math.round(((vItem.salePrice - cPrice) / vItem.salePrice) * 100);
-        }
-      } else {
-        pObj.hasOffer = false;
-        pObj.discountedPrice = vItem.salePrice;
-      }
-      return pObj;
     });
+
 
     const isAjax = req.query.ajax === "true" && req.xhr;
     const viewPath = isAjax ? "partials/_shop_content_wrapper" : "user/shop";
@@ -384,9 +471,14 @@ const getProductDetails = async (req, res) => {
 
       offers.forEach(opt => {
         if (!opt) return;
-        const currentPrice = opt.type === 'Percentage' 
-          ? basePrice - (basePrice * (opt.value / 100))
-          : Math.max(0, basePrice - opt.value);
+        const discount = opt.type === 'Percentage' 
+          ? (basePrice * (opt.value / 100))
+          : opt.value;
+        
+        // Skip if discount > 50%
+        if (discount > basePrice * 0.5) return;
+
+        const currentPrice = basePrice - discount;
         
         if (currentPrice < bestPrice) {
           bestPrice = currentPrice;
@@ -490,75 +582,218 @@ const getOffers = async (req, res) => {
     const { search, sort, category, brand, minPrice, maxPrice, color, gender } =
       req.query;
 
-    let genderFilter = gender || null;
-    // Also check if we can infer from path if this was a redirect, 
-    // though /offers is usually a direct route.
-
-    // 1. Get Categories
-    let activeCategoriesList = await Category.findActiveCategories();
-
-    if (genderFilter) {
-      activeCategoriesList = activeCategoriesList.filter(
-        (c) => c.gender === genderFilter || c.gender === "Unisex",
-      );
-    }
-
+    // 1. Get Active Categories
+    const activeCategoriesList = await Category.findActiveCategories();
     const activeCategoryIds = activeCategoriesList.map((c) => c._id);
 
-    // Filter categories for the sidebar based on product presence (Strict Global Filter)
-    const categoriesInUse = await Product.distinct("category", {
-      category: { $in: activeCategoryIds },
+    const genderFilter = gender || null;
+
+    // 2. Build matchQuery for basic filters
+    let selectedCategoryName = "";
+    const matchQuery = {
       isDeleted: false,
       isBlocked: false,
       status: { $in: ["Available", "Out of Stock"] },
-    });
-    
-    let sidebarCategories = activeCategoriesList.filter((c) =>
-      categoriesInUse.some((inUseId) => inUseId.toString() === c._id.toString()),
-    );
+      category: { $in: activeCategoryIds },
+    };
 
-    // Context-specific refinements
-    if (genderFilter) {
-      // Also hide the top-level gender entry for cleaner look if on a gender page
-      sidebarCategories = sidebarCategories.filter(
-        (c) => !(c.level === 0 && c.gender === genderFilter),
-      );
+    if (category) {
+      const activeCat = activeCategoriesList.find(c => c._id.toString() === category.toString());
+      if (activeCat) {
+          matchQuery.category = activeCat._id;
+          selectedCategoryName = activeCat.name;
+      }
     }
 
-    // Find categories that have offers, AND their children
-    const categoriesWithOffers = activeCategoriesList
-      .filter((cat) => cat.offerPercentage > 0)
-      .map((cat) => cat._id.toString());
+    // DELETED: matchQuery.gender = genderFilter;
+    // Gender restriction is already handled by activeCategoryIds filter above.
 
-    let expandedOfferCatIds = new Set(categoriesWithOffers);
-    activeCategoriesList.forEach((cat) => {
-      if (
-        cat.parentCategory &&
-        categoriesWithOffers.includes(cat.parentCategory.toString())
-      ) {
-        expandedOfferCatIds.add(cat._id.toString());
-      }
-    });
 
-    const categoryOfferObjectIds = Array.from(expandedOfferCatIds).map(
-      (id) => new mongoose.Types.ObjectId(id),
-    );
+    if (brand) {
+      const brandList = Array.isArray(brand) ? brand : [brand];
+      matchQuery.brand = { $in: brandList };
+    }
 
-    // 2. Base Pipeline for Offers
-    let pipeline = [
+    if (color) {
+      const colorList = Array.isArray(color) ? color : [color];
+      matchQuery["variants.color"] = { $in: colorList.map((c) => new RegExp(c, "i")) };
+    }
+
+    if (search) {
+      const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const searchRegex = new RegExp(safeSearch, "i");
+      const matchedCatIds = activeCategoriesList
+        .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+        .map((c) => c._id);
+      matchQuery.$or = [
+        { productName: searchRegex },
+        { description: searchRegex },
+        { brand: searchRegex },
+        { model: searchRegex },
+        { category: { $in: matchedCatIds } },
+        { "variants.color": searchRegex },
+      ];
+    }
+
+    // 4. Define Offer Calculation Stages (Dynamic Lookup)
+    const now = new Date();
+    const offerCalculationStages = [
       {
-        $match: {
-          isDeleted: false,
-          isBlocked: false,
-          status: { $in: ["Available", "Out of Stock"] },
-          category: { $in: activeCategoryIds },
-          $or: [
-            { offerPercentage: { $gt: 0 } },
-            { category: { $in: categoryOfferObjectIds } },
-            { $expr: { $lt: ["$salePrice", "$regularPrice"] } },
-          ],
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "cat0",
         },
       },
+      { $unwind: { path: "$cat0", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "cat0.parentCategory",
+          foreignField: "_id",
+          as: "cat1",
+        },
+      },
+      { $unwind: { path: "$cat1", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "cat1.parentCategory",
+          foreignField: "_id",
+          as: "cat2",
+        },
+      },
+      { $unwind: { path: "$cat2", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "offers",
+          let: { pId: "$_id", c0Id: "$cat0._id", c1Id: "$cat1._id", c2Id: "$cat2._id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$isActive", true] },
+                    { $gt: ["$expiresAt", now] },
+                    {
+                      $or: [
+                        { $and: [
+                            { $eq: ["$targetModel", "Product"] },
+                            { $eq: ["$targetId", "$$pId"] }
+                        ]},
+                        { $and: [
+                            { $eq: ["$targetModel", "Category"] },
+                            { $in: ["$targetId", ["$$c0Id", "$$c1Id", "$$c2Id"]] }
+                        ]}
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "matchedOffers"
+        }
+      },
+      {
+        $addFields: {
+          maxDiscount: {
+            $reduce: {
+              input: "$matchedOffers",
+              initialValue: 0,
+              in: {
+                $let: {
+                  vars: {
+                    currentDisc: {
+                      $cond: [
+                        { $eq: ["$$this.discountType", "Percentage"] },
+                        { $multiply: ["$salePrice", { $divide: ["$$this.discountValue", 100] }] },
+                        "$$this.discountValue"
+                      ]
+                    }
+                  },
+                  in: { $max: ["$$value", "$$currentDisc"] }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          bestOffer: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: "$matchedOffers",
+                  as: "off",
+                  cond: {
+                    $eq: [
+                      {
+                        $cond: [
+                          { $eq: ["$$off.discountType", "Percentage"] },
+                          { $multiply: ["$salePrice", { $divide: ["$$off.discountValue", 100] }] },
+                          "$$off.discountValue"
+                        ]
+                      },
+                      "$maxDiscount"
+                    ]
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }
+      },
+      {
+        $addFields: {
+          bestOfferValue: { $ifNull: ["$bestOffer.discountValue", 0] },
+          bestOfferType: { $ifNull: ["$bestOffer.discountType", "Percentage"] }
+        }
+      },
+      {
+        $addFields: {
+          validDiscount: {
+            $cond: [
+              { $gt: ["$maxDiscount", { $multiply: ["$salePrice", 0.5] }] },
+              0, // Reject if > 50%
+              "$maxDiscount",
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          hasOffer: { 
+            $or: [
+              { $gt: ["$validDiscount", 0] },
+              { $gt: ["$regularPrice", "$salePrice"] }
+            ]
+          },
+          effectivePrice: { $subtract: ["$salePrice", "$validDiscount"] },
+        },
+      },
+    ];
+
+
+    const priceMatchStage = [];
+    if (minPrice || maxPrice) {
+      const priceQuery = { effectivePrice: {} };
+      if (minPrice) priceQuery.effectivePrice.$gte = Number(minPrice);
+      if (maxPrice) priceQuery.effectivePrice.$lte = Number(maxPrice);
+      priceMatchStage.push({ $match: priceQuery });
+    }
+
+    // 4. Offer-Specific Filter Stage
+    // We want products that have either a specialized offer OR a general discount
+    const activeOfferFilterStage = [{ $match: { hasOffer: true } }];
+
+
+    // 5. Count Pipeline
+    const countPipeline = [
+      { $match: matchQuery },
       { $unwind: "$variants" },
       {
         $match: {
@@ -567,75 +802,40 @@ const getOffers = async (req, res) => {
           },
         },
       },
+      ...offerCalculationStages,
+      ...activeOfferFilterStage,
+      ...priceMatchStage,
+      { $count: "total" },
     ];
 
-    // 3. Search
-    if (search) {
-      // Escape regex special characters to prevent errors
-      const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const searchRegex = new RegExp(safeSearch, "i");
-
-      const matchedCats = activeCategoriesList.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()),
-      );
-      const matchedCatIds = matchedCats.map((c) => c._id);
-
-      pipeline.push({
-        $match: {
-          $or: [
-            { productName: searchRegex },
-            { description: searchRegex },
-            { brand: searchRegex },
-            { model: searchRegex },
-            { category: { $in: matchedCatIds } },
-            { "variants.color": searchRegex },
-          ],
-        },
-      });
-    }
-
-    // 4. Filters
-    if (category) {
-      pipeline.push({ $match: { category: new mongoose.Types.ObjectId(category) } });
-    }
-
-    if (brand) {
-      const brandList = Array.isArray(brand) ? brand : [brand];
-      pipeline.push({ $match: { brand: { $in: brandList } } });
-    }
-
-    if (color) {
-      const colorList = Array.isArray(color) ? color : [color];
-      pipeline.push({
-        $match: {
-          "variants.color": {
-            $in: colorList.map((c) => new RegExp(c, "i")),
-          },
-        },
-      });
-    }
-
-    if (minPrice || maxPrice) {
-      const priceQuery = {};
-      if (minPrice) priceQuery.$gte = Number(minPrice);
-      if (maxPrice) priceQuery.$lte = Number(maxPrice);
-      pipeline.push({ $match: { salePrice: priceQuery } });
-    }
-
-    // 5. Total Count
-    const countPipeline = [...pipeline, { $count: "total" }];
     const countResult = await Product.aggregate(countPipeline);
     const totalProducts = countResult.length > 0 ? countResult[0].total : 0;
     const totalPages = Math.ceil(totalProducts / limit);
 
-    // 6. Sort
+    // 6. Products Pipeline
+    let pipeline = [
+      { $match: matchQuery },
+      { $unwind: "$variants" },
+      {
+        $match: {
+          "variants.sizes": {
+            $elemMatch: { status: "Active", isBlocked: false },
+          },
+        },
+      },
+      ...offerCalculationStages,
+      ...activeOfferFilterStage,
+      ...priceMatchStage,
+    ];
+
+    // 7. Sort
     let sortOption = { createdAt: -1 };
     switch (sort) {
       case "priceLowHigh":
-        sortOption = { salePrice: 1 };
+        sortOption = { effectivePrice: 1 };
         break;
       case "priceHighLow":
-        sortOption = { salePrice: -1 };
+        sortOption = { effectivePrice: -1 };
         break;
       case "az":
         sortOption = { productName: 1 };
@@ -643,110 +843,51 @@ const getOffers = async (req, res) => {
       case "za":
         sortOption = { productName: -1 };
         break;
+      case "categoryAZ":
+        sortOption = { "cat0.name": 1 };
+        break;
+      case "categoryZA":
+        sortOption = { "cat0.name": -1 };
+        break;
       case "newest":
         sortOption = { createdAt: -1 };
         break;
     }
     pipeline.push({ $sort: sortOption });
 
-    // 7. Pagination
+    // 8. Pagination
     pipeline.push({ $skip: skip });
     pipeline.push({ $limit: limit });
 
-    // 8. Final Fetch with Category Join
-    pipeline.push({
-      $lookup: {
-        from: "categories",
-        localField: "category",
-        foreignField: "_id",
-        as: "categoryDoc",
-      },
-    });
-    pipeline.push({ $unwind: "$categoryDoc" });
-
     const variantItems = await Product.aggregate(pipeline);
 
-    // Helper for Sidebar Options (Use the base offer query)
+    // 9. Sidebars
     const baseOfferFilter = {
       isDeleted: false,
       isBlocked: false,
       category: { $in: activeCategoryIds },
-      $or: [
-        { offerValue: { $gt: 0 } },
-        { category: { $in: categoryOfferObjectIds } },
-        { $expr: { $lt: ["$salePrice", "$regularPrice"] } },
-      ],
     };
     const brands = await Product.distinct("brand", baseOfferFilter);
     const colors = await Product.distinct("variants.color", baseOfferFilter);
+    
+    // Fetch categories for sidebar in Offers page
+    const categoriesInUse = await Product.distinct("category", baseOfferFilter);
+    let sidebarCategories = activeCategoriesList.filter((c) =>
+      categoriesInUse.some((inUseId) => inUseId.toString() === c._id.toString()),
+    );
 
-    // 9. Process Result with Offer Math
-    const getCategoryOffer = (catId) => {
-      let currentCat = activeCategoriesList.find(
-        (c) => c._id.toString() === catId.toString(),
-      );
-      let bestOffer = { type: "Percentage", value: 0 };
-      
-      while (currentCat) {
-        const currentVal = currentCat.offerValue || 0;
-        const currentType = currentCat.offerType || "Percentage";
-        
-        const bestEquivalent = bestOffer.type === "Percentage" ? bestOffer.value * 10 : bestOffer.value;
-        const currentEquivalent = currentType === "Percentage" ? currentVal * 10 : currentVal;
-
-        if (currentEquivalent > bestEquivalent) {
-          bestOffer = { type: currentType, value: currentVal };
-        }
-
-        if (currentCat.parentCategory) {
-          currentCat = activeCategoriesList.find(
-            (c) => c._id.toString() === currentCat.parentCategory.toString(),
-          );
-        } else {
-          break;
-        }
-      }
-      return bestOffer;
-    };
-
+    // 10. Final Mapping
     const parsedProducts = variantItems.map((vItem) => {
-      const pOffer = { type: vItem.offerType || "Percentage", value: vItem.offerValue || 0 };
-      const cOffer = vItem.categoryDoc ? getCategoryOffer(vItem.categoryDoc._id) : { type: "Percentage", value: 0 };
-      
-      const getPrice = (price, offer) => {
-        if (offer.type === "Percentage") {
-          return price - (price * (offer.value / 100));
-        } else {
-          return Math.max(0, price - offer.value);
-        }
-      };
-
-      const pPrice = getPrice(vItem.salePrice, pOffer);
-      const cPrice = getPrice(vItem.salePrice, cOffer);
-
-      const pObj = {
+      return {
         ...vItem,
-        category: vItem.categoryDoc,
+        category: vItem.cat0,
+        hasOffer: vItem.validDiscount > 0, // FIXED: Only true if specialized offer exists
+        discountedPrice: Math.round(vItem.effectivePrice),
+        offerType: vItem.bestOfferType,
+        offerValue: vItem.bestOfferValue,
+        offerDiscount: vItem.validDiscount > 0 ? Math.round((vItem.validDiscount / vItem.salePrice) * 100) : 0,
+        status: (vItem.variants.sizes || []).some(s => s.status === "Active" && s.quantity > 0) ? "Available" : "Out of Stock"
       };
-
-      if (pPrice < vItem.salePrice || cPrice < vItem.salePrice) {
-        pObj.hasOffer = true;
-        pObj.discountedPrice = Math.round(Math.min(pPrice, cPrice));
-        
-        if (pPrice <= cPrice) {
-          pObj.offerType = pOffer.type;
-          pObj.offerValue = pOffer.value;
-          pObj.offerDiscount = pOffer.type === "Percentage" ? pOffer.value : Math.round(((vItem.salePrice - pPrice) / vItem.salePrice) * 100);
-        } else {
-          pObj.offerType = cOffer.type;
-          pObj.offerValue = cOffer.value;
-          pObj.offerDiscount = cOffer.type === "Percentage" ? cOffer.value : Math.round(((vItem.salePrice - cPrice) / vItem.salePrice) * 100);
-        }
-      } else {
-        pObj.hasOffer = false;
-        pObj.discountedPrice = vItem.salePrice;
-      }
-      return pObj;
     });
 
     const isAjax = req.query.ajax === "true" && req.xhr;
@@ -797,6 +938,7 @@ const getOffers = async (req, res) => {
   }
 };
 
+
 const getAbout = (req, res) => {
   res.render("user/about", {
     pageTitle: "About Us",
@@ -813,10 +955,35 @@ const getContact = (req, res) => {
   });
 };
 
+const postContact = async (req, res) => {
+  try {
+    const { fname, lname, email, subject, message } = req.body;
+
+    // Basic server-side validation (Only First Name and Email are mandatory as per request)
+    if (!fname || !email) {
+      return res.status(400).json({ success: false, message: "First name and Email are required." });
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, message: "Invalid email address." });
+    }
+
+    await sendContactEmail({ fname, lname, email, subject, message });
+
+    res.status(200).json({ success: true, message: "Your message has been sent successfully!" });
+  } catch (error) {
+    console.error("Error in postContact:", error);
+    res.status(500).json({ success: false, message: "Failed to send message. Please try again later." });
+  }
+};
+
 module.exports = {
   getShop,
   getProductDetails,
   getOffers,
   getAbout,
   getContact,
+  postContact,
 };

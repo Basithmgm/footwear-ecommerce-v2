@@ -199,18 +199,24 @@
                                     <div class="mb-3">
                                         <label for="statusSelect" class="form-label">Change Status</label>
                                         <select class="form-select" id="statusSelect" name="status">
-                                            <option value="Ordered" <%=order.orderStatus==='Ordered' ? 'selected' : ''
-                                                %>>Ordered</option>
-                                            <option value="Shipped" <%=order.orderStatus==='Shipped' ? 'selected' : ''
-                                                %>>Shipped</option>
-                                            <option value="Out for Delivery" <%=order.orderStatus==='Out for Delivery'
-                                                ? 'selected' : '' %>>Out for Delivery</option>
-                                            <option value="Delivered" <%=order.orderStatus==='Delivered' ? 'selected'
-                                                : '' %>>Delivered</option>
-                                            <option value="Cancelled" <%=order.orderStatus==='Cancelled' ? 'selected'
-                                                : '' %>>Cancelled</option>
-                                            <option value="Returned" <%=order.orderStatus==='Returned' ? 'selected' : ''
-                                                %>>Returned</option>
+                                            <!-- Logic: Disable options that represent a backward move or are the same as current -->
+                                            <% 
+                                                const priority = {
+                                                    'Ordered': 1,
+                                                    'Shipped': 2,
+                                                    'Out for Delivery': 3,
+                                                    'Delivered': 4,
+                                                    'Cancelled': 5,
+                                                    'Returned': 5
+                                                };
+                                                const currPriority = priority[order.orderStatus] || 0;
+                                            %>
+                                            <option value="Ordered" <%=order.orderStatus==='Ordered' ? 'selected' : '' %> <%= currPriority >= 1 ? 'disabled' : '' %>>Ordered</option>
+                                            <option value="Shipped" <%=order.orderStatus==='Shipped' ? 'selected' : '' %> <%= currPriority >= 2 ? 'disabled' : '' %>>Shipped</option>
+                                            <option value="Out for Delivery" <%=order.orderStatus==='Out for Delivery' ? 'selected' : '' %> <%= currPriority >= 3 ? 'disabled' : '' %>>Out for Delivery</option>
+                                            <option value="Delivered" <%=order.orderStatus==='Delivered' ? 'selected' : '' %> <%= currPriority >= 4 ? 'disabled' : '' %>>Delivered</option>
+                                            <option value="Cancelled" <%=order.orderStatus==='Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                            <option value="Returned" <%=order.orderStatus==='Returned' ? 'selected' : '' %>>Returned</option>
                                         </select>
                                     </div>
                                     <button type="submit" class="btn btn-primary w-100">Update Status</button>

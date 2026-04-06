@@ -58,7 +58,7 @@ router.post("/signup", async (req, res) => {
     await OTP.create({
       email: lowerEmail,
       otp,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      expiresAt: new Date(Date.now() + 1 * 60 * 1000), // 1 minute
     });
 
     // Send OTP email
@@ -88,7 +88,7 @@ router.post("/signup", async (req, res) => {
       success: true,
       message: "OTP sent to your email.",
       email: lowerEmail,
-      expiresIn: 300,
+      expiresIn: 60,
     });
   } catch (error) {
     console.error("Signup error:", error);
@@ -220,7 +220,7 @@ router.post("/resend-otp", async (req, res) => {
     await OTP.create({
       email: lowerEmail,
       otp,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 1 * 60 * 1000),
     });
 
     // Send OTP
@@ -237,7 +237,7 @@ router.post("/resend-otp", async (req, res) => {
     res.json({
       success: true,
       message: "OTP resent to your email",
-      expiresIn: 300,
+      expiresIn: 60,
     });
   } catch (error) {
     console.error("Resend OTP error:", error);
@@ -272,6 +272,14 @@ router.post("/login", async (req, res) => {
       return res
         .status(403)
         .json({ success: false, message: "Please verify your email first." });
+    }
+
+    // Check if blocked using 'status' field enum: ['Active', 'Blocked']
+    if (user.status === "Blocked") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been blocked. Please contact support.",
+      });
     }
 
     // Compare password with bcrypt
@@ -331,12 +339,22 @@ router.get("/user", async (req, res) => {
 
   // If app.js middleware ran, req.user should be there
   if (req.user) {
+    if (req.user.status === "Blocked") {
+      return res
+        .status(403)
+        .json({ success: false, message: "Your account has been blocked." });
+    }
     return res.json({ success: true, user: req.user });
   }
 
   // Fallback if middleware didn't run or failed
   try {
     const user = await User.findById(req.session.userId).select("-password");
+    if (user && user.status === "Blocked") {
+      return res
+        .status(403)
+        .json({ success: false, message: "Your account has been blocked." });
+    }
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, message: "Error fetching user" });

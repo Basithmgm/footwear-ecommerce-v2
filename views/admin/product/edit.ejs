@@ -164,9 +164,9 @@
                                             <!-- Pre-calculate gender/parent/child logic in script or EJS helper if complex, 
                                                  but here we rely on existing categories list and JS to populate. 
                                                  For Edit, we try to pre-select. -->
-                                            <div class="row">
+                                            <div class="row g-3">
                                                 <div class="col-md-4">
-                                                    <label class="form-label small text-muted">Gender</label>
+                                                    <label class="form-label small text-muted mb-1">Gender</label>
                                                     <select class="form-select" id="genderSelect" required>
                                                         <option value="">Select Gender</option>
                                                         <option value="Men" <%=product.category &&
@@ -184,14 +184,13 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label small text-muted">Parent Category</label>
+                                                    <label class="form-label small text-muted mb-1">Parent Category</label>
                                                     <select class="form-select" id="parentCategorySelect" required>
                                                         <option value="">Select Parent Category</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label small text-muted">Child Category
-                                                        (Optional)</label>
+                                                    <label class="form-label small text-muted mb-1">Child Category (Optional)</label>
                                                     <select class="form-select" id="childCategorySelect">
                                                         <option value="">Select Child Category</option>
                                                     </select>
@@ -201,13 +200,12 @@
 
                                         <div class="row mb-4">
                                             <div class="col-md-12">
-                                                <div class="mb-3">
+                                                <div class="mb-0">
                                                     <div class="form-check">
                                                         <input type="checkbox" class="form-check-input" id="isFeatured"
                                                             name="isFeatured" value="true" <%=product.isFeatured
                                                             ? 'checked' : '' %>>
-                                                        <label class="form-check-label" for="isFeatured">Show on
-                                                            Homepage (Featured)</label>
+                                                        <label class="form-check-label" for="isFeatured">Show on Homepage (Featured)</label>
                                                     </div>
                                                 </div>
                                             </div>

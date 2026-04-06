@@ -372,15 +372,16 @@ exports.postLogin = async (req, res) => {
 
     // Remember Me Logic
     if (rememberMe === "true" || rememberMe === true) {
-      // Set session to 24 hours
-      req.session.cookie.maxAge = 24 * 60 * 60 * 1000;
-      // Set a cookie for the email that lasts 24 hours
+      // Set session to 30 days
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+      // Set a cookie for the email that lasts 30 days
       res.cookie("remembered_email", email, {
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
         httpOnly: true,
       });
     } else {
-      req.session.cookie.maxAge = null; // Session cookie (expires on close)
+      // Default persistent session (24 hours) - already set in app.js, but explicitly confirming here
+      req.session.cookie.maxAge = 24 * 60 * 60 * 1000; 
       // Clear the remembered email cookie if not checked
       res.clearCookie("remembered_email");
     }
@@ -601,6 +602,8 @@ exports.postVerifyOTP = async (req, res) => {
 
     // Set session (auto-login after OTP)
     req.session.userId = user._id;
+    // Ensure persistence for auto-login
+    req.session.cookie.maxAge = 24 * 60 * 60 * 1000; 
     // req.session.user => REMOVED
 
     req.session.successMessage =
@@ -641,3 +644,80 @@ exports.logout = (req, res) => {
     res.redirect("/");
   });
 };
+
+// ============================================
+// GOOGLE SSO CALLBACK
+// ============================================
+exports.googleCallback = async (req, res) => {
+  try {
+    const user = req.user; // Set by Passport
+
+    if (!user) {
+      return res.redirect("/login");
+    }
+
+    // Check if blocked
+    if (user.status === "Blocked") {
+      req.logout((err) => {
+        if (err) console.error("Logout error after blocked Google login:", err);
+      });
+      return res.status(403).render("auth/login", {
+        pageTitle: "Login",
+        oldInput: { email: user.email },
+        errors: [
+          { msg: "Your account has been blocked. Please contact support." },
+        ],
+        successMessage: "",
+      });
+    }
+
+    // Mark as verified if not already (Google accounts are pre-verified)
+    if (!user.isVerified) {
+      user.isVerified = true;
+      await user.save();
+    }
+
+    // Set session userId (Existing system's primary user ID)
+    req.session.userId = user._id;
+    // Ensure persistence for Google Login
+    req.session.cookie.maxAge = 24 * 60 * 60 * 1000; 
+
+    // Determine Role
+    let isAdmin = false;
+    if (user.role_id && user.role_id.role_name === "admin") {
+      isAdmin = true;
+      req.session.isAdmin = true;
+    }
+
+    // Update last login
+    user.last_login_at = new Date();
+    await user.save();
+
+    // Determine Success Message and Redirect
+    if (req.auth_linked) {
+      req.session.successMessage = "Google account linked successfully!";
+      return res.redirect("/profile");
+    }
+
+    req.session.successMessage = "Google login successful! Welcome back.";
+
+    // Redirect
+    if (isAdmin) {
+      return res.redirect("/admin/users");
+    } else {
+      req.session.save((err) => {
+        if (err) console.error("Google Login Session Save Error:", err);
+        return res.redirect("/");
+      });
+    }
+  } catch (err) {
+    console.error("Google SSO Callback error:", err);
+    return res.status(500).render("auth/login", {
+      pageTitle: "Login",
+      oldInput: { email: "" },
+      errors: [{ msg: "Something went wrong with Google Login. Please try again." }],
+      successMessage: "",
+    });
+  }
+};
+

@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const OTP_EXPIRY_MINUTES = 5; // OTP valid for 5 minutes
+const OTP_EXPIRY_MINUTES = 1; // OTP valid for 1 minute
 
 const otpSchema = new mongoose.Schema({
   email: {

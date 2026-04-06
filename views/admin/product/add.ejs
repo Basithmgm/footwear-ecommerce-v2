@@ -117,9 +117,9 @@
                                             <h6 class="mb-3 text-secondary">Category Selection *</h6>
                                             <input type="hidden" id="finalCategory" name="category" required>
 
-                                            <div class="row">
+                                            <div class="row g-3">
                                                 <div class="col-md-4">
-                                                    <label class="form-label small text-muted">Gender</label>
+                                                    <label class="form-label small text-muted mb-1">Gender</label>
                                                     <select class="form-select" id="genderSelect" required>
                                                         <option value="">Select Gender</option>
                                                         <option value="Men">Men</option>
@@ -129,15 +129,14 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label small text-muted">Parent Category</label>
+                                                    <label class="form-label small text-muted mb-1">Parent Category</label>
                                                     <select class="form-select" id="parentCategorySelect" disabled
                                                         required>
                                                         <option value="">Select Parent Category</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label small text-muted">Child Category
-                                                        (Optional)</label>
+                                                    <label class="form-label small text-muted mb-1">Child Category (Optional)</label>
                                                     <select class="form-select" id="childCategorySelect" disabled>
                                                         <option value="">Select Child Category</option>
                                                     </select>
@@ -145,9 +144,9 @@
                                             </div>
                                         </div>
 
-                                        <div class="row mb-4">
+                                        <div class="row mb-4 align-items-end">
                                             <div class="col-md-6">
-                                                <div class="mb-3">
+                                                <div class="mb-0">
                                                     <label for="status" class="form-label">Status</label>
                                                     <select class="form-select" id="status" name="status">
                                                         <option value="Available">Available</option>
@@ -157,13 +156,11 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
-                                                <div class="mb-3 pt-4">
+                                                <div class="mb-2">
                                                     <div class="form-check">
                                                         <input type="checkbox" class="form-check-input" id="isFeatured"
                                                             value="true" name="isFeatured">
-                                                        <label class="form-check-label" for="isFeatured">Show on
-                                                            Homepage
-                                                            (Featured)</label>
+                                                        <label class="form-check-label" for="isFeatured">Show on Homepage (Featured)</label>
                                                     </div>
                                                 </div>
                                             </div>

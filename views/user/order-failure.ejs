@@ -13,6 +13,64 @@
     <link rel="stylesheet" href="/css/bootstrap.min.css" />
     <link rel="stylesheet" href="/css/style.css" />
     <link rel="stylesheet" href="/css/custom.css" />
+    <style>
+      .failure-header {
+        background: #fff5f5;
+        color: #dc3545;
+        padding: 50px 20px;
+        border-radius: 15px 15px 0 0;
+        border-bottom: 1px solid #ffe3e3;
+      }
+      .error-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(220, 53, 69, 0.08);
+        background: white;
+        overflow: hidden;
+      }
+      .btn-premium {
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+      .btn-premium-danger {
+        background: #dc3545;
+        border: none;
+        color: white;
+      }
+      .btn-premium-danger:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        color: white;
+      }
+      .btn-premium-outline {
+        border: 2px solid #6c757d;
+        color: #6c757d;
+        background: transparent;
+      }
+      .btn-premium-outline:hover {
+        background: #6c757d;
+        color: white;
+        transform: translateY(-2px);
+      }
+      .reason-list {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .reason-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 15px;
+      }
+      .reason-item i {
+        margin-right: 12px;
+        margin-top: 3px;
+        color: #dc3545;
+      }
+    </style>
   </head>
 
   <body>
@@ -20,38 +78,67 @@
     <div id="page">
       <%- include('../partials/navbar-offer-search') %>
 
-      <div class="colorlib-product">
+      <div class="colorlib-product mb-5">
         <div class="container">
-          <div class="row row-pb-lg justify-content-center">
-            <div class="col-md-10 text-center">
-              <div class="p-5" style="background: #fdf2f2; border-radius: 10px; border: 1px solid #f8d7da;">
-                <span class="icon mb-4 d-block">
-                  <i class="icon-cross-circle display-3 text-danger"></i>
-                </span>
-                <h2 class="mb-4 text-danger">Payment Failed</h2>
-                <p class="lead mb-5">Something went wrong while processing your payment.</p>
+          <div class="row justify-content-center">
+            <div class="col-md-8">
+              <div class="error-card mb-5">
+                <div class="failure-header text-center">
+                  <div class="icon mb-3">
+                    <i class="ion-ios-close-circle-outline display-1"></i>
+                  </div>
+                  <h1 class="text-danger mb-2 font-weight-bold">Payment Failed</h1>
+                  <p class="lead text-muted mb-0">We couldn't process your payment at this time.</p>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                  <div class="alert alert-warning border-0 bg-light p-4 rounded-lg mb-5">
+                    <h5 class="font-weight-bold mb-3"><i class="ion-ios-information-circle-outline mr-2"></i>What happened?</h5>
+                    <p class="text-muted mb-4">Your transaction was unsuccessful. This can happen due to various reasons. Don't worry, no money has been deducted from your account (if it was, it will be refunded automatically).</p>
+                    
+                    <div class="reason-list">
+                      <div class="reason-item">
+                        <i class="ion-ios-arrow-dropright-circle"></i>
+                        <span>The transaction was cancelled by you or your bank.</span>
+                      </div>
+                      <div class="reason-item">
+                        <i class="ion-ios-arrow-dropright-circle"></i>
+                        <span>Insufficient funds in the selected payment method.</span>
+                      </div>
+                      <div class="reason-item">
+                        <i class="ion-ios-arrow-dropright-circle"></i>
+                        <span>Network timeout or temporary technical issue with the payment gateway.</span>
+                      </div>
+                      <div class="reason-item">
+                        <i class="ion-ios-arrow-dropright-circle"></i>
+                        <span>Incorrect card details or expired security credentials.</span>
+                      </div>
+                    </div>
+                  </div>
 
-                <div class="row justify-content-center mb-5">
-                  <div
-                    class="col-md-8 text-left bg-white p-4 rounded shadow-sm border"
-                  >
-                    <p class="mb-2"><strong>Possible Reasons:</strong></p>
-                    <ul class="text-muted small">
-                      <li>Transaction was cancelled by the user.</li>
-                      <li>Insufficient funds in your account.</li>
-                      <li>Payment was declined by your bank or Razorpay.</li>
-                      <li>Network timeout or technical glitch.</li>
-                    </ul>
-                    <p class="mt-4 mb-0 text-center">
-                      <strong class="text-dark">Don't worry!</strong> Your cart items are still safe.
-                    </p>
+                  <div class="text-center py-4 border-top">
+                    <h5 class="font-weight-bold mb-4">Your items are still in your cart!</h5>
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                      <a href="/checkout" class="btn btn-premium btn-premium-danger mx-2 mb-3">
+                        <i class="icon-refresh mr-1"></i> Try Payment Again
+                      </a>
+                      <a href="/orders" class="btn btn-premium btn-premium-outline mx-2 mb-3">
+                        <i class="icon-list mr-1"></i> View Order History
+                      </a>
+                      <a href="/shop" class="btn btn-premium btn-premium-outline mx-2 mb-3">
+                        <i class="icon-shopping-cart mr-1"></i> Return to Shop
+                      </a>
+                    </div>
                   </div>
                 </div>
-
-                <p>
-                  <a href="/checkout" class="btn btn-primary px-4 py-2 mr-2">Retry Payment</a>
-                  <a href="/shop" class="btn btn-outline-secondary px-4 py-2">Continue Shopping</a>
-                </p>
+              </div>
+              
+              <div class="text-center">
+                <p class="text-muted">Need help completing your purchase?</p>
+                <div class="mt-4">
+                  <p class="small text-muted mb-0">Contact our support team for immediate assistance.</p>
+                  <a href="/contact" class="text-primary font-weight-bold">Customer Support</a>
+                </div>
               </div>
             </div>
           </div>

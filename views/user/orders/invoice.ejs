@@ -234,55 +234,74 @@
                 <td>Price</td>
             </tr>
 
-            <% let cancelledTotal=0; order.items.forEach(item=> {
-                if (item.itemStatus === 'Cancelled') {
-                cancelledTotal += item.itemTotal;
-                }
+            <% 
+                let originalSubtotal = 0;
+                let returnDeduction = 0;
+                let cancelDeduction = 0;
+                
+                order.items.forEach(item => {
+                    const itemAmt = (item.finalPricePaid || item.itemTotal);
+                    if (item.itemStatus === 'Returned') {
+                        returnDeduction += itemAmt;
+                    } else if (item.itemStatus === 'Cancelled') {
+                        cancelDeduction += itemAmt;
+                    } else {
+                        originalSubtotal += itemAmt;
+                    }
                 });
-                let finalTotal = order.totalAmount - cancelledTotal;
-                %>
 
-                <% order.items.forEach(item=> { %>
-                    <tr class="item <%= item.itemStatus === 'Cancelled' ? 'text-muted' : '' %>"
-                        <%=item.itemStatus==='Cancelled' ? 'style="text-decoration: line-through; opacity: 0.6;"' : ''
-                        %>>
-                        <td>
+                // The order.totalAmount should ideally be the original total including shipping/tax
+                // but we calculate based on items for the settled total.
+                const settledTotal = order.totalAmount - returnDeduction - cancelDeduction;
+            %>
+
+            <% order.items.forEach(item=> { %>
+                <tr class="item <%= (item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') ? 'text-muted' : '' %>"
+                    <%= (item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') ? 'style="opacity: 0.7;"' : '' %>>
+                    <td>
+                        <div style="<%= (item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') ? 'text-decoration: line-through;' : '' %>">
                             <%= item.productName %> (Color: <%= item.variantId %> | x<%= item.quantity %>)
-                                        <% if(item.itemStatus==='Cancelled' ) { %>
-                                            <span
-                                                style="color: red; font-size: 0.8em; text-decoration: none; display: inline-block; margin-left: 5px;">[Cancelled]</span>
-                                            <% } %>
-                        </td>
-                        <td style="text-align: center;">
-                            <%= item.itemStatus==='Returned' ? '✔ Yes' : '-' %>
-                        </td>
-                        <td>
-                            <% if(item.itemStatus==='Cancelled' ) { %>
-                                -₹<%= item.itemTotal.toFixed(2) %>
-                                    <% } else { %>
-                                        ₹<%= item.itemTotal.toFixed(2) %>
-                                            <% } %>
-                        </td>
-                    </tr>
-                    <% }) %>
+                        </div>
+                        <% if(item.itemStatus === 'Cancelled') { %>
+                            <span style="color: #dc3545; font-size: 0.85em; font-weight: bold;">[CANCELLED]</span>
+                        <% } else if(item.itemStatus === 'Returned') { %>
+                            <span style="color: #fd7e14; font-size: 0.85em; font-weight: bold;">[RETURNED]</span>
+                        <% } %>
+                    </td>
+                    <td style="text-align: center;">
+                        <%= item.itemStatus === 'Returned' ? '✔ Yes' : '-' %>
+                    </td>
+                    <td>
+                        <% if(item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') { %>
+                            <span style="color: #dc3545;">-₹<%= (item.finalPricePaid || item.itemTotal).toFixed(2) %></span>
+                        <% } else { %>
+                            ₹<%= (item.finalPricePaid || item.itemTotal).toFixed(2) %>
+                        <% } %>
+                    </td>
+                </tr>
+            <% }) %>
 
-                        <tr class="item">
-                            <td colspan="2">Shipping</td>
-                            <td>₹<%= order.shippingFee.toFixed(2) %>
-                            </td>
-                        </tr>
+            <tr class="item">
+                <td colspan="2">Shipping</td>
+                <td>₹<%= order.shippingFee.toFixed(2) %></td>
+            </tr>
 
-                        <tr class="item">
-                            <td colspan="2">Tax</td>
-                            <td>₹<%= order.tax.toFixed(2) %>
-                            </td>
-                        </tr>
+            <tr class="item">
+                <td colspan="2">Tax</td>
+                <td>₹<%= order.tax.toFixed(2) %></td>
+            </tr>
 
-                        <tr class="total">
-                            <td colspan="2"></td>
-                            <td>Total: ₹<%= finalTotal.toFixed(2) %>
-                            </td>
-                        </tr>
+            <% if (returnDeduction > 0 || cancelDeduction > 0) { %>
+                <tr class="item" style="color: #dc3545;">
+                    <td colspan="2">Total Deductions (Returns/Cancellations)</td>
+                    <td>-₹<%= (returnDeduction + cancelDeduction).toFixed(2) %></td>
+                </tr>
+            <% } %>
+
+            <tr class="total">
+                <td colspan="2"></td>
+                <td>Settled Total: ₹<%= Math.max(0, settledTotal).toFixed(2) %></td>
+            </tr>
         </table>
     </div>
 </body>

@@ -23,6 +23,7 @@
               <tr>
                 <th>Code</th>
                 <th>Discount</th>
+                <th>Max Discount</th>
                 <th>Min Purchase</th>
                 <th>Expires</th>
                 <th>Usage</th>
@@ -37,6 +38,9 @@
                     <td><strong class="text-primary"><%= coupon.code %></strong></td>
                     <td>
                       <%= coupon.discountType === 'Percentage' ? coupon.discountValue + '%' : '₹' + coupon.discountValue %>
+                    </td>
+                    <td>
+                      <%= coupon.maxDiscountAmount ? '₹' + coupon.maxDiscountAmount : 'N/A' %>
                     </td>
                     <td>₹<%= coupon.minPurchaseAmount %></td>
                     <td>
@@ -77,10 +81,6 @@
       </div>
     </div>
   </section>
-  <%- include('../../partials/admin/footer.ejs') %>
-  
-  <link rel="stylesheet" href="/css/sweetalert2.min.css">
-  <script src="/js/sweetalert2.all.min.js"></script>
   <script>
     <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
       Swal.fire('Error', '<%= errorMessage %>', 'error');
@@ -141,3 +141,4 @@
     }
   </script>
 </main>
+<%- include('../../partials/admin/footer.ejs') %>

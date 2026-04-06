@@ -30,9 +30,15 @@ const cartSchema = new mongoose.Schema({
             type: Number,
             required: true
         },
+        regularPrice: Number,
+        salePrice: Number,
         // Snapshot of product details in case product is deleted/changed (optional but good practice)
         productName: String,
-        image: String
+        image: String,
+        isSelected: {
+            type: Boolean,
+            default: true
+        }
     }]
 }, {
     timestamps: true

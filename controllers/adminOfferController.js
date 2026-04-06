@@ -42,6 +42,13 @@ exports.addOffer = async (req, res) => {
   try {
     const { name, offerType, targetId, discountType, discountValue, expiresAt } =
       req.body;
+
+    if (discountType === "Percentage" && Number(discountValue) > 50) {
+      return res.status(400).json({
+        success: false,
+        message: "Offer percentage cannot exceed 50%.",
+      });
+    }
     // 1. Save the Offer to our central tracking model
     const newOffer = new Offer({
       name,
@@ -110,6 +117,13 @@ exports.getEditOffer = async (req, res) => {
 exports.postEditOffer = async (req, res) => {
   try {
     const { name, discountType, discountValue, expiresAt } = req.body;
+
+    if (discountType === "Percentage" && Number(discountValue) > 50) {
+      return res.status(400).json({
+        success: false,
+        message: "Offer percentage cannot exceed 50%.",
+      });
+    }
     const offer = await Offer.findById(req.params.id);
     
     if (!offer) {

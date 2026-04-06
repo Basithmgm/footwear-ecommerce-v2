@@ -51,6 +51,12 @@
               <input type="date" class="form-control" id="expiresAt" name="expiresAt" value="<%= dateString %>" required>
             </div>
 
+            <div class="col-md-6 mb-3" id="maxDiscountContainer">
+              <label for="maxDiscountAmount" class="form-label">Max Discount Amount (₹)</label>
+              <input type="number" placeholder="e.g. 500 (Optional for %)" class="form-control" id="maxDiscountAmount" name="maxDiscountAmount" value="<%= coupon.maxDiscountAmount || '' %>" min="1">
+              <small class="text-muted">Maximum cap for percentage discounts.</small>
+            </div>
+
             <div class="col-md-6 mb-3">
               <label for="usageLimit" class="form-label">Global Usage Limit (Optional)</label>
               <input type="number" placeholder="Leave blank for unlimited" class="form-control" id="usageLimit" name="usageLimit" value="<%= coupon.usageLimit || '' %>" min="1">
@@ -65,10 +71,6 @@
       </div>
     </div>
   </section>
-  <%- include('../../partials/admin/footer.ejs') %>
-  
-  <link rel="stylesheet" href="/css/sweetalert2.min.css">
-  <script src="/js/sweetalert2.all.min.js"></script>
   <script>
     <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
       Swal.fire('Error', '<%= errorMessage %>', 'error');
@@ -81,7 +83,10 @@
     document.getElementById('editCouponForm').addEventListener('submit', function(e) {
       const discountType = document.getElementById('discountType').value;
       const discountValue = Number(document.getElementById('discountValue').value);
-      const expiresAt = new Date(document.getElementById('expiresAt').value);
+      const expiresAtInput = document.getElementById('expiresAt').value;
+      const expiresAt = new Date(expiresAtInput);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       if (discountValue <= 0) {
         e.preventDefault();
@@ -95,11 +100,29 @@
         return;
       }
 
-      if (expiresAt < new Date()) {
+      if (expiresAt < today) {
         e.preventDefault();
         Swal.fire('Invalid Date', 'Expiration date cannot be in the past.', 'error');
         return;
       }
     });
+
+    // Toggle Max Discount visibility
+    const discountTypeSelect = document.getElementById('discountType');
+    const maxDiscountContainer = document.getElementById('maxDiscountContainer');
+
+    function toggleMaxDiscount() {
+      if (discountTypeSelect.value === 'Percentage') {
+        maxDiscountContainer.style.display = 'block';
+      } else {
+        maxDiscountContainer.style.display = 'none';
+        document.getElementById('maxDiscountAmount').value = ''; // Clear if not percentage
+      }
+    }
+
+    discountTypeSelect.addEventListener('change', toggleMaxDiscount);
+    // Initial call
+    toggleMaxDiscount();
   </script>
 </main>
+<%- include('../../partials/admin/footer.ejs') %>

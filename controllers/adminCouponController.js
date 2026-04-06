@@ -31,7 +31,7 @@ exports.getAddCoupon = (req, res) => {
 
 exports.postAddCoupon = async (req, res) => {
   try {
-    const { code, discountType, discountValue, minPurchaseAmount, expiresAt, usageLimit } = req.body;
+    const { code, discountType, discountValue, minPurchaseAmount, maxDiscountAmount, expiresAt, usageLimit } = req.body;
     
     if (Number(discountValue) < 0 || Number(minPurchaseAmount) < 0) {
       req.session.errorMessage = "Values cannot be negative.";
@@ -45,8 +45,8 @@ exports.postAddCoupon = async (req, res) => {
       return res.redirect("/admin/coupons/add");
     }
 
-    if (discountType === "Percentage" && Number(discountValue) > 100) {
-      req.session.errorMessage = "Percentage discount cannot exceed 100.";
+    if (discountType === "Percentage" && Number(discountValue) > 50) {
+      req.session.errorMessage = "Percentage discount cannot exceed 50%.";
       req.session.oldInput = req.body;
       return res.redirect("/admin/coupons/add");
     }
@@ -63,6 +63,7 @@ exports.postAddCoupon = async (req, res) => {
       discountType,
       discountValue: Number(discountValue),
       minPurchaseAmount: Number(minPurchaseAmount) || 0,
+      maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : null,
       expiresAt,
       usageLimit: usageLimit ? Number(usageLimit) : null,
       isActive: true, // Default to true on creation
@@ -103,15 +104,15 @@ exports.getEditCoupon = async (req, res) => {
 exports.postEditCoupon = async (req, res) => {
   try {
     const couponId = req.params.id;
-    const { discountType, discountValue, minPurchaseAmount, expiresAt, usageLimit } = req.body;
+    const { discountType, discountValue, minPurchaseAmount, maxDiscountAmount, expiresAt, usageLimit } = req.body;
     
     if (Number(discountValue) <= 0 || Number(minPurchaseAmount) < 0) {
       req.session.errorMessage = "Values cannot be negative.";
       return res.redirect(`/admin/coupons/edit/${couponId}`);
     }
 
-    if (discountType === "Percentage" && Number(discountValue) > 100) {
-      req.session.errorMessage = "Percentage discount cannot exceed 100.";
+    if (discountType === "Percentage" && Number(discountValue) > 50) {
+      req.session.errorMessage = "Percentage discount cannot exceed 50%.";
       return res.redirect(`/admin/coupons/edit/${couponId}`);
     }
 
@@ -124,6 +125,7 @@ exports.postEditCoupon = async (req, res) => {
       discountType,
       discountValue: Number(discountValue),
       minPurchaseAmount: Number(minPurchaseAmount) || 0,
+      maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : null,
       expiresAt: new Date(expiresAt),
       usageLimit: usageLimit ? Number(usageLimit) : null,
     });

@@ -12,7 +12,7 @@ router.get("/success/:orderId", checkoutController.getOrderSuccess);
 router.get("/failure", checkoutController.getOrderFailure);
 router.post("/add-address", checkoutController.addAddress);
 router.post("/apply-coupon", auth, checkoutController.applyCoupon);
-router.post("/remove-coupon", auth, checkoutController.removeCoupon);
+router.post("/payment-failed", checkoutController.handlePaymentFailure);
 
 // Razorpay Routes
 router.post("/razorpay/create-order", auth, razorpayController.createOrder);

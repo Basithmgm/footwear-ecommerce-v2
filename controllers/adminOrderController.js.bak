@@ -45,34 +45,11 @@ exports.getOrders = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
-    // If filter is for returns, let's extract the specific items for better admin visibility
-    let returnItems = [];
-    if (statusFilter === 'Return Requested') {
-      orders.forEach(o => {
-        o.items.forEach(item => {
-          if (item.itemStatus === 'Return Requested' || o.orderStatus === 'Return Requested') {
-            returnItems.push({
-              _id: o._id,
-              itemId: item._id,
-              productName: item.productName,
-              quantity: item.quantity,
-              total: item.finalPricePaid || item.itemTotal,
-              orderDate: o.orderedDate,
-              customer: o.shippingAddress.full_name,
-              paymentMethod: o.paymentMethod,
-              itemStatus: item.itemStatus
-            });
-          }
-        });
-      });
-    }
-
     const totalPages = Math.ceil(totalOrders / limit);
 
     res.render("admin/orders/list", {
       pageTitle: "Order Management",
       orders,
-      returnItems,
       currentPage: page,
       totalPages,
       search,
@@ -118,85 +95,70 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     const oldStatus = order.orderStatus;
-    
-    // Status Hierarchy Definition
-    const statusPriority = {
-      'Ordered': 1,
-      'Shipped': 2,
-      'Out for Delivery': 3,
-      'Delivered': 4,
-      'Cancelled': 5,
-      'Returned': 5, // Returned is terminal
-      'Return Rejected': 5
-    };
 
-    // Terminal Statuses (No changes allowed once reached)
-    const terminalStatuses = ['Delivered', 'Cancelled', 'Returned', 'Return Rejected'];
-    
-    if (terminalStatuses.includes(oldStatus)) {
+    // Allowed transitions check
+    if (oldStatus === "Delivered") {
       return res.status(400).json({
         success: false,
-        message: `Order status is already "${oldStatus}" and cannot be changed.`
+        message: "Order has already been Delivered and cannot be changed.",
       });
     }
 
-    // Forward-only validation (excluding terminal moves like Cancelled)
-    const newStatusPriority = statusPriority[status] || 0;
-    const oldStatusPriority = statusPriority[oldStatus] || 0;
-
-    if (newStatusPriority > 0 && oldStatusPriority > 0) {
-      // Allow moving TO terminal states but not FROM them (handled above)
-      // Special case: allow cancellation if not yet delivered
-      if (status === 'Cancelled') {
-        // Allowed (as long as it wasn't terminal, which is checked above)
-      } else if (newStatusPriority < oldStatusPriority) {
-        return res.status(400).json({
-          success: false,
-          message: `Cannot revert order status from "${oldStatus}" back to "${status}".`
-        });
-      }
+    // Prevent reverting from 'Out for Delivery' to 'Shipped'
+    const hasOutForDeliveryItem = order.items.some(
+      (item) => item.itemStatus === "Out for Delivery",
+    );
+    if (
+      (oldStatus === "Out for Delivery" || hasOutForDeliveryItem) &&
+      (status === "Shipped" || status === "Ordered")
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Cannot change status back to Shipped or Ordered once a product is Out for Delivery.",
+      });
     }
 
-          // Stock Restoration Logic - Ensure we only restore stock ONCE
-          if (
-            (status === "Cancelled" || status === "Returned") &&
-            oldStatus !== "Cancelled" &&
-            oldStatus !== "Returned"
-          ) {
-            for (const item of order.items) {
-              // ONLY increment if the item wasn't already handled individually
-              if (item.itemStatus !== "Cancelled" && item.itemStatus !== "Returned") {
-                const product = await Product.findById(item.productId);
-                if (product) {
-                  const variant = product.variants.find(
-                    (v) => v.color === item.variantId,
-                  );
-                  if (variant) {
-                    const sizeObj = variant.sizes.find((s) => s.size == item.size);
-                    if (sizeObj) {
-                      sizeObj.quantity += item.quantity;
-                    }
-                  }
-      
-                  // Recalculate totalStock
-                  product.totalStock = product.variants.reduce((acc, v) => {
-                    return acc + v.sizes.reduce((sum, s) => sum + s.quantity, 0);
-                  }, 0);
-      
-                  await product.save();
-                }
+    // Stock Restoration Logic
+    // If status changes to Cancelled or Returned, restore stock
+    if (
+      (status === "Cancelled" || status === "Returned") &&
+      oldStatus !== "Cancelled" &&
+      oldStatus !== "Returned"
+    ) {
+      for (const item of order.items) {
+        // ONLY increment if the item wasn't already handled individually
+        if (item.itemStatus !== "Cancelled" && item.itemStatus !== "Returned") {
+          const product = await Product.findById(item.productId);
+          if (product) {
+            const variant = product.variants.find(
+              (v) => v.color === item.variantId,
+            );
+            if (variant) {
+              const sizeObj = variant.sizes.find((s) => s.size == item.size);
+              if (sizeObj) {
+                sizeObj.quantity += item.quantity;
               }
-              // Always sync the item status if we are moving the whole order to Cancelled/Returned
-              item.itemStatus = status;
             }
-          } else {
-            // For other status changes (Shipped, etc.), sync items that aren't cancelled/returned
-            order.items.forEach(item => {
-              if (item.itemStatus !== "Cancelled" && item.itemStatus !== "Returned") {
-                item.itemStatus = status;
-              }
-            });
+
+            // Recalculate totalStock
+            product.totalStock = product.variants.reduce((acc, v) => {
+              return acc + v.sizes.reduce((sum, s) => sum + s.quantity, 0);
+            }, 0);
+
+            await product.save();
           }
+          item.itemStatus = status; // Sync item status
+        }
+      }
+    } else {
+      // For other status changes (Shipped, etc.), sync items that aren't cancelled/returned
+      order.items.forEach(item => {
+        if (item.itemStatus !== "Cancelled" && item.itemStatus !== "Returned") {
+          item.itemStatus = status;
+        }
+      });
+    }
 
     // If we strictly follow the requirement "Inventory/Stock management", we might also want to handle
     // the reverse case (Cancelled -> Pending), but that's rare and dangerous.

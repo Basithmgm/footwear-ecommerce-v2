@@ -13,6 +13,7 @@ router.get("/women", shopController.getShop);
 router.get("/offers", shopController.getOffers);
 router.get("/about", shopController.getAbout);
 router.get("/contact", shopController.getContact);
+router.post("/contact", shopController.postContact);
 router.get("/product/:id", shopController.getProductDetails);
 router.get("/wallet", auth, walletController.getWallet);
 router.post("/wallet/add-money", auth, walletController.createWalletOrder);

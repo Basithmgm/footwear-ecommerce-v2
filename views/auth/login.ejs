@@ -143,6 +143,62 @@
     .signin-footer-text a:hover {
       text-decoration: underline;
     }
+
+    .google-btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 50px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .google-btn:hover {
+      background-color: #f8f9fa;
+      border-color: #ccc;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .google-icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 12px;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 20px 0;
+      color: #888;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #eee;
+    }
+
+    .divider:not(:empty)::before {
+      margin-right: 15px;
+    }
+
+    .divider:not(:empty)::after {
+      margin-left: 15px;
+    }
   </style>
 </head>
 
@@ -178,6 +234,13 @@
       </div>
 
       <button type="submit" class="signin-btn">Sign In</button>
+
+      <div class="divider">OR</div>
+
+      <a href="/auth/google" class="google-btn">
+        <img src="/images/google-logo.png" class="google-icon" alt="Google logo">
+        Continue with Google
+      </a>
 
       <p class="signin-footer-text">
         Don't have an account?

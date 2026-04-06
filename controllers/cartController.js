@@ -3,72 +3,125 @@ const Product = require("../models/Product");
 const User = require("../models/User");
 const Coupon = require("../models/Coupon");
 
+const getEffectivePrice = (basePrice, product) => {
+  const pOption = { type: product.offerType || 'Percentage', value: product.offerValue || 0 };
+  const cOptionDirect = product.category ? { type: product.category.offerType || 'Percentage', value: product.category.offerValue || 0 } : null;
+  const cOptionParent = product.category && product.category.parentCategory ? { type: product.category.parentCategory.offerType || 'Percentage', value: product.category.parentCategory.offerValue || 0 } : null;
+
+  const getBestPrice = (price, offers) => {
+    let bestPrice = price;
+    offers.forEach(opt => {
+      if (!opt || opt.value <= 0) return;
+      const discount = opt.type === 'Percentage' ? (price * (opt.value / 100)) : opt.value;
+      if (discount > price * 0.5) return;
+      const discounted = price - discount;
+      if (discounted < bestPrice) bestPrice = discounted;
+    });
+    return Math.round(bestPrice);
+  };
+
+  return getBestPrice(basePrice, [pOption, cOptionDirect, cOptionParent]);
+};
+
+const calculateCartTotals = (items) => {
+  let subtotal = 0;
+  let originalTotal = 0;
+  let totalDiscount = 0;
+  
+  const processedItems = items.map(item => {
+    const product = item.productId;
+    let regularPrice = item.regularPrice || item.price || 0;
+    let currentEffectivePrice = item.salePrice || item.price || 0;
+    let stockStatus = "Available";
+
+    if (!product || product.isDeleted || product.isBlocked) {
+      stockStatus = "Unavailable";
+    } else {
+      const variant = product.variants.find(v => v.color === item.variantId);
+      if (variant && !variant.isBlocked) {
+        const sizeObj = variant.sizes.find(s => s.size == item.size);
+        if (sizeObj && sizeObj.status !== "Inactive") {
+          regularPrice = sizeObj.regularPrice;
+          const salePrice = sizeObj.salePrice;
+          currentEffectivePrice = getEffectivePrice(salePrice, product);
+
+          if (sizeObj.quantity <= 0) {
+            stockStatus = "Out of Stock";
+          }
+        } else {
+          stockStatus = "Unavailable";
+        }
+      } else {
+        stockStatus = "Unavailable";
+      }
+    }
+
+    let itemDiscount = (regularPrice - currentEffectivePrice) * item.quantity;
+    if (itemDiscount < 0) itemDiscount = 0;
+
+    // Calculate totals for ALL items (Simplified flow)
+    totalDiscount += itemDiscount;
+    originalTotal += regularPrice * item.quantity;
+    subtotal += currentEffectivePrice * item.quantity;
+
+    const discountPercentage = regularPrice > currentEffectivePrice 
+      ? Math.round(((regularPrice - currentEffectivePrice) / regularPrice) * 100) 
+      : 0;
+
+    return {
+      ...item.toObject(),
+      regularPrice,
+      salePrice: currentEffectivePrice,
+      discountPercentage,
+      subtotal: currentEffectivePrice * item.quantity,
+      stockStatus
+    };
+  });
+
+  return { processedItems, subtotal, originalTotal, totalDiscount };
+};
+
 const getCart = async (req, res) => {
   try {
     if (!req.session.userId) {
       return res.redirect("/login");
     }
 
-    const cart = await Cart.findOne({ userId: req.session.userId }).populate({
+    let cart = await Cart.findOne({ userId: req.session.userId }).populate({
       path: "items.productId",
-      model: "Product",
+      populate: {
+        path: "category",
+        populate: { path: "parentCategory" }
+      }
     });
 
-    // Calculate totals
-    let subtotal = 0;
-    let originalTotal = 0;
-    let totalDiscount = 0;
-    let cartItems = [];
-
-    if (cart && cart.items.length > 0) {
-      cartItems = cart.items.map((item) => {
-        // Determine current price from product variant/size
-        const product = item.productId;
-        let currentPrice = item.price;
-        let stockStatus = "Available";
-        let regularPrice = item.price;
-        let salePrice = item.price;
-        let maxStock = 0;
-
-        // Find the exact variant and size
-        if (!product || product.isDeleted || product.isBlocked) {
-          stockStatus = "Unavailable";
-        } else {
-          const variant = product.variants.find(
-            (v) => v.color === item.variantId,
-          );
-          if (variant && !variant.isBlocked) {
-            const sizeObj = variant.sizes.find((s) => s.size == item.size);
-            if (sizeObj && sizeObj.status !== "Inactive") {
-              regularPrice = sizeObj.regularPrice || item.price;
-              salePrice = sizeObj.salePrice || item.price;
-              if (sizeObj.quantity <= 0 || sizeObj.quantity < item.quantity) {
-                stockStatus = "Out of Stock";
-              }
-            } else {
-              stockStatus = "Unavailable";
-            }
-          } else {
-            stockStatus = "Unavailable";
-          }
+    // PERSISTENCE: If there's a pending Virtual Buy Now, move it to the real cart before displaying
+    const virtualItem = req.session.buyNowItem;
+    if (virtualItem) {
+        if (!cart) {
+            cart = new Cart({ userId: req.session.userId, items: [] });
         }
+        
+        const existingItemIndex = cart.items.findIndex(i => {
+            const iId = (i.productId._id || i.productId).toString();
+            const vId = (virtualItem.productId._id || virtualItem.productId).toString();
+            return iId === vId && 
+                   i.variantId === virtualItem.variantId &&
+                   i.size.toString() === virtualItem.size.toString();
+        });
 
-        let itemDiscount = (regularPrice - salePrice) * item.quantity;
-        if (itemDiscount < 0) itemDiscount = 0;
-
-        totalDiscount += itemDiscount;
-        originalTotal += regularPrice * item.quantity;
-        subtotal += item.price * item.quantity;
-
-        return {
-          ...item.toObject(),
-          regularPrice,
-          salePrice,
-          subtotal: item.price * item.quantity,
-          stockStatus,
-        };
-      });
+        if (existingItemIndex === -1) {
+            cart.items.push({ ...virtualItem });
+        }
+        
+        await cart.save();
+        delete req.session.buyNowItem;
+        return res.redirect("/cart"); 
     }
+
+    delete req.session.buyNowItemId;
+
+    const { processedItems: cartItems, subtotal, originalTotal, totalDiscount } = calculateCartTotals(cart ? cart.items : []);
 
     const activeCoupons = await Coupon.find({
       isActive: true,
@@ -84,6 +137,16 @@ const getCart = async (req, res) => {
           couponDiscountAmount = (subtotal * appliedCoupon.discountValue) / 100;
         } else {
           couponDiscountAmount = appliedCoupon.discountValue;
+        }
+
+        if (appliedCoupon.discountType === 'Percentage' && appliedCoupon.maxDiscountAmount && couponDiscountAmount > appliedCoupon.maxDiscountAmount) {
+          couponDiscountAmount = appliedCoupon.maxDiscountAmount;
+        }
+
+        if (couponDiscountAmount > (subtotal * 0.5)) {
+          req.session.appliedCoupon = null;
+          appliedCoupon = null;
+          couponDiscountAmount = 0;
         }
       } else {
         req.session.appliedCoupon = null;
@@ -123,128 +186,105 @@ const getCart = async (req, res) => {
 const addToCart = async (req, res) => {
   try {
     if (!req.session.userId) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Please login to add items to cart" });
+      return res.status(401).json({ success: false, message: "Please login to add items to cart" });
     }
 
-    const { productId, variantColor, size, quantity, price } = req.body;
+    const { productId, variantColor, size, quantity, isBuyNow } = req.body;
     const userId = req.session.userId;
 
-    // 1. Validate Product & Stock
     const product = await Product.findById(productId);
     if (!product || product.isDeleted || product.isBlocked) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Product not found or unavailable" });
+      return res.status(404).json({ success: false, message: "Product not found or unavailable" });
     }
 
-    // Find specific size variant
     const variant = product.variants.find((v) => v.color === variantColor);
     if (!variant || variant.isBlocked)
-      return res
-        .status(404)
-        .json({ success: false, message: "Variant not found or unavailable" });
+      return res.status(404).json({ success: false, message: "Variant not found or unavailable" });
 
     const sizeObj = variant.sizes.find((s) => s.size == size);
     if (!sizeObj || sizeObj.status === "Inactive")
-      return res
-        .status(404)
-        .json({ success: false, message: "Size not found or unavailable" });
+      return res.status(404).json({ success: false, message: "Size not found or unavailable" });
 
     const orderLimit = variant.orderLimit || 5;
 
-    // Preliminary limit check for purely new item addition
     if (parseInt(quantity) > orderLimit) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: `Maximum ${orderLimit} items per product allowed`,
-        });
+      return res.status(400).json({ success: false, message: `Maximum ${orderLimit} items per product allowed` });
     }
 
     if (sizeObj.quantity < quantity) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Insufficient stock" });
+      return res.status(400).json({ success: false, message: "Insufficient stock" });
     }
 
-    // 2. Find or Create Cart
     let cart = await Cart.findOne({ userId });
     if (!cart) {
       cart = new Cart({ userId, items: [] });
     }
 
-    console.log("Add to Cart Request Body:", req.body);
-    console.log(
-      "Current Cart Items (before check):",
-      cart.items.map((i) => ({
-        pid: i.productId,
-        vid: i.variantId,
-        sz: i.size,
-      })),
-    );
+    const regularPrice = sizeObj.regularPrice;
+    const salePrice = sizeObj.salePrice;
+    const image = (variant.variantImages && variant.variantImages[0]) || "";
 
-    // 3. Check if item exists
+    if (isBuyNow) {
+      const effectivePrice = getEffectivePrice(salePrice, product);
+      req.session.buyNowItem = {
+        productId: productId,
+        productName: product.productName,
+        variantId: variantColor,
+        size: size,
+        quantity: parseInt(quantity),
+        price: effectivePrice,
+        regularPrice: regularPrice,
+        salePrice: salePrice,
+        image: image
+      };
+      
+      return res.json({
+        success: true,
+        message: "Proceeding to Buy Now...",
+        cartCount: (cart ? cart.items.reduce((acc, i) => acc + i.quantity, 0) : 0) + parseInt(quantity)
+      });
+    }
+
     const existingItemIndex = cart.items.findIndex((item) => {
-      const isSameProduct = item.productId.toString() === productId;
-      const isSameVariant = item.variantId === variantColor; // Ensure exact match
-      const isSameSize = item.size.toString() === size.toString(); // Ensure string comparison
-
-      console.log(
-        `Checking Item: ${item._id} | SameProd: ${isSameProduct} | SameVar: ${isSameVariant} ('${item.variantId}' vs '${variantColor}') | SameSize: ${isSameSize} ('${item.size}' vs '${size}')`,
-      );
-
-      return isSameProduct && isSameVariant && isSameSize;
+      const iId = (item.productId._id || item.productId).toString();
+      const pId = productId.toString();
+      return iId === pId &&
+             item.variantId === variantColor &&
+             item.size.toString() === size.toString();
     });
 
     if (existingItemIndex > -1) {
-      // Update Quantity
-      let newQuantity =
-        cart.items[existingItemIndex].quantity + parseInt(quantity);
-
-      // Max limit + Stock check
-      if (newQuantity > orderLimit)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: `Maximum ${orderLimit} items per product allowed`,
-          });
-      if (newQuantity > sizeObj.quantity)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Insufficient stock for requested quantity",
-          });
+      let newQuantity = cart.items[existingItemIndex].quantity + parseInt(quantity);
+      if (newQuantity > orderLimit) return res.status(400).json({ success: false, message: `Maximum ${orderLimit} items per product allowed` });
+      if (newQuantity > sizeObj.quantity) return res.status(400).json({ success: false, message: "Insufficient stock" });
 
       cart.items[existingItemIndex].quantity = newQuantity;
+      cart.items[existingItemIndex].price = salePrice;
+      cart.items[existingItemIndex].regularPrice = regularPrice;
+      cart.items[existingItemIndex].salePrice = salePrice;
     } else {
-      // Add new Item
       cart.items.push({
         productId,
         variantId: variantColor,
         size,
         quantity: parseInt(quantity),
-        price: parseFloat(price),
+        price: salePrice,
+        regularPrice,
+        salePrice,
         productName: product.productName,
-        image: variant.variantImages[0],
+        image: image
       });
     }
 
     await cart.save();
+    delete req.session.buyNowItem; 
+    delete req.session.buyNowItemId;
 
-    // 4. Remove from Wishlist
     await User.findByIdAndUpdate(userId, {
       $pull: { wishlist: productId },
     });
 
-    const totalQuantity = cart.items.reduce(
-      (acc, item) => acc + item.quantity,
-      0,
-    );
+    const totalQuantity = cart.items.reduce((acc, item) => acc + item.quantity, 0);
 
     res.json({
       success: true,
@@ -263,123 +303,89 @@ const updateQuantity = async (req, res) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { itemId, check } = req.body; // 'check' is 'plus' or 'minus'
+    const { itemId, check } = req.body;
     const userId = req.session.userId;
 
     const cart = await Cart.findOne({ userId });
-    if (!cart)
-      return res
-        .status(404)
-        .json({ success: false, message: "Cart not found" });
+    if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
 
     const item = cart.items.id(itemId);
-    if (!item)
-      return res
-        .status(404)
-        .json({ success: false, message: "Item not found in cart" });
+    if (!item) return res.status(404).json({ success: false, message: "Item not found in cart" });
 
-    // Logic check
-    // ideally we fetch product again to verify stock
     const product = await Product.findById(item.productId);
-
-    // Handle case where product might be deleted or not found
-    if (!product) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          message: "Product not found (might be deleted)",
-        });
-    }
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
 
     const variant = product.variants.find((v) => v.color === item.variantId);
-    if (!variant || variant.isBlocked) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Variant not found or unavailable" });
-    }
+    if (!variant || variant.isBlocked) return res.status(404).json({ success: false, message: "Variant not found or unavailable" });
 
     const sizeObj = variant.sizes.find((s) => s.size == item.size);
-    if (!sizeObj || sizeObj.status === "Inactive") {
-      return res
-        .status(404)
-        .json({ success: false, message: "Size not found or unavailable" });
-    }
+    if (!sizeObj || sizeObj.status === "Inactive") return res.status(404).json({ success: false, message: "Size not found or unavailable" });
 
     let newQuantity = item.quantity;
     const orderLimit = variant.orderLimit || 5;
 
     if (check === "plus") {
       newQuantity += 1;
-      if (newQuantity > orderLimit)
-        return res.json({
-          success: false,
-          message: `Max limit reached (${orderLimit})`,
-        });
-      if (newQuantity > sizeObj.quantity)
-        return res.json({ success: false, message: "Out of stock" });
+      if (newQuantity > orderLimit) return res.json({ success: false, message: `Max limit reached (${orderLimit})` });
+      if (newQuantity > sizeObj.quantity) return res.json({ success: false, message: "Out of stock" });
     } else if (check === "minus") {
       newQuantity -= 1;
     }
 
-    if (newQuantity < 1) {
-      // Remove item if quantity matches < 1 (optional, user might prefer explicit remove btn)
-      // But usually '-' stops at 1.
-      return res.json({ success: false, message: "Minimum quantity is 1" });
-    }
+    if (newQuantity < 1) return res.json({ success: false, message: "Minimum quantity is 1" });
 
     item.quantity = newQuantity;
-
-    // Ensure we save the parent document (cart), not the subdocument (item)
     await cart.save();
 
-    // Calculate new totals for response
-    const cartForTotals = await Cart.findOne({ userId }).populate(
-      "items.productId",
-    );
-    let total = 0,
-      originalTotal = 0,
-      totalDiscount = 0;
-    const totalQuantity = cartForTotals.items.reduce(
-      (acc, item) => acc + item.quantity,
-      0,
-    );
-
-    cartForTotals.items.forEach((curr) => {
-      let regularPrice = curr.price;
-      let salePrice = curr.price;
-      const p = curr.productId;
-      if (p) {
-        const v = p.variants.find((v) => v.color === curr.variantId);
-        if (v) {
-          const s = v.sizes.find((sz) => sz.size == curr.size);
-          if (s) {
-            regularPrice = s.regularPrice || curr.price;
-            salePrice = s.salePrice || curr.price;
-          }
-        }
-      }
-      let itemDisc = (regularPrice - salePrice) * curr.quantity;
-      if (itemDisc < 0) itemDisc = 0;
-      totalDiscount += itemDisc;
-      originalTotal += regularPrice * curr.quantity;
-      total += curr.price * curr.quantity;
+    const cartForTotals = await Cart.findOne({ userId }).populate({
+      path: "items.productId",
+      populate: { path: "category", populate: { path: "parentCategory" } }
     });
+
+    const { processedItems, subtotal, originalTotal, totalDiscount } = calculateCartTotals(cartForTotals ? cartForTotals.items : []);
+    const totalQuantity = processedItems.reduce((acc, i) => acc + i.quantity, 0);
+    const updatedItem = processedItems.find(i => i._id.toString() === itemId);
+
+    let appliedCoupon = req.session.appliedCoupon || null;
+    let couponDiscountAmount = 0;
+    if (appliedCoupon) {
+      if (subtotal >= appliedCoupon.minPurchaseAmount) {
+        if (appliedCoupon.discountType === 'Percentage') {
+          couponDiscountAmount = (subtotal * appliedCoupon.discountValue) / 100;
+        } else {
+          couponDiscountAmount = appliedCoupon.discountValue;
+        }
+
+        if (appliedCoupon.discountType === 'Percentage' && appliedCoupon.maxDiscountAmount && couponDiscountAmount > appliedCoupon.maxDiscountAmount) {
+          couponDiscountAmount = appliedCoupon.maxDiscountAmount;
+        }
+
+        if (couponDiscountAmount > (subtotal * 0.5)) {
+          req.session.appliedCoupon = null;
+          appliedCoupon = null;
+          couponDiscountAmount = 0;
+        }
+      } else {
+        req.session.appliedCoupon = null;
+        appliedCoupon = null;
+      }
+    }
 
     res.json({
       success: true,
       newQuantity,
-      newItemTotal: item.price * newQuantity,
-      cartTotal: total,
+      newItemTotal: updatedItem ? updatedItem.subtotal : 0,
+      cartTotal: subtotal,
       originalTotal,
       totalDiscount,
+      couponDiscountAmount,
+      finalTotal: subtotal - couponDiscountAmount,
       cartCount: totalQuantity,
+      couponRemoved: !appliedCoupon && req.session.appliedCoupon === null && couponDiscountAmount === 0
     });
   } catch (error) {
     console.error("Update Quantity Error:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error: " + error.message });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -393,53 +399,52 @@ const removeFromCart = async (req, res) => {
     const userId = req.session.userId;
 
     const cart = await Cart.findOne({ userId });
-    if (!cart)
-      return res
-        .status(404)
-        .json({ success: false, message: "Cart not found" });
+    if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
 
-    // Remove item using Mongoose pull
     cart.items.pull({ _id: itemId });
     await cart.save();
 
-    const cartForTotals = await Cart.findOne({ userId }).populate(
-      "items.productId",
-    );
-    let total = 0,
-      originalTotal = 0,
-      totalDiscount = 0;
-    const totalQuantity = cartForTotals.items.reduce(
-      (acc, item) => acc + item.quantity,
-      0,
-    );
-
-    cartForTotals.items.forEach((curr) => {
-      let regularPrice = curr.price;
-      let salePrice = curr.price;
-      const p = curr.productId;
-      if (p) {
-        const v = p.variants.find((v) => v.color === curr.variantId);
-        if (v) {
-          const s = v.sizes.find((sz) => sz.size == curr.size);
-          if (s) {
-            regularPrice = s.regularPrice || curr.price;
-            salePrice = s.salePrice || curr.price;
-          }
-        }
-      }
-      let itemDisc = (regularPrice - salePrice) * curr.quantity;
-      if (itemDisc < 0) itemDisc = 0;
-      totalDiscount += itemDisc;
-      originalTotal += regularPrice * curr.quantity;
-      total += curr.price * curr.quantity;
+    const cartForTotals = await Cart.findOne({ userId }).populate({
+      path: "items.productId",
+      populate: { path: "category", populate: { path: "parentCategory" } }
     });
+
+    const { processedItems, subtotal, originalTotal, totalDiscount } = calculateCartTotals(cartForTotals ? cartForTotals.items : []);
+    const totalQuantity = processedItems.reduce((acc, i) => acc + i.quantity, 0);
+
+    let appliedCoupon = req.session.appliedCoupon || null;
+    let couponDiscountAmount = 0;
+    if (appliedCoupon) {
+      if (subtotal >= appliedCoupon.minPurchaseAmount) {
+        if (appliedCoupon.discountType === 'Percentage') {
+          couponDiscountAmount = (subtotal * appliedCoupon.discountValue) / 100;
+        } else {
+          couponDiscountAmount = appliedCoupon.discountValue;
+        }
+
+        if (appliedCoupon.discountType === 'Percentage' && appliedCoupon.maxDiscountAmount && couponDiscountAmount > appliedCoupon.maxDiscountAmount) {
+          couponDiscountAmount = appliedCoupon.maxDiscountAmount;
+        }
+
+        if (couponDiscountAmount > (subtotal * 0.5)) {
+          req.session.appliedCoupon = null;
+          appliedCoupon = null;
+          couponDiscountAmount = 0;
+        }
+      } else {
+        req.session.appliedCoupon = null;
+        appliedCoupon = null;
+      }
+    }
 
     res.json({
       success: true,
       message: "Item removed",
-      cartTotal: total,
+      cartTotal: subtotal,
       originalTotal,
       totalDiscount,
+      couponDiscountAmount,
+      finalTotal: subtotal - couponDiscountAmount,
       cartCount: totalQuantity,
     });
   } catch (error) {
@@ -454,10 +459,7 @@ const getCartCount = async (req, res) => {
       return res.json({ success: true, cartCount: 0 });
     }
     const cart = await Cart.findOne({ userId: req.session.userId });
-    let count = 0;
-    if (cart && cart.items) {
-      count = cart.items.reduce((acc, item) => acc + item.quantity, 0);
-    }
+    let count = cart ? cart.items.reduce((acc, item) => acc + item.quantity, 0) : 0;
     res.json({ success: true, cartCount: count });
   } catch (error) {
     console.error("Get Cart Count Error:", error);
@@ -465,10 +467,13 @@ const getCartCount = async (req, res) => {
   }
 };
 
+
 module.exports = {
   getCart,
   addToCart,
   updateQuantity,
   removeFromCart,
   getCartCount,
+  calculateCartTotals,
+  getEffectivePrice
 };

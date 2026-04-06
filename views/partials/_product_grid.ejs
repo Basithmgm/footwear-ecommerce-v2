@@ -8,10 +8,12 @@
                 <select class="form-control form-control-sm"
                                                     id="sort-dropdown-ajax">
                     <option value="<%= getUrl({ sort: 'newest' }) %>" <%= selectedSort === 'newest' ? 'selected' : '' %>>Newest Arrivals</option>
-                    <option value="<%= getUrl({ sort: 'priceLowHigh' }) %>" <%= selectedSort === 'priceLowHigh' ? 'selected' : '' %>>Price: Low to High</option>
-                    <option value="<%= getUrl({ sort: 'priceHighLow' }) %>" <%= selectedSort === 'priceHighLow' ? 'selected' : '' %>>Price: High to Low</option>
-                    <option value="<%= getUrl({ sort: 'az' }) %>" <%= selectedSort === 'az' ? 'selected' : '' %>>Name: A - Z</option>
-                    <option value="<%= getUrl({ sort: 'za' }) %>" <%= selectedSort === 'za' ? 'selected' : '' %>>Name: Z - A</option>
+                    <option value="<%= getUrl({ sort: 'priceLowHigh' }) %>" <%= selectedSort === 'priceLowHigh' ? 'selected' : '' %>>Price: Ascending</option>
+                    <option value="<%= getUrl({ sort: 'priceHighLow' }) %>" <%= selectedSort === 'priceHighLow' ? 'selected' : '' %>>Price: Descending</option>
+                    <option value="<%= getUrl({ sort: 'az' }) %>" <%= selectedSort === 'az' ? 'selected' : '' %>>Name: Ascending</option>
+                    <option value="<%= getUrl({ sort: 'za' }) %>" <%= selectedSort === 'za' ? 'selected' : '' %>>Name: Descending</option>
+                    <option value="<%= getUrl({ sort: 'categoryAZ' }) %>" <%= selectedSort === 'categoryAZ' ? 'selected' : '' %>>Category: Ascending</option>
+                    <option value="<%= getUrl({ sort: 'categoryZA' }) %>" <%= selectedSort === 'categoryZA' ? 'selected' : '' %>>Category: Descending</option>
                 </select>
             </div>
         </div>
